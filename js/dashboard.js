@@ -22,7 +22,7 @@ export const template = `
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="lg:col-span-2 space-y-3">
             <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                ⚠️ Требует внимания (Сроки и Гарантийное ТО)
+                ⚠️ Требует внимания (Сроки, Задачи и ТО)
             </h3>
             <div id="dashAlertsContainer" class="space-y-2">
                 <div class="text-center text-gray-500 py-6 text-xs font-bold bg-white border border-gray-300 rounded-xl">Загрузка данных...</div>
@@ -35,7 +35,7 @@ export const template = `
                 <button onclick="window.switchModule('fleet')" class="w-full text-left p-3.5 bg-gray-50 hover:bg-emerald-50 rounded-lg border border-gray-300 hover:border-emerald-600 transition flex items-center justify-between group">
                     <div>
                         <p class="text-xs font-bold text-gray-950">Открыть автопарк</p>
-                        <p class="text-[11px] text-gray-600 font-medium">Управление машинами и тегами</p>
+                        <p class="text-[11px] text-gray-600 font-medium">Управление машинами и задачами</p>
                     </div>
                     <span class="text-gray-500 group-hover:text-emerald-700 transition text-sm font-bold">➔</span>
                 </button>
@@ -55,10 +55,19 @@ export async function init() {
 async function loadDashboardData() {
     if (!window._supabase) return;
     try {
-        const { data: vehicles, error: vErr } = await window._supabase.from('vehicles').select('*');
-        if (vErr) throw vErr;
-        renderStats(vehicles || []);
-        renderAlerts(vehicles || []);
+        // Параллельно загружаем технику и список незавершенных задач
+        const [vehiclesRes, tasksRes] = await Promise.all([
+            window._supabase.from('vehicles').select('*'),
+            window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false)
+        ]);
+
+        if (vehiclesRes.error) throw vehiclesRes.error;
+        
+        const vehiclesList = vehiclesRes.data || [];
+        const activeTasks = tasksRes.data || [];
+
+        renderStats(vehiclesList);
+        renderAlerts(vehiclesList, activeTasks);
     } catch (err) {
         console.error("Ошибка Dashboard:", err.message);
         const container = document.getElementById('dashAlertsContainer');
@@ -74,15 +83,24 @@ function renderStats(list) {
     document.getElementById('dashInRepair').innerText = list.filter(v => v.tags && v.tags.includes('В ремонте')).length;
 }
 
-function renderAlerts(list) {
+function renderAlerts(list, activeTasks) {
     const container = document.getElementById('dashAlertsContainer');
     if (!container) return;
 
     const alerts = [];
     const today = new Date();
     
+    // 1. Сначала добавляем в список критические задачи по ремонту/обслуживанию от пользователя
+    activeTasks.forEach(task => {
+        alerts.push({
+            type: 'task',
+            text: `📋 <b>${task.vehicle_name || 'Техника'}</b>: <span class="text-amber-950 font-bold">${task.text}</span>`
+        });
+    });
+
+    // 2. Обрабатываем документы и гарантию каждой машины
     list.forEach(v => {
-        // 1. Проверка Гостехосмотра
+        // Проверка Гостехосмотра
         if (v.inspection_date) {
             const diff = Math.ceil((new Date(v.inspection_date) - today) / (1000 * 60 * 60 * 24));
             if (diff <= 0) {
@@ -92,7 +110,7 @@ function renderAlerts(list) {
             }
         }
 
-        // 2. Проверка Страховки
+        // Проверка Страховки
         if (v.insurance_date) {
             const diffIns = Math.ceil((new Date(v.insurance_date) - today) / (1000 * 60 * 60 * 24));
             if (diffIns <= 0) {
@@ -102,29 +120,24 @@ function renderAlerts(list) {
             }
         }
 
-        // 3. НОВОЕ: Проверка Гарантийной техники и наработки до ТО
+        // Проверка Гарантийной наработки до ТО (кратно 250 м/ч)
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         if (vehicleTagsArray.includes('Гарантия')) {
             const hours = v.current_hours || 0;
-            
-            // Предполагаем шаг обслуживания каждые 250 моточасов (250, 500, 750, 1000 и т.д.)
             const nextTO = Math.ceil((hours + 1) / 250) * 250;
             const hoursLeft = nextTO - hours;
 
             if (hoursLeft <= 30) {
-                // Если до ТО осталось меньше 30 м/ч — критический уровень опасности
                 alerts.push({ 
                     type: 'danger', 
-                    text: `🛠️ <b>${v.model}</b> (ГАРАНТИЯ): <span class="text-red-700 font-bold">Срочно требуется ТО-${nextTO}!</span> Осталось всего <b>${hoursLeft} м/ч</b> (наработка: ${hours} м/ч).` 
+                    text: `🛠️ <b>${v.model}</b> (ГАРАНТИЯ): <span class="text-red-700 font-bold">Срочно требуется ТО-${nextTO}!</span> Осталось всего <b>${hoursLeft} м/ч</b>.` 
                 });
             } else if (hoursLeft <= 60) {
-                // Если от 31 до 60 м/ч — предупреждение
                 alerts.push({ 
                     type: 'warning', 
                     text: `🛠️ <b>${v.model}</b> (ГАРАНТИЯ): Приближается ТО-${nextTO}. Осталось <b>${hoursLeft} м/ч</b>.` 
                 });
             } else {
-                // Если всё спокойно — выводим обычной информационной плашкой
                 alerts.push({ 
                     type: 'info', 
                     text: `🛠️ <b>${v.model}</b> (ГАРАНТИЯ): Наработка ${hours} м/ч. До планового ТО-${nextTO} осталось <b>${hoursLeft} м/ч</b>.` 
@@ -136,15 +149,20 @@ function renderAlerts(list) {
     if (alerts.length === 0) {
         container.innerHTML = `
             <div class="bg-emerald-50 border-2 border-emerald-300 text-emerald-900 p-4 rounded-xl text-center text-xs font-bold">
-                Все документы в порядке и ТО на контроле! Критических уведомлений не обнаружено.
+                Все документы в порядке, активных задач и критических сроков обслуживания нет!
             </div>`;
         return;
     }
 
+    // Выводим все события на экран с индивидуальными стилями
     container.innerHTML = alerts.map(a => {
-        let classes = "bg-amber-50 border-amber-300 text-amber-950 font-medium"; // warning
+        let classes = "bg-amber-50 border-amber-300 text-amber-950 font-medium"; // warning по умолчанию
         if (a.type === 'danger') classes = "bg-red-50 border-red-300 text-red-950 font-bold";
         if (a.type === 'info') classes = "bg-blue-50 border-blue-300 text-blue-950 font-medium";
+        
+        // Для задач делаем стильную оранжево-желтую плашку с хорошей жирностью текста
+        if (a.type === 'task') classes = "bg-amber-50 border-2 border-amber-400 text-gray-950 font-bold shadow-2xs";
+        
         return `<div class="p-2.5 border rounded-lg text-xs ${classes}">${a.text}</div>`;
     }).join('');
 }
