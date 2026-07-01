@@ -96,11 +96,11 @@ async function loadFleetData() {
                         <div class="border-t border-gray-100 my-2 pt-2 space-y-1 text-xs">
                             <p class="flex justify-between">
                                 <span class="text-gray-400">📅 Техосмотр:</span> 
-                                <span class="font-medium text-gray-700">${formatDate(v.inspection_date)}</span>
+                                <span class="font-medium text-gray-700">${formatDate(v.inspection)}</span>
                             </p>
                             <p class="flex justify-between">
                                 <span class="text-gray-400">📜 Страховка:</span> 
-                                <span class="font-medium text-gray-700">${formatDate(v.insurance_date)}</span>
+                                <span class="font-medium text-gray-700">${formatDate(v.insurance)}</span>
                             </p>
                         </div>
                     </div>
@@ -110,7 +110,7 @@ async function loadFleetData() {
 
         data.forEach(v => {
             const btn = document.getElementById(`btn-edit-${v.id}`);
-            if (btn) btn.onclick = () => openVehicleModal(v.id, v.model, v.plate, v.inspection_date, v.insurance_date);
+            if (btn) btn.onclick = () => openVehicleModal(v.id, v.model, v.plate, v.inspection, v.insurance);
         });
 
     } catch (e) {
@@ -155,15 +155,15 @@ async function handleFormSubmit(e) {
     const id = document.getElementById('vehicleId').value;
     const model = document.getElementById('modalModel').value;
     const plate = document.getElementById('modalPlate').value;
-    const inspection_date = document.getElementById('modalInspection').value || null;
-    const insurance_date = document.getElementById('modalInsurance').value || null;
+    const inspection = document.getElementById('modalInspection').value || null;
+    const insurance = document.getElementById('modalInsurance').value || null;
 
     try {
         if (id) {
-            const { error } = await window._supabase.from('vehicles').update({ model, plate, inspection_date, insurance_date }).eq('id', id);
+            const { error } = await window._supabase.from('vehicles').update({ model, plate, inspection, insurance }).eq('id', id);
             if (error) throw error;
         } else {
-            const { error } = await window._supabase.from('vehicles').insert([{ model, plate, inspection_date, insurance_date }]);
+            const { error } = await window._supabase.from('vehicles').insert([{ model, plate, inspection, insurance }]);
             if (error) throw error;
         }
         closeVehicleModal();
