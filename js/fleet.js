@@ -1,131 +1,126 @@
 export const template = `
-    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-xl border border-gray-300/70 shadow-xs">
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs">
         <div class="space-y-0.5">
-            <h2 class="text-xl font-bold text-gray-900 tracking-tight">Управление автопарком</h2>
-            <p class="text-xs text-gray-500">Учет техники, контроль сроков действия документов и логов ремонта</p>
+            <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
+            <p class="text-xs text-gray-600 font-medium">Учет техники, контроль сроков действия документов и логов ремонта</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <button id="showProblemsBtn" onclick="window.toggleProblemsFilter()" class="bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
-                <span>⚠️</span> Контроль сроков
-            </button>
-            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-gray-50 hover:bg-gray-100 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
+            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
                 Категории
             </button>
-            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">
+            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">
                 + Добавить технику
             </button>
         </div>
     </div>
 
-    <div class="bg-white p-4 rounded-xl border border-gray-300/70 shadow-xs space-y-3 mb-5">
+    <div class="bg-white p-4 rounded-xl border-2 border-gray-400/80 shadow-xs space-y-3 mb-5">
         <div class="flex flex-col sm:flex-row gap-3">
-            <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-xs text-gray-950 placeholder-gray-400 focus:outline-none focus:border-emerald-600 focus:bg-white font-medium transition" placeholder="Поиск по модели, госномеру, инвентарному или VIN...">
-            <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="bg-white border border-gray-300 rounded-lg p-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-emerald-600">
+            <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs text-gray-950 placeholder-gray-500 focus:outline-none focus:border-emerald-600 focus:bg-white font-bold transition" placeholder="Поиск по модели, госномеру, инвентарному или VIN...">
+            <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="bg-white border-2 border-gray-400 rounded-lg p-2.5 text-xs font-bold text-gray-800 focus:outline-none focus:border-emerald-600">
                 <option value="name_asc">По названию (А-Я)</option>
                 <option value="name_desc">По названию (Я-А)</option>
                 <option value="hours_desc">По наработке (сначала max)</option>
             </select>
         </div>
         
-        <div class="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100" id="fleetCategoriesBar">
-            <div class="text-xs text-gray-400">Загрузка категорий...</div>
+        <div class="flex flex-wrap gap-1.5 pt-2 border-t border-gray-200" id="fleetCategoriesBar">
+            <div class="text-xs text-gray-400 font-bold">Загрузка категорий...</div>
         </div>
     </div>
 
     <div id="fleetGridContainer" class="space-y-6">
-        <div class="text-center text-gray-400 py-10 text-xs font-medium">Загрузка данных автопарка...</div>
+        <div class="text-center text-gray-500 py-10 text-xs font-bold">Загрузка данных автопарка...</div>
     </div>
 
     <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-md p-6 border border-gray-300 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 id="vModalTitle" class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2">Карточка техники</h3>
+        <div class="bg-white rounded-xl w-full max-w-md p-6 border-2 border-gray-400 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 id="vModalTitle" class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-2">Карточка техники</h3>
             <form id="vForm" class="space-y-3.5 text-xs">
                 <input type="hidden" id="vId">
                 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-gray-600 mb-1 font-bold">Категория</label>
-                        <select id="vCategory" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 font-medium focus:outline-none focus:border-emerald-600"></select>
+                        <label class="block text-gray-700 mb-1 font-bold">Категория</label>
+                        <select id="vCategory" required class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600"></select>
                     </div>
                     <div>
-                        <label class="block text-gray-600 mb-1 font-bold">Модель / Название</label>
-                        <input type="text" id="vName" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 font-medium focus:outline-none focus:border-emerald-600" placeholder="МТЗ-3522">
+                        <label class="block text-gray-700 mb-1 font-bold">Модель / Название</label>
+                        <input type="text" id="vName" required class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600" placeholder="МТЗ-3522">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2.5">
                     <div>
-                        <label class="block text-gray-600 mb-1 font-bold">Госномер</label>
-                        <input type="text" id="vPlate" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="1234 AB-7">
+                        <label class="block text-gray-700 mb-1 font-bold">Госномер</label>
+                        <input type="text" id="vPlate" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="1234 AB-7">
                     </div>
                     <div>
-                        <label class="block text-gray-600 mb-1 font-bold">Инвентарный №</label>
-                        <input type="text" id="vInv" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="00125">
+                        <label class="block text-gray-700 mb-1 font-bold">Инвентарный №</label>
+                        <input type="text" id="vInv" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="00125">
                     </div>
                     <div>
-                        <label class="block text-gray-600 mb-1 font-bold">Наработка (м/ч)</label>
-                        <input type="number" id="vHours" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 font-bold focus:border-emerald-600" placeholder="0">
+                        <label class="block text-gray-700 mb-1 font-bold">Наработка (м/ч)</label>
+                        <input type="number" id="vHours" required class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:border-emerald-600" placeholder="0">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-gray-600 mb-1 font-bold">VIN / Заводской серийный номер</label>
-                    <input type="text" id="vVin" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 font-mono focus:border-emerald-600" placeholder="Номер рамы или кузова">
+                    <label class="block text-gray-700 mb-1 font-bold">VIN / Заводской номер</label>
+                    <input type="text" id="vVin" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="Номер рамы или кузова">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-gray-600 mb-1 font-bold">Техосмотр (до)</label>
-                        <input type="date" id="vToDate" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 font-medium focus:border-emerald-600">
+                        <label class="block text-gray-700 mb-1 font-bold">Техосмотр (до)</label>
+                        <input type="date" id="vToDate" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:border-emerald-600">
                     </div>
                     <div>
-                        <label class="block text-gray-600 mb-1 font-bold">Страховка (до)</label>
-                        <input type="date" id="vInsuranceDate" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 font-medium focus:border-emerald-600">
+                        <label class="block text-gray-700 mb-1 font-bold">Страховка (до)</label>
+                        <input type="date" id="vInsuranceDate" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:border-emerald-600">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-gray-600 mb-1 font-bold">Теги текущего состояния (до 2-х)</label>
-                    <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200"></div>
+                    <label class="block text-gray-700 mb-1 font-bold">Теги состояния (до 2-х)</label>
+                    <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border-2 border-gray-300"></div>
                 </div>
 
                 <div class="flex gap-2.5 pt-3 border-t border-gray-200">
-                    <button type="button" onclick="window.closeVModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg font-bold transition">Отмена</button>
+                    <button type="button" onclick="window.closeVModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-bold transition border border-gray-300">Отмена</button>
                     <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold transition shadow-xs">Сохранить</button>
                 </div>
-                <button type="button" id="vDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg font-bold transition hidden border border-red-200">Удалить из базы данных</button>
+                <button type="button" id="vDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg font-bold transition hidden border border-red-300">Удалить из базы данных</button>
             </form>
         </div>
     </div>
 
     <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-xs p-5 border border-gray-300 shadow-2xl space-y-4">
-            <h3 class="text-xs font-bold text-gray-900 border-b border-gray-200 pb-1.5">Настройка категорий</h3>
+        <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
+            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">Настройка категорий</h3>
             <div class="space-y-1.5 max-h-40 overflow-y-auto" id="modalCategoriesList"></div>
             <div class="pt-2 border-t border-gray-200 space-y-1.5">
-                <input type="text" id="newCatInput" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 text-xs focus:outline-none focus:border-emerald-600" placeholder="Новая категория...">
+                <input type="text" id="newCatInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Новая категория...">
                 <button onclick="window.addCustomCategory()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Добавить</button>
             </div>
-            <button onclick="document.getElementById('categoriesModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-600 py-1.5 rounded-lg text-xs font-bold transition border border-gray-200">Закрыть</button>
+            <button onclick="document.getElementById('categoriesModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
         </div>
     </div>
 
     <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-sm p-5 border border-gray-300 shadow-2xl space-y-4">
+        <div class="bg-white rounded-xl w-full max-w-sm p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <div class="space-y-0.5">
-                <h3 id="tasksModalTitle" class="text-sm font-bold text-gray-900">Задачи по технике</h3>
-                <p class="text-xs text-gray-500" id="tasksModalSubtitle"></p>
+                <h3 id="tasksModalTitle" class="text-sm font-bold text-gray-950">Задачи по технике</h3>
+                <p class="text-xs text-gray-600 font-medium" id="tasksModalSubtitle"></p>
             </div>
             <input type="hidden" id="taskVehicleId">
             <input type="hidden" id="taskVehicleName">
-            
             <div class="space-y-2 max-h-44 overflow-y-auto" id="vehicleTasksList"></div>
-            
             <div class="pt-2 border-t border-gray-200 space-y-1.5">
-                <textarea id="newTaskText" rows="2" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 text-xs focus:outline-none focus:border-emerald-600" placeholder="Записать задачу или нужную запчасть..."></textarea>
+                <textarea id="newTaskText" rows="2" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Записать задачу..."></textarea>
                 <button onclick="window.addVehicleTask()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold transition shadow-xs">Добавить задачу</button>
             </div>
-            <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-600 py-1.5 rounded-lg text-xs font-bold transition border border-gray-200">Закрыть</button>
+            <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
         </div>
     </div>
 `;
@@ -137,7 +132,6 @@ let baseTags = ["Готов", "В ремонте", "На хранении", "Г�
 
 let searchQuery = "";
 let selectedCategory = "all";
-let filterProblemsOnly = false;
 let currentSort = "name_asc";
 let refreshIntervalId = null;
 
@@ -168,17 +162,6 @@ export async function init() {
     window.openVehicleModalForm = (v = null) => openVehicleModal(v);
     window.closeVModal = () => document.getElementById('vFormModal').classList.add('hidden');
     window.openCategoriesModal = () => renderCategoriesModalList();
-    
-    window.toggleProblemsFilter = () => {
-        filterProblemsOnly = !filterProblemsOnly;
-        const btn = document.getElementById('showProblemsBtn');
-        if (btn) {
-            btn.className = filterProblemsOnly 
-                ? "bg-amber-600 text-white border border-transparent px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
-                : "bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs";
-        }
-        renderFleet();
-    };
     
     window.handleSortChange = (val) => {
         currentSort = val;
@@ -221,11 +204,11 @@ function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
     if (!bar) return;
 
-    let html = `<button onclick="window.filterCategory('all')" class="px-2.5 py-1 text-xs font-bold rounded-md transition border ${selectedCategory === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100'}">Все</button>`;
+    let html = `<button onclick="window.filterCategory('all')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${selectedCategory === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">Все</button>`;
     
     categories.forEach((cat) => {
         const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
-        html += `<button onclick="window.filterCategory('${cat}')" class="px-2.5 py-1 text-xs font-bold rounded-md transition border ${isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100'}">${cat}</button>`;
+        html += `<button onclick="window.filterCategory('${cat}')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">${cat}</button>`;
     });
 
     bar.innerHTML = html;
@@ -255,14 +238,6 @@ function renderFleet() {
         if (selectedCategory !== 'all') {
             if (vType.toLowerCase() !== selectedCategory.toLowerCase()) return false;
         }
-
-        if (filterProblemsOnly) {
-            let hasProblem = false;
-            const now = new Date();
-            if (v.inspection_date && (new Date(v.inspection_date) - now) / (1000*60*60*24) <= 30) hasProblem = true;
-            if (v.insurance_date && (new Date(v.insurance_date) - now) / (1000*60*60*24) <= 30) hasProblem = true;
-            return hasProblem;
-        }
         return true;
     });
 
@@ -282,23 +257,23 @@ function renderFleet() {
 
         html += `
             <div class="space-y-2">
-                <h3 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider pl-0.5">${cat} — ${catList.length} ед.</h3>
+                <h3 class="text-xs font-black text-gray-600 uppercase tracking-wider pl-0.5">${cat} — ${catList.length} ед.</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     ${catList.map(v => {
                         const now = new Date();
                         
                         const formatDocStatus = (dateStr) => {
-                            if (!dateStr) return { text: '—', classes: 'text-gray-400 font-normal' };
+                            if (!dateStr) return { text: '—', classes: 'text-gray-500 font-bold' };
                             const diffDays = Math.ceil((new Date(dateStr) - now) / (1000 * 60 * 60 * 24));
                             const formattedDate = new Date(dateStr).toLocaleDateString('ru-RU');
                             
                             if (diffDays <= 0) {
-                                return { text: `${formattedDate} (Просрочено)`, classes: 'text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-bold text-[11px]' };
+                                return { text: `${formattedDate} (Просрочено)`, classes: 'text-red-700 bg-red-50 border-2 border-red-300 px-2 py-0.5 rounded font-black text-[11px]' };
                             }
                             if (diffDays <= 30) {
-                                return { text: `${formattedDate} (${diffDays} дн.)`, classes: 'text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-bold text-[11px]' };
+                                return { text: `${formattedDate} (${diffDays} дн.)`, classes: 'text-amber-900 bg-amber-50 border-2 border-amber-400 px-2 py-0.5 rounded font-black text-[11px]' };
                             }
-                            return { text: formattedDate, classes: 'text-gray-800 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded font-medium text-[11px]' };
+                            return { text: formattedDate, classes: 'text-gray-900 bg-gray-50 border-2 border-gray-300 px-2 py-0.5 rounded font-bold text-[11px]' };
                         };
 
                         const toInfo = formatDocStatus(v.inspection_date);
@@ -308,73 +283,62 @@ function renderFleet() {
                         const safeVehicleJson = JSON.stringify(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
                         return `
-                            <div class="relative bg-white border border-gray-300/90 rounded-xl p-4 shadow-2xs hover:border-emerald-600/60 transition duration-150 flex flex-col justify-between">
+                            <div class="relative bg-white border-2 border-gray-400 rounded-xl p-4 shadow-2xs hover:border-emerald-600 transition flex flex-col justify-between">
                                 
                                 ${v.inv_number ? `
-                                    <div class="absolute top-4 right-4 bg-gray-100 text-[10px] text-gray-700 px-2 py-0.5 rounded border border-gray-300 font-mono font-bold">
-                                        Инв. ${v.inv_number}
+                                    <div class="absolute top-4 right-4 bg-gray-100 text-[11px] text-gray-900 px-2 py-0.5 rounded border-2 border-gray-400 font-mono font-bold">
+                                        Инв. №: ${v.inv_number}
                                     </div>
                                 ` : ''}
 
                                 <div class="space-y-3.5">
-                                    <div class="space-y-1 pr-24">
-                                        <h4 class="font-bold text-gray-900 text-sm tracking-tight truncate">${v.model}</h4>
+                                    <div class="space-y-1 pr-28">
+                                        <h4 class="font-bold text-gray-950 text-sm tracking-tight truncate">${v.model}</h4>
                                         <div class="flex flex-wrap gap-1">
                                             ${vehicleTagsArray.map(t => {
-                                                let c = "bg-gray-100 text-gray-700 border-gray-300";
-                                                if (t === 'Готов') c = "bg-emerald-50 text-emerald-800 border-emerald-200";
-                                                if (t === 'В ремонте') c = "bg-red-50 text-red-700 border-red-200";
-                                                if (t === 'На хранении') c = "bg-gray-100 text-gray-700 border-gray-300";
-                                                if (t === 'Гарантия') c = "bg-blue-50 text-blue-800 border-blue-200";
-                                                return `<span class="border ${c} text-[9px] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider">${t}</span>`;
+                                                let c = "bg-gray-100 text-gray-800 border-gray-400";
+                                                if (t === 'Готов') c = "bg-emerald-50 text-emerald-900 border-emerald-400";
+                                                if (t === 'В ремонте') c = "bg-red-50 text-red-900 border-red-400";
+                                                if (t === 'На хранении') c = "bg-gray-100 text-gray-800 border-gray-400";
+                                                if (t === 'Гарантия') c = "bg-blue-50 text-blue-900 border-blue-400";
+                                                return `<span class="border-2 ${c} text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider">${t}</span>`;
                                             }).join('')}
                                         </div>
                                     </div>
                                     
                                     <div class="space-y-1">
-                                        <div class="text-sm font-mono font-bold text-gray-950 bg-gray-50 border-2 border-gray-900 inline-block px-3 py-1 rounded-md tracking-wider shadow-2xs">
+                                        <div class="text-sm font-mono font-black text-gray-950 bg-gray-50 border-2 border-gray-900 inline-block px-3 py-1 rounded-md tracking-wider">
                                             ${v.plate || 'БЕЗ ГОСНОМЕРА'}
                                         </div>
                                         ${v.vin_number ? `
-                                            <div class="text-[10px] font-mono font-medium text-gray-500 truncate" title="${v.vin_number}">
+                                            <div class="text-[10px] font-mono font-bold text-gray-600 truncate" title="${v.vin_number}">
                                                 VIN: ${v.vin_number}
                                             </div>
                                         ` : ''}
                                     </div>
-                                    
-                                    ${vTasks.length > 0 ? `
-                                        <div class="space-y-1 border-t border-dashed border-gray-200 pt-2">
-                                            ${vTasks.map(t => `
-                                                <div class="text-[10px] bg-amber-50 border border-amber-200 text-amber-900 px-2 py-1 rounded flex items-center justify-between">
-                                                    <span class="truncate pr-2 font-medium">📌 ${t.text}</span>
-                                                    <button onclick="window.completeTask(${t.id})" class="text-emerald-700 font-bold hover:underline shrink-0">Ок</button>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    ` : ''}
                                 </div>
 
-                                <div class="pt-3 mt-3 border-t border-gray-200 text-[11px] space-y-2.5">
+                                <div class="pt-3 mt-3 border-t-2 border-gray-200 text-[11px] space-y-2.5">
                                     <div class="space-y-1.5">
                                         <div class="flex justify-between items-center">
-                                            <span class="text-gray-500 font-medium">Наработка:</span>
-                                            <span class="font-bold text-gray-900">${v.current_hours || 0} м/ч</span>
+                                            <span class="text-gray-600 font-bold">Наработка:</span>
+                                            <span class="font-black text-gray-950">${v.current_hours || 0} м/ч</span>
                                         </div>
                                         <div class="flex justify-between items-center">
-                                            <span class="text-gray-500 font-medium">Техосмотр:</span>
+                                            <span class="text-gray-600 font-bold">Техосмотр:</span>
                                             <span class="${toInfo.classes}">${toInfo.text}</span>
                                         </div>
                                         <div class="flex justify-between items-center">
-                                            <span class="text-gray-500 font-medium">Страховка:</span>
+                                            <span class="text-gray-600 font-bold">Страховка:</span>
                                             <span class="${insInfo.classes}">${insInfo.text}</span>
                                         </div>
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2 pt-0.5">
-                                        <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[10px] text-center font-bold text-gray-700 bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 transition py-1">
+                                        <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[11px] text-center font-bold text-gray-800 bg-gray-50 border-2 border-gray-400 rounded-md hover:bg-gray-100 transition py-1">
                                             Изменить
                                         </button>
-                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[10px] text-center font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 rounded-md hover:bg-emerald-100 transition py-1">
+                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[11px] text-center font-bold text-emerald-800 bg-emerald-50 border-2 border-emerald-400 rounded-md hover:bg-emerald-100 transition py-1">
                                             Задачи (${vTasks.length})
                                         </button>
                                     </div>
@@ -388,7 +352,7 @@ function renderFleet() {
         `;
     });
 
-    container.innerHTML = html || `<div class="text-center text-gray-400 py-10 text-xs">Техника не найдена</div>`;
+    container.innerHTML = html || `<div class="text-center text-gray-500 py-10 text-xs font-bold">Техника не найдена</div>`;
 }
 
 function openVehicleModal(vehicle = null) {
@@ -405,7 +369,7 @@ function openVehicleModal(vehicle = null) {
     const tagsBox = document.getElementById('tagsCheckboxContainer');
     if (tagsBox) {
         tagsBox.innerHTML = baseTags.map(t => `
-            <label class="flex items-center gap-1.5 bg-white px-2.5 py-0.5 rounded border border-gray-300 text-[11px] font-bold text-gray-700 cursor-pointer select-none">
+            <label class="flex items-center gap-1.5 bg-white px-2.5 py-0.5 rounded border-2 border-gray-400 text-[11px] font-bold text-gray-800 cursor-pointer select-none">
                 <input type="checkbox" name="vTags" value="${t}" onchange="window.handleTagCheckboxLimit(this)" class="rounded text-emerald-600 focus:ring-emerald-500">
                 ${t}
             </label>
@@ -471,32 +435,24 @@ async function handleFormSubmit() {
 
     try {
         if (id) {
-            const { error } = await window._supabase.from('vehicles').update(payload).eq('id', id);
-            if (error) throw error;
+            await window._supabase.from('vehicles').update(payload).eq('id', id);
         } else {
-            const { error } = await window._supabase.from('vehicles').insert([payload]);
-            if (error) throw error;
+            await window._supabase.from('vehicles').insert([payload]);
         }
         window.closeVModal();
         await loadAllData();
-    } catch (e) {
-        alert("Ошибка сохранения: " + e.message);
-    }
+    } catch (e) { alert(e.message); }
 }
 
 async function handleDeleteVehicle() {
     const id = document.getElementById('vId').value;
     if (!id || !window._supabase) return;
-
-    if (confirm("Вы точно хотите безвозвратно удалить данную технику из базы данных филиала?")) {
+    if (confirm("Вы точно хотите удалить технику?")) {
         try {
-            const { error } = await window._supabase.from('vehicles').delete().eq('id', id);
-            if (error) throw error;
+            await window._supabase.from('vehicles').delete().eq('id', id);
             window.closeVModal();
             await loadAllData();
-        } catch (e) {
-            alert("Не удалось удалить: " + e.message);
-        }
+        } catch (e) { alert(e.message); }
     }
 }
 
@@ -507,8 +463,8 @@ function renderCategoriesModalList() {
 
     modal.classList.remove('hidden');
     list.innerHTML = categories.map((c, idx) => `
-        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-300 text-xs font-bold">
-            <span class="text-gray-700">${c}</span>
+        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg border-2 border-gray-300 text-xs font-bold">
+            <span class="text-gray-900">${c}</span>
             ${c !== 'Без категории' ? `<button onclick="window.deleteCustomCategory(${idx})" class="text-red-600 hover:underline">Удалить</button>` : ''}
         </div>
     `).join('');
@@ -525,13 +481,22 @@ function renderCategoriesModalList() {
         }
     };
 
-    window.deleteCustomCategory = (idx) => {
-        if (confirm(`Удалить категорию "${categories[idx]}"?`)) {
+    window.deleteCustomCategory = async (idx) => {
+        const catName = categories[idx];
+        if (confirm(`Удалить категорию "${catName}"? Все машины из неё будут переведены в "Без категории".`)) {
+            
+            // Если подключен Supabase, обновляем записи в БД
+            if (window._supabase) {
+                try {
+                    await window._supabase.from('vehicles').update({ type: 'Без категории' }).eq('type', catName);
+                } catch(err) { console.error("Ошибка переноса ТС:", err); }
+            }
+
             categories.splice(idx, 1);
             localStorage.setItem('fleet_custom_categories', JSON.stringify(categories));
             renderCategoriesModalList();
             renderCategoriesBar();
-            renderFleet();
+            await loadAllData();
         }
     };
 }
@@ -553,11 +518,11 @@ function renderTasksListInsideModal() {
     if (!list) return;
     const vTasks = tasks.filter(t => t.vehicle_id === vId);
     if (vTasks.length === 0) {
-        list.innerHTML = `<div class="text-center text-gray-400 py-3 text-xs font-medium">Нет активных задач</div>`;
+        list.innerHTML = `<div class="text-center text-gray-500 py-3 text-xs font-bold">Нет активных задач</div>`;
         return;
     }
     list.innerHTML = vTasks.map(t => `
-        <div class="flex items-center justify-between bg-amber-50 border border-amber-200 p-2 rounded-lg text-xs text-amber-950 font-medium">
+        <div class="flex items-center justify-between bg-amber-50 border-2 border-amber-300 p-2 rounded-lg text-xs text-amber-950 font-bold">
             <span>${t.text}</span>
             <button onclick="window.completeTask(${t.id})" class="text-emerald-700 font-bold hover:underline">Готово</button>
         </div>
@@ -569,7 +534,6 @@ window.addVehicleTask = async () => {
     const vName = document.getElementById('taskVehicleName').value;
     const textInput = document.getElementById('newTaskText');
     if (!textInput || !textInput.value.trim() || !window._supabase) return;
-
     try {
         await window._supabase.from('vehicle_tasks').insert([{ vehicle_id: parseInt(vId), vehicle_name: vName, text: textInput.value.trim(), is_completed: false }]);
         textInput.value = "";
