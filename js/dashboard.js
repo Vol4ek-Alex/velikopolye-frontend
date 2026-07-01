@@ -111,14 +111,28 @@ async function loadDashboardData() {
 }
 
 function renderCounters() {
-    const list = window.globalVehicles;
+    const list = window.globalVehicles || [];
     
     const total = list.length;
     
-    // ИСПРАВЛЕНО: Безопасное сравнение статусов вне зависимости от регистра букв и случайных пробелов
-    const ready = list.filter(v => v.status && v.status.toLowerCase().trim() === 'готово').length;
-    const storage = list.filter(v => v.status && v.status.toLowerCase().trim() === 'хранение').length;
-    const repair = list.filter(v => v.status && v.status.toLowerCase().trim() === 'ремонт').length;
+    // Бронебойный фильтр: проверяет и русские, и английские варианты + убирает пробелы
+    const ready = list.filter(v => {
+        if (!v.status) return false;
+        const s = v.status.toLowerCase().trim();
+        return s === 'готово' || s === 'ready';
+    }).length;
+
+    const storage = list.filter(v => {
+        if (!v.status) return false;
+        const s = v.status.toLowerCase().trim();
+        return s === 'хранение' || s === 'storage';
+    }).length;
+
+    const repair = list.filter(v => {
+        if (!v.status) return false;
+        const s = v.status.toLowerCase().trim();
+        return s === 'ремонт' || s === 'repair';
+    }).length;
 
     const tEl = document.getElementById('dashTotal');
     const rEl = document.getElementById('dashReady');
