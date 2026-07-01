@@ -6,25 +6,47 @@
     <title>АРМ «Великополье»</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-white font-sans">
-
-    <header class="p-4 border-b border-slate-700 bg-slate-800">
+<body class="bg-slate-900 text-white min-h-screen">
+    
+    <header class="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
         <h1 class="text-xl font-bold">🚜 СХК «Великополье»</h1>
+        <button onclick="window.loadFleet()" class="bg-slate-700 hover:bg-slate-600 text-sm px-3 py-1.5 rounded-lg transition">🔄 Обновить</button>
     </header>
 
-    <main id="app" class="p-4">
-        <div id="content">
-            <p class="text-slate-400">Загрузка приложения...</p>
-        </div>
+    <main id="app" class="p-4 max-w-7xl mx-auto">
+        <div id="content">Загрузка приложения...</div>
     </main>
 
+    <div id="vehicleModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <h3 id="modalTitle" class="text-xl font-bold mb-4 text-white">Добавить технику</h3>
+            
+            <form id="vehicleForm" onsubmit="window.handleFormSubmit(event)">
+                <input type="hidden" id="vehicleId">
+                
+                <div class="mb-4">
+                    <label class="block text-slate-400 text-sm mb-1">Марка / Модель</label>
+                    <input type="text" id="modalModel" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" placeholder="Например, МТЗ-82">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-slate-400 text-sm mb-1">Госномер</label>
+                    <input type="text" id="modalPlate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" placeholder="Например, 1234 АВ-7">
+                </div>
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="window.closeModal()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl transition">Отмена</button>
+                    <button type="submit" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
-    // Добавляем timestamp к пути, чтобы браузер не брал старый кэш
-    const version = new Date().getTime();
-    const script = document.createElement('script');
-    script.type = 'module';
-    script.src = `js/app.js?v=${version}`;
-    document.body.appendChild(script);
-</script>
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = `js/app.js?v=${Date.now()}`;
+        document.body.appendChild(script);
+    </script>
 </body>
 </html>
