@@ -61,6 +61,32 @@
     </div>
 
     <div id="moduleTemplates" class="hidden">
+        <div id="tpl-auth">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-center max-w-sm mx-auto mt-10 shadow-lg">
+                <h2 id="authTitle" class="text-xl font-bold text-white mb-6">Авторизация сотрудника</h2>
+                
+                <div id="authUserInfo" class="hidden space-y-4">
+                    <p class="text-slate-300 text-sm">Вы вошли как: <br><span id="userEmailLabel" class="font-semibold text-blue-400"></span></p>
+                    <button onclick="handleLogout()" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 rounded-xl transition">
+                        🚪 Выйти из профиля
+                    </button>
+                </div>
+
+                <form id="authForm" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-left text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Email / Логин</label>
+                        <input type="email" id="authEmail" required placeholder="name@minsktrans.by" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-left text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Пароль</label>
+                        <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <button type="submit" id="authBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition mt-2 shadow-md">
+                        Войти
+                    </button>
+                </form>
+            </div>
+        </div>
         <div id="tpl-fleet">
             <div class="space-y-8">
                 <section class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg">
@@ -122,7 +148,7 @@
         const SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm"; 
 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+        
         const APP_MODULES = [
             { id: 'dashboard', name: '🏠 Главная панель', init: () => {} },
             { id: 'fleet', name: '🚜 Сельхоз.парк', init: loadVehicles },
@@ -179,10 +205,79 @@
             if (targetModule && targetModule.init) targetModule.init();
         }
 
+        // Проверка текущего вошедшего пользователя
+        async function checkUser() {
+            const { data: { user } } = await _supabase.auth.getUser();
+            return user;
+        }
+
+        // Экран входа
+        async function initAuthScreen() {
+            const user = await checkUser();
+            const form = document.getElementById('authForm');
+            const info = document.getElementById('authUserInfo');
+            const title = document.getElementById('authTitle');
+
+            if (user) {
+                form.classList.add('hidden');
+                info.classList.remove('hidden');
+                document.getElementById('userEmailLabel').innerText = user.email;
+                title.innerText = "Личный кабинет";
+            } else {
+                form.classList.remove('hidden');
+                info.classList.add('hidden');
+                title.innerText = "Авторизация сотрудника";
+            }
+        }
+
+        // Хендлер авторизации
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('authBtn');
+            btn.innerText = 'Вход...';
+            btn.disabled = true;
+
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                alert('Ошибка авторизации: ' + error.message);
+                btn.innerText = 'Войти';
+                btn.disabled = false;
+            } else {
+                alert('Успешный вход в систему!');
+                switchModule('fleet'); // Перекидываем в автопарк
+            }
+        }
+
+        // Хендлер выхода
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            alert('Вы вышли из системы');
+            switchModule('dashboard');
+        }
         // --- ЛОГИКА РАБОТЫ С БАЗОЙ ДАННЫХ SUPABASE + КОНТРОЛЬ СРОКОВ ---
         async function loadVehicles() {
             const listContainer = document.getElementById('vehiclesList');
             if (!listContainer) return;
+
+            // ПРОВЕРКА ПРАВ
+            const user = await checkUser();
+            const formSection = document.querySelector('#moduleWorkspace form')?.closest('section');
+            
+            if (formSection) {
+                if (user) {
+                    // Пользователь авторизован — показываем форму добавления
+                    formSection.classList.remove('hidden');
+                } else {
+                    // Гость — скрываем форму, чтобы нельзя было ничего добавить
+                    formSection.classList.add('hidden');
+                }
+            }
+            
+            // ... (весь остальной твой код загрузки списка машин из Supabase)
 
             try {
                 // Запрос к Supabase
