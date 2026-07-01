@@ -8,10 +8,10 @@ export const template = `
             <button id="showProblemsBtn" onclick="window.toggleProblemsFilter()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
                 ⚠️ Проблемная техника
             </button>
-            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2.5 rounded-xl text-xs font-bold transition shadow-sm hidden">
+            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2.5 rounded-xl text-xs font-bold transition shadow-sm">
                 ⚙️ Категории
             </button>
-            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm hidden">
+            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm">
                 ➕ Добавить технику
             </button>
         </div>
@@ -86,8 +86,7 @@ export const template = `
 
                 <div>
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Теги состояния (выбери до 2-ух)</label>
-                    <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100">
-                        </div>
+                    <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100"></div>
                 </div>
 
                 <div class="flex gap-3 pt-2">
@@ -123,8 +122,8 @@ export const template = `
             <div class="space-y-2 max-h-48 overflow-y-auto" id="vehicleTasksList"></div>
             
             <div class="pt-2 border-t border-gray-100 space-y-2">
-                <textarea id="newTaskText" rows="2" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-xs focus:outline-none" placeholder="Например: Заказать заднее стекло и комплект прокладок..."></textarea>
-                <button onclick="window.addVehicleTask()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-xs">📌 Добавить задачу на Главную</button>
+                <textarea id="newTaskText" rows="2" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-xs focus:outline-none" placeholder="Например: Заказать заднее стекло..."></textarea>
+                <button onclick="window.addVehicleTask()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-xs">📌 Добавить задачу</button>
             </div>
             <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-500 py-2 rounded-xl text-xs font-bold">Закрыть</button>
         </div>
@@ -145,12 +144,6 @@ let refreshIntervalId = null;
 export async function init() {
     const savedCats = localStorage.getItem('fleet_custom_categories');
     if (savedCats) categories = JSON.parse(savedCats);
-
-    const isAdmin = typeof window.isAdmin === 'function' && window.isAdmin();
-    const addBtn = document.getElementById('addVehicleBtn');
-    const manageCatsBtn = document.getElementById('manageCatsBtn');
-    if (addBtn && isAdmin) addBtn.classList.remove('hidden');
-    if (manageCatsBtn && isAdmin) manageCatsBtn.classList.remove('hidden');
 
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
@@ -174,6 +167,7 @@ export async function init() {
     window.openVehicleModalForm = (v = null) => openVehicleModal(v);
     window.closeVModal = () => document.getElementById('vFormModal').classList.add('hidden');
     window.openCategoriesModal = () => renderCategoriesModalList();
+    
     window.toggleProblemsFilter = () => {
         filterProblemsOnly = !filterProblemsOnly;
         const btn = document.getElementById('showProblemsBtn');
@@ -184,6 +178,7 @@ export async function init() {
         }
         renderFleet();
     };
+    
     window.handleSortChange = (val) => {
         currentSort = val;
         renderFleet();
@@ -198,7 +193,16 @@ async function loadAllData() {
     if (!window._supabase) return;
     try {
         const { data: vData, error: vErr } = await window._supabase.from('vehicles').select('*');
-        if (!vErr && vData) vehicles = vData;
+        if (!vErr && vData) {
+            vehicles = vData;
+            // Динамически вытягиваем из базы категории, если их там больше, чем в нашем массиве
+            vData.forEach(v => {
+                if (v.type && !categories.map(c => c.toLowerCase()).includes(v.type.toLowerCase())) {
+                    categories.push(v.type);
+                }
+            });
+            categories = [...new Set(categories)];
+        }
 
         const { data: tData, error: tErr } = await window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false);
         if (!tErr && tData) tasks = tData;
@@ -214,11 +218,10 @@ function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
     if (!bar) return;
 
-    let html = `<button onclick="window.filterCategory('all')" id="cat_all" class="px-3.5 py-2 text-xs font-bold rounded-xl transition ${selectedCategory === 'all' ? 'bg-gray-800 text-white shadow-xs' : 'bg-white/80 border border-gray-200/50 text-gray-600 hover:bg-gray-50'}">Все</button>`;
+    let html = `<button onclick="window.filterCategory('all')" class="px-3.5 py-2 text-xs font-bold rounded-xl transition ${selectedCategory === 'all' ? 'bg-gray-800 text-white' : 'bg-white/80 border border-gray-200 text-gray-600'}">Все</button>`;
     
-    categories.forEach((cat, idx) => {
-        const id = `cat_custom_${idx}`;
-        html += `<button onclick="window.filterCategory('${cat}')" id="${id}" class="px-3.5 py-2 text-xs font-bold rounded-xl transition ${selectedCategory === cat ? 'bg-gray-800 text-white shadow-xs' : 'bg-white/80 border border-gray-200/50 text-gray-600 hover:bg-gray-50'}">${cat}</button>`;
+    categories.forEach((cat) => {
+        html += `<button onclick="window.filterCategory('${cat}')" class="px-3.5 py-2 text-xs font-bold rounded-xl transition ${selectedCategory.toLowerCase() === cat.toLowerCase() ? 'bg-gray-800 text-white' : 'bg-white/80 border border-gray-200 text-gray-600'}">${cat}</button>`;
     });
 
     bar.innerHTML = html;
@@ -235,18 +238,27 @@ function renderFleet() {
     if (!container) return;
 
     let filtered = vehicles.filter(v => {
-        const queryMatch = v.model?.toLowerCase().includes(searchQuery) || 
-                           v.plate?.toLowerCase().includes(searchQuery) || 
-                           v.inv_number?.toLowerCase().includes(searchQuery) || 
-                           v.vin_number?.toLowerCase().includes(searchQuery) ||
-                           v.tags?.toLowerCase().includes(searchQuery);
+        const modelStr = v.model ? v.model.toLowerCase() : '';
+        const plateStr = v.plate ? v.plate.toLowerCase() : '';
+        const invStr = v.inv_number ? v.inv_number.toLowerCase() : '';
+        const vinStr = v.vin_number ? v.vin_number.toLowerCase() : '';
+        const tagsStr = v.tags ? v.tags.toLowerCase() : '';
+
+        const queryMatch = modelStr.includes(searchQuery) || 
+                           plateStr.includes(searchQuery) || 
+                           invStr.includes(searchQuery) || 
+                           vinStr.includes(searchQuery) ||
+                           tagsStr.includes(searchQuery);
         
         if (!queryMatch) return false;
-        if (selectedCategory !== 'all' && v.type !== selectedCategory) return false;
+        
+        if (selectedCategory !== 'all') {
+            if (!v.type || v.type.toLowerCase() !== selectedCategory.toLowerCase()) return false;
+        }
 
         if (filterProblemsOnly) {
             let hasProblem = false;
-            if (v.tags?.includes('Гарантия')) hasProblem = true;
+            if (v.tags && v.tags.includes('Гарантия')) hasProblem = true;
             const now = new Date();
             if (v.inspection_date && (new Date(v.inspection_date) - now) / (1000*60*60*24) <= 15) hasProblem = true;
             if (v.insurance_date && (new Date(v.insurance_date) - now) / (1000*60*60*24) <= 15) hasProblem = true;
@@ -263,16 +275,14 @@ function renderFleet() {
         return 0;
     });
 
-    if (filtered.length === 0) {
-        container.innerHTML = `<div class="text-center text-gray-400 py-10 font-medium backdrop-blur-md bg-white/40 rounded-2xl border border-dashed border-gray-200">Техника не найдена</div>`;
-        return;
-    }
-
+    // Показываем технику без категорий в отдельном блоке, если фильтр "Все"
     let html = "";
-    const activeCategories = selectedCategory === 'all' ? categories : [selectedCategory];
+    
+    // Группируем по категориям, присутствующим в текущем отфильтрованном списке
+    const uniqueTypesInFiltered = [...new Set(filtered.map(v => v.type || "Без категории"))];
 
-    activeCategories.forEach(cat => {
-        const catList = filtered.filter(v => v.type === cat);
+    uniqueTypesInFiltered.forEach(cat => {
+        const catList = filtered.filter(v => (v.type || "Без категории").toLowerCase() === cat.toLowerCase() || (cat === "Без категории" && !v.type));
         if (catList.length === 0) return;
 
         html += `
@@ -280,9 +290,7 @@ function renderFleet() {
                 <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider pl-1">${cat} (${catList.length})</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     ${catList.map(v => {
-                        const isAdmin = typeof window.isAdmin === 'function' && window.isAdmin();
                         const now = new Date();
-                        
                         let toClass = "text-gray-800";
                         if (v.inspection_date) {
                             const days = (new Date(v.inspection_date) - now) / (1000*60*60*24);
@@ -297,16 +305,18 @@ function renderFleet() {
                             else if (days <= 15) insClass = "text-amber-600 font-black";
                         }
 
-                        // Парсим теги из плоской строки базы данных
                         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
                         const vTasks = tasks.filter(t => t.vehicle_id === v.id);
+
+                        // Безопасный JSON для передачи в onclick
+                        const safeVehicleJson = JSON.stringify(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
                         return `
                             <div class="backdrop-blur-md bg-white/70 border border-white/40 rounded-2xl p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between space-y-4">
                                 <div class="space-y-2">
                                     <div class="flex items-start justify-between gap-2">
-                                        <div onclick="${isAdmin ? `window.openVehicleModalForm(${JSON.stringify(v).replace(/"/g, '&quot;')})` : ''}" class="${isAdmin ? 'cursor-pointer group' : ''}">
-                                            <h4 class="font-black text-gray-900 text-base tracking-tight leading-tight ${isAdmin ? 'group-hover:text-emerald-600' : ''}">${v.model}</h4>
+                                        <div>
+                                            <h4 class="font-black text-gray-900 text-base tracking-tight leading-tight">${v.model}</h4>
                                             <div class="text-[11px] text-gray-400 font-bold mt-0.5 tracking-wider uppercase">
                                                 ${v.plate || 'б/н'} ${v.inv_number ? `• Инв. ${v.inv_number}` : ''}
                                             </div>
@@ -323,13 +333,13 @@ function renderFleet() {
                                         </div>
                                     </div>
                                     
-                                    ${v.vin_number ? `<div class="text-[10px] font-mono bg-gray-50/60 p-1.5 rounded-lg border border-gray-100 text-gray-500 truncate" title="VIN: ${v.vin_number}">⚙️ VIN: ${v.vin_number}</div>` : ''}
+                                    ${v.vin_number ? `<div class="text-[10px] font-mono bg-gray-50/60 p-1.5 rounded-lg border border-gray-100 text-gray-500 truncate">⚙️ VIN: ${v.vin_number}</div>` : ''}
                                     
                                     <div class="space-y-1">
                                         ${vTasks.map(t => `
                                             <div class="text-xs bg-amber-50/50 border border-amber-100 text-amber-900 p-2 rounded-xl flex items-center justify-between">
                                                 <span class="font-medium line-clamp-2">📌 ${t.text}</span>
-                                                ${isAdmin ? `<button onclick="window.completeTask(${t.id})" class="text-[10px] text-emerald-600 font-bold ml-1 hover:underline">Ок</button>` : ''}
+                                                <button onclick="window.completeTask(${t.id})" class="text-[10px] text-emerald-600 font-bold ml-1 hover:underline">Ок</button>
                                             </div>
                                         `).join('')}
                                     </div>
@@ -348,8 +358,11 @@ function renderFleet() {
                                         <span class="text-gray-400 block font-medium">Страховка:</span>
                                         <span class="${insClass}">${v.insurance_date ? new Date(v.insurance_date).toLocaleDateString('ru-RU') : '—'}</span>
                                     </div>
-                                    <div class="pt-1 flex items-end justify-end">
-                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg hover:bg-emerald-100 transition">
+                                    <div class="pt-1 flex flex-col gap-1 items-end justify-end">
+                                        <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[10px] text-center font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-lg hover:bg-gray-200 transition">
+                                            ✏️ Редактировать
+                                        </button>
+                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[10px] text-center font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg hover:bg-emerald-100 transition">
                                             📝 Задачи (${vTasks.length})
                                         </button>
                                     </div>
@@ -362,7 +375,7 @@ function renderFleet() {
         `;
     });
 
-    container.innerHTML = html;
+    container.innerHTML = html || `<div class="text-center text-gray-400 py-10">Нет техники</div>`;
 }
 
 function openVehicleModal(vehicle = null) {
@@ -420,7 +433,7 @@ function openVehicleModal(vehicle = null) {
     } else {
         title.innerText = "➕ Добавление новой техники";
         document.getElementById('vId').value = '';
-        if (delBtn) delBtn.add ? delBtn.classList.add('hidden') : delBtn.className += ' hidden';
+        if (delBtn) delBtn.classList.add('hidden');
     }
 }
 
@@ -440,7 +453,7 @@ async function handleFormSubmit() {
         vin_number: document.getElementById('vVin').value || null,
         inspection_date: document.getElementById('vToDate').value || null,
         insurance_date: document.getElementById('vInsuranceDate').value || null,
-        tags: selectedTags.join(', ') // Сохраняем как плоскую строку с запятыми под твой тип text
+        tags: selectedTags.join(', ')
     };
 
     try {
