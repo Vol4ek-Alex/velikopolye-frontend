@@ -120,24 +120,41 @@ export function init() {
     searchQuery = "";
     loadFleetData();
 
-    document.getElementById('addVehicleBtn').onclick = () => openVehicleModal();
-    document.getElementById('closeModalBtn').onclick = () => closeVehicleModal();
-    document.getElementById('vehicleForm').onsubmit = (e) => handleFormSubmit(e);
-    document.getElementById('deleteVehicleBtn').onclick = () => handleDeleteVehicle();
-    document.getElementById('filterDatesBtn').onclick = () => toggleDateFilter();
-    
-    // Переключатель отображения блока моточасов в форме
-    document.getElementById('modalStatusTag').onchange = (e) => {
-        toggleWarrantyInputs(e.target.value);
-    };
-
-    const searchInput = document.getElementById('fleetSearchInput');
+    // БЕЗОПАСНАЯ ПРОВЕРКА: Вешаем события только если элементы есть на экране
+    const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
         searchInput.oninput = (e) => {
-            searchQuery = e.target.value.toLowerCase().trim();
-            filterAndRender();
+            searchQuery = e.target.value;
+            renderCategorizedGrid();
         };
     }
+
+    const statusSelect = document.getElementById('vehicleStatusSelect'); // или твой селект
+    if (statusSelect) {
+        statusSelect.onchange = (e) => {
+            // Твоя логика фильтрации по статусу
+            renderCategorizedGrid();
+        };
+    }
+
+    const addBtn = document.getElementById('addVehicleBtn');
+    if (addBtn) {
+        if (typeof window.isAdmin === 'function' && window.isAdmin()) {
+            addBtn.onclick = () => openVehicleModal();
+        } else {
+            addBtn.classList.add('hidden');
+        }
+    }
+
+    // Проверяем остальные кнопки модального окна
+    const closeBtn = document.getElementById('closeModalBtn');
+    if (closeBtn) closeBtn.onclick = () => closeVehicleModal();
+
+    const form = document.getElementById('vehicleForm');
+    if (form) form.onsubmit = (e) => handleFormSubmit(e);
+
+    const deleteBtn = document.getElementById('deleteVehicleBtn');
+    if (deleteBtn) deleteBtn.onclick = () => handleDeleteVehicle();
 }
 
 function toggleWarrantyInputs(status) {
