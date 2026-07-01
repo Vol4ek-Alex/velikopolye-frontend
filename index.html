@@ -125,7 +125,8 @@
 
         const APP_MODULES = [
             { id: 'dashboard', name: '🏠 Главная панель', init: () => {} },
-            { id: 'fleet', name: '🚜 Сельхоз.парк', init: loadVehicles }
+            { id: 'fleet', name: '🚜 Сельхоз.парк', init: loadVehicles },
+            { id: 'auth', name: '🔐 Вход в АРМ', init: initAuthScreen }
         ];
         let currentModuleId = 'dashboard';
 
