@@ -179,18 +179,31 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
 
         // Проверка Гарантии
+        // Проверка Гарантии
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         if (vehicleTagsArray.includes('Гарантия')) {
             const hours = v.current_hours || 0;
-            const nextTO = Math.ceil((hours + 1) / 250) * 250;
+            
+            // Считаем ближайшее ТО с шагом 125 м/ч
+            const nextTO = Math.ceil((hours + 1) / 125) * 125;
             const hoursLeft = nextTO - hours;
 
+            // Определяем тип ТО в зависимости от целевой наработки
+            let toType = "(ТО-1)"; // По умолчанию для x125, x375, x625, x875
+            
+            if (nextTO % 1000 === 0) {
+                toType = "(ТО-3)";
+            } else if (nextTO % 250 === 0) { // Сюда же автоматически попадает и кратность 500
+                toType = "(ТО-2)";
+            }
+
+            // Формируем текст уведомления с новым обозначением
             if (hoursLeft <= 30) {
-                warrantyAlerts.push({ status: 'danger', text: `🚨 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Срочно ТО-${nextTO}!</span> Осталось <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ status: 'danger', text: `🚨 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Срочно ТО-${nextTO} ${toType}!</span> Осталось <b>${hoursLeft} м/ч</b>.` });
             } else if (hoursLeft <= 60) {
-                warrantyAlerts.push({ status: 'warning', text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Приближается ТО-${nextTO}. Осталось <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ status: 'warning', text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Приближается ТО-${nextTO} ${toType}. Осталось <b>${hoursLeft} м/ч</b>.` });
             } else {
-                warrantyAlerts.push({ status: 'info', text: `⚙️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Наработка ${hours} м/ч. До ТО-${nextTO} ещё <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ status: 'info', text: `⚙️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Наработка ${hours} м/ч. До ТО-${nextTO} ${toType} ещё <b>${hoursLeft} м/ч</b>.` });
             }
         }
     });
