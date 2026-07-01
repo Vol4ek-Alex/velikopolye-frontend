@@ -1,0 +1,8 @@
+{
+  "name": "АРМ Великополье",
+  "short_name": "АРМ",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1e293b",
+  "theme_color": "#1e293b"
+}
