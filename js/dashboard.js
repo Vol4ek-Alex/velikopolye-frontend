@@ -88,7 +88,6 @@ async function loadDashboardData() {
 
         if (vErr || tErr) return;
 
-        // Наполняем глобальный кэш
         window.globalVehicles = vehicles || [];
         window.globalTasks = tasks || [];
 
@@ -142,10 +141,8 @@ function renderSeparatedAlerts() {
         }
     }
 
-    // Сборщики алертов для окон 2 и 3
     const warrantyAlerts = [];
     const docAlerts = [];
-
     const now = new Date();
 
     listVehicles.forEach(v => {
@@ -155,21 +152,16 @@ function renderSeparatedAlerts() {
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         if (vehicleTagsArray.includes('Гарантия')) {
             const hours = v.current_hours || 0;
-            
-            // Считаем ближайшее ТО с шагом 125 м/ч
             const nextTO = Math.ceil((hours + 1) / 125) * 125;
             const hoursLeft = nextTO - hours;
 
-            // Определяем тип ТО в зависимости от целевой наработки
             let toType = "(ТО-1)"; 
-            
             if (nextTO % 1000 === 0) {
                 toType = "(ТО-3)";
             } else if (nextTO % 250 === 0) { 
                 toType = "(ТО-2)";
             }
 
-            // Формируем текст уведомления с новым обозначением
             if (hoursLeft <= 30) {
                 warrantyAlerts.push({ status: 'danger', text: `🚨 <b>${v.model}</b><span class="font-mono text-gray-700 dark:text-gray-400">${plateStr}</span>:<br><span class="text-red-700 dark:text-red-400 font-black">Срочно ТО-${nextTO} ${toType}!</span> Осталось <b>${hoursLeft} м/ч</b>.` });
             } else if (hoursLeft <= 60) {
@@ -179,7 +171,7 @@ function renderSeparatedAlerts() {
             }
         }
 
-        // Проверка Техосмотра (Гостехосмотр)
+        // Проверка Техосмотра
         if (v.inspection_to) {
             const inspDate = new Date(v.inspection_to);
             const diffTime = inspDate - now;
