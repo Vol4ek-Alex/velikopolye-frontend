@@ -6,7 +6,7 @@
     <title>АРМ «Великополье»</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="manifest" href="manifest.json"></link>
+    <link rel="manifest" href="manifest.json">
 </head>
 <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col md:flex-row">
 
@@ -22,7 +22,7 @@
             </div>
             <div class="space-y-2">
                 <input type="password" id="sitePinInput" maxlength="4" placeholder="Введите ПИН-код" 
-                       class="w-full text-center tracking-[0.5em] text-xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-emerald-600 transition">
+                       class="w-full text-center tracking-[0.5em] text-xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-emerald-600 transition text-gray-900">
                 <p id="authErrorMsg" class="text-red-600 text-xs font-bold hidden">❌ Неверный ПИН-код доступа</p>
             </div>
             <button onclick="window.checkSiteAccess()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-xl transition shadow-md">
@@ -137,21 +137,6 @@
             if (btn) btn.innerText = isDark ? '☀️' : '🌙';
         };
 
-        // Проверка темы при загрузке
-        (function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-            
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-                document.addEventListener("DOMContentLoaded", () => {
-                    const btn = document.getElementById('themeBtn');
-                    if (btn) btn.innerText = '☀️';
-                });
-            }
-        })();
-
         // --- ГЛОБАЛЬНАЯ ЗАЩИТА САЙТА ---
         const SITE_PIN = "7777"; 
 
@@ -168,13 +153,22 @@
             }
         };
 
-        function verifySession() {
+        window.verifySession = () => {
             const overlay = document.getElementById('siteAuthOverlay');
             if (localStorage.getItem('site_access_granted') === 'true') {
                 if (overlay) overlay.classList.add('hidden');
             } else {
                 if (overlay) overlay.classList.remove('hidden');
             }
+        };
+
+        // Инициализация темы при старте скрипта модуля
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            document.documentElement.classList.add('dark');
+            const btn = document.getElementById('themeBtn');
+            if (btn) btn.innerText = '☀️';
         }
 
         // PWA обработчик
@@ -192,17 +186,16 @@
                 if (!deferredPrompt) return;
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
+                if (deferredPrompt && outcome === 'accepted') {
                     btnInstall.style.display = 'none';
                 }
                 deferredPrompt = null;
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            verifySession(); 
-            window.switchModule('dashboard');
-        });
+        // Запуск проверки сессии и загрузка дашборда
+        window.verifySession();
+        window.switchModule('dashboard');
     </script>
 </body>
 </html>
