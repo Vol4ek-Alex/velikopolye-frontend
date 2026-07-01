@@ -104,17 +104,6 @@ export async function init() {
 
 async function loadDocs() {
     try {
-        const { data, error } = await window._supabase.from('doc_registry').select('*').order('doc_date', { ascending: false });
-        if (error) throw error;
-        documents = data || [];
-        renderDocs();
-    } catch (err) {
-        console.error("Ошибка загрузки документов:", err.message);
-    }
-}
-
-async function loadDocs() {
-    try {
         // Проверяем, подключена ли таблица в Supabase
         const { data, error } = await window._supabase
             .from('doc_registry')
