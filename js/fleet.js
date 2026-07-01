@@ -41,6 +41,7 @@ export const template = `
                         <label class="block text-gray-600 text-sm font-medium mb-1">Тип техники</label>
                         <select id="modalType" required class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:border-emerald-500 transition">
                             <option value="Тракторы">Трактор</option>
+                            <option value="Погрузчики">Погрузчик</option>
                             <option value="Комбайны">Комбайн</option>
                             <option value="Грузовые автомобили">Грузовой автомобиль</option>
                             <option value="Легковые автомобили">Легковой автомобиль</option>
