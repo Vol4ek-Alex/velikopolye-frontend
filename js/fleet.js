@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
         
-        async function loadVehicles() {
+        export async function loadVehicles() {
             const listContainer = document.getElementById('vehiclesList');
             if (!listContainer) return;
 
@@ -148,7 +148,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
             }
         }
 
-        async function saveVehicle(e) {
+        export async function saveVehicle(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             btn.innerHTML = 'Сохранение...';
