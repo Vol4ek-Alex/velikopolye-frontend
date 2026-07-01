@@ -10,6 +10,7 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col md:flex-row">
 
+    <!-- ЭКРАН АВТОРИЗАЦИИ -->
     <div id="siteAuthOverlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl text-center space-y-5">
             <div class="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 shadow-sm flex items-center justify-center text-3xl mx-auto">
@@ -23,7 +24,7 @@
         
             <div class="space-y-3">
                 <input type="password" id="sitePinInput" inputmode="numeric" pattern="[0-9]*" class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl p-3.5 text-center font-mono text-xl tracking-widest text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 transition" placeholder="••••">
-                <button onclick="checkSiteAccess()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold transition shadow-md">
+                <button onclick="window.checkSiteAccess()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold transition shadow-md">
                     Войти
                 </button>
             </div>
@@ -31,6 +32,7 @@
         </div>
     </div>
 
+    <!-- МОБИЛЬНАЯ ШАПКА -->
     <header class="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
         <div class="flex items-center gap-2">
             <span class="text-xl">🚜</span>
@@ -39,9 +41,10 @@
                 <p class="text-[10px] text-gray-400 dark:text-gray-500 font-medium">ГП «Минсктранс»</p>
             </div>
         </div>
-        <button onclick="toggleMobileMenu()" class="text-gray-600 dark:text-gray-400 text-2xl">☰</button>
+        <button onclick="window.toggleMobileMenu()" class="text-gray-600 dark:text-gray-400 text-2xl">☰</button>
     </header>
 
+    <!-- БОКОВОЕ МЕНЮ (САЙДБАР) -->
     <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col justify-between p-4 transition-transform -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
         <div>
             <div class="hidden md:flex items-center gap-3 mb-4 px-2 border-b border-gray-100 dark:border-gray-800 pb-5">
@@ -53,6 +56,7 @@
                 </div>
             </div>
 
+            <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ -->
             <div class="mb-4 flex items-center justify-between bg-gray-100 dark:bg-gray-800/50 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
                 <span class="text-xs font-bold text-gray-600 dark:text-gray-400 pl-1">Режим экрана</span>
                 <button onclick="window.toggleDarkMode()" id="themeBtn" class="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-yellow-400 transition shadow-xs text-sm flex items-center justify-center border border-gray-300/70 dark:border-gray-600">
@@ -64,15 +68,16 @@
         </div>
 
         <div class="space-y-3 border-t border-gray-100 dark:border-gray-800 pt-4">
-            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
+            <button id="pwaInstallBtn" onclick="window.installPWA()" class="hidden w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
                 📱 Установить на телефон
             </button>
             <div class="text-xs text-gray-400 dark:text-gray-500 text-center">АРМ v1.0 • Модульный • @Vol4ek</div>
         </div>
     </aside>
 
-    <div id="menuOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden"></div>
+    <div id="menuOverlay" onclick="window.toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden"></div>
 
+    <!--РАБОЧАЯ ОБЛАСТЬ ДЛЯ МОДУЛЕЙ -->
     <main id="moduleWorkspace" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full"></main>
 
     <script type="module">
@@ -87,7 +92,21 @@
 
         let currentModuleId = 'dashboard';
 
-        // ИСПРАВЛЕНО: Сделали функцию глобальной, чтобы onclick на кнопках меню её видел
+        // 1. Функция рендера меню теперь объявлена до вызова навигации
+        function renderMenu() {
+            const container = document.getElementById('menuContainer');
+            if (!container) return;
+            container.innerHTML = APP_MODULES.map(mod => {
+                const isActive = mod.id === currentModuleId;
+                const activeClasses = isActive 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold shadow-sm' 
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100';
+                
+                return `<button onclick="window.switchModule('${mod.id}'); if(window.innerWidth < 768) window.toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
+            }).join('');
+        }
+
+        // 2. Глобальная функция навигации
         window.switchModule = async (moduleId) => {
             currentModuleId = moduleId;
             renderMenu();
@@ -107,24 +126,17 @@
             }
         };
 
-        function renderMenu() {
-            const container = document.getElementById('menuContainer');
-            if (!container) return;
-            container.innerHTML = APP_MODULES.map(mod => {
-                const isActive = mod.id === currentModuleId;
-                const activeClasses = isActive ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100';
-                return `<button onclick="window.switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
-            }).join('');
-        }
-
+        // 3. Управление мобильной шторкой
         window.toggleMobileMenu = () => {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('menuOverlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            }
         };
 
-        // --- ЛОГИКА ТЕМНОЙ ТЕМЫ ---
+        // 4. Логика тёмной темы
         window.toggleDarkMode = function() {
             const isDark = document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -133,7 +145,7 @@
             if (btn) btn.innerText = isDark ? '☀️' : '🌙';
         };
 
-        // Проверка темы до загрузки контента
+        // Самовызывающаяся проверка сохраненной темы
         (function initTheme() {
             const savedTheme = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -148,28 +160,7 @@
             }
         })();
 
-        // --- РЕГИСТРАЦИЯ SERVICE WORKER И КОНТРОЛЬ КЭША ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => {
-                        console.log('✅ Service Worker успешно запущен');
-                        reg.update();
-                        reg.onupdatefound = () => {
-                            const installingWorker = reg.installing;
-                            installingWorker.onstatechange = () => {
-                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('🔄 Вышло обновление системы! Перезагрузка...');
-                                    setTimeout(() => { window.location.reload(); }, 1000);
-                                }
-                            };
-                        };
-                    })
-                    .catch(err => console.error('❌ Ошибка SW:', err));
-            });
-        }
-
-        // --- ЛОГИКА PWA УСТАНОВКИ НА ТЕЛЕФОН / ПК ---
+        // 5. Логика PWA установки
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); 
@@ -188,7 +179,7 @@
             deferredPrompt = null;
         };
 
-        // --- ГЛОБАЛЬНАЯ ЗАЩИТА САЙТА ---
+        // 6. Логика проверки доступа (ПИН-КОД)
         const SITE_PIN = "7777"; 
 
         window.checkSiteAccess = () => {
@@ -213,7 +204,26 @@
             }
         }
 
-        // Вызов инициализации и первичного рендера
+        // --- Запуск приложения ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => {
+                        reg.update();
+                        reg.onupdatefound = () => {
+                            const installingWorker = reg.installing;
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    setTimeout(() => { window.location.reload(); }, 1000);
+                                }
+                            };
+                        };
+                    })
+                    .catch(err => console.error('Ошибка SW:', err));
+            });
+        }
+
+        // Запуск сессии и первичная отрисовка первой вкладки
         verifySession();
         window.switchModule('dashboard');
     </script>
