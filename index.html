@@ -53,7 +53,6 @@
                 </div>
             </div>
 
-            <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ -->
             <div class="mb-4 flex items-center justify-between bg-gray-100 dark:bg-gray-800/50 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
                 <span class="text-xs font-bold text-gray-600 dark:text-gray-400 pl-1">Режим экрана</span>
                 <button onclick="window.toggleDarkMode()" id="themeBtn" class="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-yellow-400 transition shadow-xs text-sm flex items-center justify-center border border-gray-300/70 dark:border-gray-600">
@@ -88,6 +87,7 @@
 
         let currentModuleId = 'dashboard';
 
+        // ИСПРАВЛЕНО: Сделали функцию глобальной, чтобы onclick на кнопках меню её видел
         window.switchModule = async (moduleId) => {
             currentModuleId = moduleId;
             renderMenu();
@@ -98,7 +98,6 @@
             const targetModule = APP_MODULES.find(m => m.id === moduleId);
             if (targetModule) {
                 try {
-                    // ?v=Date.now() + Service Worker гарантируют 100% свежий код модулей
                     const module = await import(`${targetModule.file}?v=${Date.now()}`);
                     workspace.innerHTML = module.template;
                     if (module.init) module.init();
@@ -113,11 +112,8 @@
             if (!container) return;
             container.innerHTML = APP_MODULES.map(mod => {
                 const isActive = mod.id === currentModuleId;
-                // Добавлена поддержка темной темы в генерацию стилей кнопок меню:
-                const activeClasses = isActive 
-                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold shadow-sm' 
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100';
-                return `<button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
+                const activeClasses = isActive ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100';
+                return `<button onclick="window.switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
             }).join('');
         }
 
@@ -158,11 +154,7 @@
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => {
                         console.log('✅ Service Worker успешно запущен');
-                        
-                        // Проверяем обновления на сервере при каждом запуске
                         reg.update();
-
-                        // Если найден новый sw.js, сообщаем пользователю и перезагружаем кэш
                         reg.onupdatefound = () => {
                             const installingWorker = reg.installing;
                             installingWorker.onstatechange = () => {
@@ -183,7 +175,7 @@
             e.preventDefault(); 
             deferredPrompt = e;
             const btn = document.getElementById('pwaInstallBtn');
-            if (btn) btn.classList.remove('hidden'); // Показываем кнопку установки в меню
+            if (btn) btn.classList.remove('hidden'); 
         });
 
         window.installPWA = async () => {
@@ -197,16 +189,14 @@
         };
 
         // --- ГЛОБАЛЬНАЯ ЗАЩИТА САЙТА ---
-        const SITE_PIN = "7777"; // 💡 ЗАДАТЬ СВОЙ ПИН-КОД ЗДЕСЬ
+        const SITE_PIN = "7777"; 
 
         window.checkSiteAccess = () => {
             const input = document.getElementById('sitePinInput');
             const error = document.getElementById('authErrorMsg');
             
             if (input && input.value === SITE_PIN) {
-                // Запоминаем успешный вход в браузере
                 localStorage.setItem('site_access_granted', 'true');
-                // Скрываем экран блокировки
                 document.getElementById('siteAuthOverlay').classList.add('hidden');
             } else {
                 if (error) error.classList.remove('hidden');
@@ -214,7 +204,6 @@
             }
         };
 
-        // Функция автоматической проверки при загрузке страницы
         function verifySession() {
             const overlay = document.getElementById('siteAuthOverlay');
             if (localStorage.getItem('site_access_granted') === 'true') {
@@ -224,10 +213,9 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            verifySession(); // Перекрываем сайт до проверки ПИН-кода
-            switchModule('dashboard');
-        });
+        // Вызов инициализации и первичного рендера
+        verifySession();
+        window.switchModule('dashboard');
     </script>
 </body>
 </html>
