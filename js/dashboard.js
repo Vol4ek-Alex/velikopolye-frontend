@@ -4,18 +4,42 @@ export const template = `
         <p class="text-xs text-gray-600 font-medium">Оперативная сводка по филиалу СХК «Великополье»</p>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-3 mb-6">
-        <div class="bg-white border-2 border-gray-400/80 rounded-xl p-4 shadow-2xs">
-            <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Всего техники</p>
-            <h3 id="dashTotal" class="text-2xl font-black text-gray-950 mt-1">0 <span class="text-xs font-normal text-gray-500">ед.</span></h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        
+        <div class="md:col-span-1 bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-950 rounded-2xl p-5 shadow-sm text-white flex flex-col justify-between min-h-[115px]">
+            <div class="flex items-center justify-between">
+                <p class="text-[10px] font-black uppercase tracking-wider text-gray-400">Общий автопарк</p>
+                <span class="text-xs bg-white/10 px-2 py-0.5 rounded-md font-bold text-gray-300">Всего</span>
+            </div>
+            <div class="mt-2 flex items-baseline gap-1">
+                <h3 id="dashTotal" class="text-4xl font-black tracking-tight">0</h3>
+                <span class="text-xs font-bold text-gray-400">ед. техники</span>
+            </div>
         </div>
-        <div class="bg-white border-2 border-gray-400/80 rounded-xl p-4 shadow-2xs border-l-4 border-l-emerald-600">
-            <p class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">🟢 Готовы к работе</p>
-            <h3 id="dashReady" class="text-2xl font-black text-gray-950 mt-1">0</h3>
-        </div>
-        <div class="bg-white border-2 border-gray-400/80 rounded-xl p-4 shadow-2xs border-l-4 border-l-red-600">
-            <p class="text-[11px] font-bold text-red-600 uppercase tracking-wider">🔴 В ремонте</p>
-            <h3 id="dashInRepair" class="text-2xl font-black text-gray-950 mt-1">0</h3>
+
+        <div class="md:col-span-2 grid grid-cols-3 gap-3 bg-white border-2 border-gray-400/80 rounded-2xl p-3.5 shadow-2xs">
+            
+            <div class="bg-emerald-50/60 border-2 border-emerald-500/30 rounded-xl p-3 flex flex-col justify-between">
+                <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block animate-pulse"></span> Готово
+                </p>
+                <h4 id="dashReady" class="text-2xl font-black text-gray-950 mt-2">0</h4>
+            </div>
+
+            <div class="bg-blue-50/60 border-2 border-blue-500/20 rounded-xl p-3 flex flex-col justify-between">
+                <p class="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span> Хранение
+                </p>
+                <h4 id="dashStorage" class="text-2xl font-black text-gray-950 mt-2">0</h4>
+            </div>
+
+            <div class="bg-red-50/60 border-2 border-red-500/30 rounded-xl p-3 flex flex-col justify-between">
+                <p class="text-[10px] font-black uppercase tracking-wider text-red-800 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-600 inline-block"></span> Ремонт
+                </p>
+                <h4 id="dashInRepair" class="text-2xl font-black text-gray-950 mt-2">0</h4>
+            </div>
+
         </div>
     </div>
 
@@ -90,28 +114,33 @@ async function loadDashboardData() {
 }
 
 function renderStats(list) {
-    document.getElementById('dashTotal').innerHTML = `${list.length} <span class="text-xs font-normal text-gray-500">ед.</span>`;
+    // 1. Всего техники
+    document.getElementById('dashTotal').innerText = list.length;
+    
+    // 2. Готовы к работе (проверяем тег)
     document.getElementById('dashReady').innerText = list.filter(v => v.tags && v.tags.includes('Готов')).length;
+    
+    // 3. На хранении (новый счетчик)
+    document.getElementById('dashStorage').innerText = list.filter(v => v.tags && v.tags.includes('На хранении')).length;
+    
+    // 4. В ремонте
     document.getElementById('dashInRepair').innerText = list.filter(v => v.tags && v.tags.includes('В ремонте')).length;
 }
 
 function renderSeparatedAlerts(list, activeTasks) {
     const today = new Date();
-    
-    // Создаем карту соответствия ID техники -> Госномер
     const plateMap = {};
     list.forEach(v => {
         plateMap[v.id] = v.plate ? `[${v.plate}]` : '[б/н]';
     });
 
-    // 1. РЕНДЕРИНГ БЛОКА ЗАДАЧ
+    // 1. ЗАДАЧИ
     const containerTasks = document.getElementById('containerTasks');
     if (containerTasks) {
         if (activeTasks.length === 0) {
-            containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет активных задач по ремонту</div>`;
+            containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет active задач по ремонту</div>`;
         } else {
             containerTasks.innerHTML = activeTasks.map(task => {
-                // Ищем госномер для этой задачи
                 const plateStr = plateMap[task.vehicle_id] || '';
                 return `
                     <div class="p-2.5 bg-amber-50 border-2 border-amber-400 text-gray-950 font-bold rounded-lg text-[11px] shadow-2xs">
@@ -123,11 +152,9 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     }
 
-    // Списки для двух других категорий
     const warrantyAlerts = [];
     const docAlerts = [];
 
-    // Разносим данные по массивам
     list.forEach(v => {
         const plateStr = v.plate ? ` [${v.plate}]` : ' [б/н]';
 
@@ -168,7 +195,7 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     });
 
-    // 2. РЕНДЕРИНГ БЛОКА ГАРАНТИИ
+    // 2. ГАРАНТИЯ
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
@@ -183,7 +210,7 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     }
 
-    // 3. РЕНДЕРИНГ БЛОКА ДОКУМЕНТОВ
+    // 3. ДОКУМЕНТЫ
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
         if (docAlerts.length === 0) {
