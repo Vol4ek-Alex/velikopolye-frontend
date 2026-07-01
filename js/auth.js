@@ -1,11 +1,11 @@
 import { _supabase } from './config.js';
 
-export async function checkUser() {
-    const { data: { user } } = await _supabase.auth.getUser();
-    return user;
-}
+        export async function checkUser() {
+            const { data: { user } } = await _supabase.auth.getUser();
+        return user;
+        }
 
-        async function initAuthScreen() {
+        export async function initAuthScreen() {
             const user = await checkUser();
             const form = document.getElementById('authForm');
             const info = document.getElementById('authUserInfo');
@@ -23,7 +23,7 @@ export async function checkUser() {
             }
         }
 
-        async function handleLogin(e) {
+        export async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('authBtn');
             btn.innerText = 'Вход...';
@@ -44,7 +44,7 @@ export async function checkUser() {
             }
         }
 
-        async function handleLogout() {
+        export async function handleLogout() {
             await _supabase.auth.signOut();
             alert('Вы вышли из системы');
             switchModule('dashboard');
