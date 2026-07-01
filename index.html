@@ -18,6 +18,13 @@
         </div>
     </main>
 
-    <script type="module" src="js/app.js"></script>
+    <script type="module">
+    // Добавляем timestamp к пути, чтобы браузер не брал старый кэш
+    const version = new Date().getTime();
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = `js/app.js?v=${version}`;
+    document.body.appendChild(script);
+</script>
 </body>
 </html>
