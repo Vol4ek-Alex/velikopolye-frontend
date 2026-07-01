@@ -10,6 +10,27 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col md:flex-row">
 
+    <div id="siteAuthOverlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div class="bg-white border border-gray-100 p-6 rounded-2xl w-full max-w-sm shadow-2xl text-center space-y-5">
+            <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 shadow-sm flex items-center justify-center text-3xl mx-auto">
+               🔒
+            </div>
+            <div>
+                <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ф-л СХК «Великополье»</p>
+                <h2 class="text-xl font-black text-gray-800">Вход в систему АРМ</h2>
+                <p class="text-xs text-gray-400 mt-1">Для доступа к панели управления введите ПИН-код</p>
+            </div>
+        
+            <div class="space-y-3">
+                <input type="password" id="sitePinInput" inputmode="numeric" pattern="[0-9]*" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3.5 text-center font-mono text-xl tracking-widest text-gray-900 focus:outline-none focus:border-emerald-500 transition" placeholder="••••">
+                <button onclick="checkSiteAccess()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold transition shadow-md">
+                    Войти
+                </button>
+            </div>
+            <p id="authErrorMsg" class="text-xs font-semibold text-red-600 hidden">❌ Неверный ПИН-код! Доступ ограничен.</p>
+        </div>
+    </div>
+
     <header class="md:hidden bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
         <div class="flex items-center gap-2">
             <span class="text-xl">🚜</span>
@@ -135,7 +156,38 @@
             deferredPrompt = null;
         };
 
-        document.addEventListener('DOMContentLoaded', () => switchModule('dashboard'));
+        // --- ГЛОБАЛЬНАЯ ЗАЩИТА САЙТА ---
+        const SITE_PIN = "7777"; // 💡 ЗАДАТЬ СВОЙ ПИН-КОД ЗДЕСЬ
+
+        window.checkSiteAccess = () => {
+            const input = document.getElementById('sitePinInput');
+            const error = document.getElementById('authErrorMsg');
+            
+            if (input && input.value === SITE_PIN) {
+                // Запоминаем успешный вход в браузере
+                localStorage.setItem('site_access_granted', 'true');
+                // Скрываем экран блокировки
+                document.getElementById('siteAuthOverlay').classList.add('hidden');
+            } else {
+                if (error) error.classList.remove('hidden');
+                if (input) { input.value = ''; input.focus(); }
+            }
+        };
+
+        // Функция автоматической проверки при загрузке страницы
+        function verifySession() {
+            const overlay = document.getElementById('siteAuthOverlay');
+            if (localStorage.getItem('site_access_granted') === 'true') {
+                if (overlay) overlay.classList.add('hidden');
+            } else {
+                if (overlay) overlay.classList.remove('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            verifySession(); // Перекрываем сайт до проверки ПИН-кода
+            switchModule('dashboard');
+        });
     </script>
 </body>
 </html>
