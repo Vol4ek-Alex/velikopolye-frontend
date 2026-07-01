@@ -17,8 +17,8 @@ app.add_middleware(
 
 # Прописываем ключи Supabase напрямую (для простоты)
 # ЗАМЕНИ ЭТИ ЗНАЧЕНИЯ НА СВОИ ИЗ SUPABASE:
-SUPABASE_URL = "https://твой-проект.supabase.co"
-SUPABASE_KEY = "твой-длинный-api-ключ"
+SUPABASE_URL = "https://eaiitxfoqlkmykyqqapg.supabase.co/rest/v1/"
+SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm"
 
 # Инициализируем клиент Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
