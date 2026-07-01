@@ -63,7 +63,7 @@ export const template = `
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Краткое содержание / Тема</label>
-                    <textarea id="docSubject" required rows="3" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500" placeholder="Обоснование выделения средств на ремонт К-744..."></textarea>
+                    <textarea id="docSubject" required rows="3" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500" placeholder="Обоснование..."></textarea>
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="button" id="closeDocModalBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-3 rounded-xl font-bold transition text-sm">Отмена</button>
@@ -78,7 +78,6 @@ let currentFilter = 'incoming';
 let documents = [];
 
 export async function init() {
-    // Проверка прав (админ/диспетчер) для отображения кнопки добавления
     const addBtn = document.getElementById('addDocBtn');
     if (!window.isAdmin()) {
         if (addBtn) addBtn.classList.add('hidden');
@@ -86,38 +85,47 @@ export async function init() {
         if (addBtn) addBtn.onclick = () => document.getElementById('docModal').classList.remove('hidden');
     }
 
-    document.getElementById('closeDocModalBtn').onclick = () => document.getElementById('docModal').classList.add('hidden');
-    document.getElementById('docForm').onsubmit = (e) => handleDocSubmit(e);
+    const closeBtn = document.getElementById('closeDocModalBtn');
+    if (closeBtn) closeBtn.onclick = () => document.getElementById('docModal').classList.add('hidden');
+    
+    const form = document.getElementById('docForm');
+    if (form) form.onsubmit = (e) => handleDocSubmit(e);
 
     window.filterDocs = (dir) => {
         currentFilter = dir;
-        document.getElementById('tabIncoming').className = dir === 'incoming' ? 'flex-1 px-4 py-2 text-xs font-bold rounded-lg transition bg-white text-gray-800 shadow-sm' : 'flex-1 px-4 py-2 text-xs font-bold rounded-lg transition text-gray-500 hover:text-gray-800';
-        document.getElementById('tabOutgoing').className = dir === 'outgoing' ? 'flex-1 px-4 py-2 text-xs font-bold rounded-lg transition bg-white text-gray-800 shadow-sm' : 'flex-1 px-4 py-2 text-xs font-bold rounded-lg transition text-gray-500 hover:text-gray-800';
+        const tabInc = document.getElementById('tabIncoming');
+        const tabOut = document.getElementById('tabOutgoing');
+        if (tabInc && tabOut) {
+            tabInc.className = dir === 'incoming' ? 'flex-1 px-4 py-2 text-xs font-bold rounded-lg transition bg-white text-gray-800 shadow-sm' : 'flex-1 px-4 py-2 text-xs font-bold rounded-lg transition text-gray-500 hover:text-gray-800';
+            tabOut.className = dir === 'outgoing' ? 'flex-1 px-4 py-2 text-xs font-bold rounded-lg transition bg-white text-gray-800 shadow-sm' : 'flex-1 px-4 py-2 text-xs font-bold rounded-lg transition text-gray-500 hover:text-gray-800';
+        }
         renderDocs();
     };
 
-    // Ставим сегодняшнюю дату в форму по умолчанию
-    document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
+    const docDateInput = document.getElementById('docDate');
+    if (docDateInput) docDateInput.value = new Date().toISOString().split('T')[0];
 
     await loadDocs();
 }
 
 async function loadDocs() {
     try {
-        // Проверяем, подключена ли таблица в Supabase
-        const { data, error } = await window._supabase
-            .from('doc_registry')
-            .select('*')
-            .order('doc_date', { ascending: false });
-            
-        if (error) throw error;
-        documents = data || [];
+        if (window._supabase) {
+            const { data, error } = await window._supabase
+                .from('doc_registry')
+                .select('*')
+                .order('doc_date', { ascending: false });
+                
+            if (!error && data) {
+                documents = data;
+            } else {
+                documents = [];
+            }
+        }
     } catch (err) {
-        console.error("Ошибка загрузки документов из Supabase:", err.message);
-        // Если таблицы еще нет или она пустая — делаем пустой массив, чтобы АРМ не зависало
+        console.error("Ошибка запроса:", err);
         documents = [];
     } finally {
-        // В любом случае принудительно запускаем отрисовку, чтобы убрать надпись "Загрузка..."
         renderDocs();
     }
 }
@@ -166,13 +174,15 @@ async function handleDocSubmit(e) {
     };
 
     try {
-        const { error } = await window._supabase.from('doc_registry').insert([newDoc]);
-        if (error) throw error;
+        if (window._supabase) {
+            const { error } = await window._supabase.from('doc_registry').insert([newDoc]);
+            if (error) throw error;
 
-        document.getElementById('docModal').classList.add('hidden');
-        document.getElementById('docForm').reset();
-        document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
-        await loadDocs();
+            document.getElementById('docModal').classList.add('hidden');
+            document.getElementById('docForm').reset();
+            document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
+            await loadDocs();
+        }
     } catch (err) {
         alert("Ошибка сохранения: " + err.message);
     }
