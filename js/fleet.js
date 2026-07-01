@@ -230,6 +230,11 @@ function renderFleet() {
     const container = document.getElementById('fleetGridContainer');
     if (!container) return;
 
+    const searchInput = document.getElementById('vehicleSearchInput');
+    if (searchInput) {
+        searchQuery = searchInput.value.toLowerCase().trim();
+    }
+
     let filtered = vehicles.filter(v => {
         const vType = v.type || "Без категории";
         const modelStr = v.model ? v.model.toLowerCase() : '';
