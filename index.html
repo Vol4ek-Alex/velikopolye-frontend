@@ -2,162 +2,194 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>АРМ «Великополье»</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
+    <style>
+        /* Стили для шторки меню на телефоне */
+        #mobileMenuOverlay { transition: opacity 0.3s; }
+        #mobileDrawer { transition: transform 0.3s ease-out; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans antialiased">
+<body class="bg-slate-900 text-slate-100 font-sans antialiased overscroll-none">
 
-    <!-- Верхняя шапка -->
-    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 shadow-md">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
-        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-            🚜 СХК «Великополье» <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">Модульная АРМ</span>
-        </h1>
-    </div>
-    </header>
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 shadow-md viewport-fit">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center h-16">
+            
+            <div class="flex items-center gap-3">
+                <button onclick="toggleMobileMenu()" class="md:hidden p-1.5 bg-slate-700 rounded-lg hover:bg-slate-600 transition" aria-label="Открыть меню">
+                    <svg class="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+                <h1 class="font-bold tracking-tight text-white flex items-center gap-2">
+                    <span class="text-xl">🚜</span>
+                    <span class="hidden xs:inline text-lg">СХК «Великополье»</span>
+                    <span class="inline xs:hidden text-lg">СХК</span>
+                </h1>
+            </div>
 
-    <!-- Основной каркас приложения (Двухпанельный) -->
-    <div class="max-w-7xl mx-auto p-4 grid grid-cols-1 md:grid-cols-4 gap-6">
-        
-        <!-- НАВИГАЦИОННОЕ МЕНЮ (Левая панель) -->
-        <aside class="md:col-span-1 space-y-2">
-            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3">Доступные модули</h2>
-            <nav id="modulesMenu" class="space-y-1">
-                <!-- Кнопки меню генерируются скриптом -->
-            </nav>
-        </aside>
-
-        <!-- КОНТЕНТНАЯ ЗОНА (Правая панель, куда подгружаются модули) -->
-        <main id="moduleWorkspace" class="md:col-span-3">
-            <!-- Сюда динамически вставляется активный модуль -->
-        </main>
-
-    </div>
-
-    <!-- ТЕМПЛЕЙТЫ МОДУЛЕЙ (Скрытые шаблоны, как компоненты в Python/JS) -->
-    <div id="moduleTemplates" class="hidden">
-        
-        <!-- Шаблон модуля: Сельхоз.парк -->
-        <div id="tpl-fleet">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Форма добавления -->
-                <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg h-fit">
-                    <h2 class="text-base font-semibold mb-4 text-white flex items-center gap-2 border-b border-slate-700 pb-2">
-                        📝 Регистрация транспорта
-                    </h2>
-                    <form id="vehicleForm" onsubmit="saveVehicle(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Название / Модель</label>
-                            <input type="text" id="model" required placeholder="например, Кировец К-7М" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Гос. номер</label>
-                            <input type="text" id="plate" required placeholder="1234 АБ-7" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Окончание Страховки</label>
-                            <input type="date" id="insurance" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Окончание Техосмотра</label>
-                            <input type="date" id="inspection" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition">
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition mt-2 shadow-md">
-                            💾 Сохранить в базу
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Список карточек -->
-                <div class="lg:col-span-2 space-y-4">
-                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                    <h2 class="text-base font-semibold text-white">
-                    📋 Техника в строю (<span id="count">0</span>)
-                    </h2>
-                <button onclick="loadVehicles()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-white px-2 py-1 rounded-lg transition flex items-center gap-1">
-            🔄 Обновить
+            <button onclick="refreshCurrentModule()" class="bg-blue-600 hover:bg-blue-500 text-white p-2 md:px-4 md:py-2 rounded-xl flex items-center gap-2 transition shadow-md shadow-blue-600/20" aria-label="Обновить данные">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <span class="hidden md:inline text-sm font-medium">Обновить данные</span>
             </button>
         </div>
-    <div id="vehiclesList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="col-span-full text-center text-slate-500 py-8">Загрузка данных...</div>
+    </header>
+
+    <div id="mobileMenuOverlay" class="fixed inset-0 bg-slate-950/80 z-50 opacity-0 pointer-events-none hidden" onclick="toggleMobileMenu()">
+        <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-[280px] bg-slate-800 p-5 shadow-2xl transform -translate-x-full z-50 overscroll-contain flex flex-col" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-8 pb-3 border-b border-slate-700">
+                <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Модули АРМ</h2>
+                <button onclick="toggleMobileMenu()" class="p-1.5 bg-slate-700 rounded-lg text-slate-300 hover:text-white" aria-label="Закрыть">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <nav id="mobileMenuContainer" class="space-y-1.5 flex-grow overflow-y-auto pr-2"></nav>
+            <div class="pt-4 border-t border-slate-700/50 mt-auto text-center text-xs text-slate-600">v1.1 (v5)</div>
+        </aside>
     </div>
-</div>
+
+    <div class="max-w-7xl mx-auto p-4 md:pt-6 grid grid-cols-1 md:grid-cols-4 md:gap-8">
+        
+        <aside class="hidden md:block md:col-span-1 space-y-2 pb-6">
+            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3">Доступные модули</h2>
+            <nav id="pcMenuContainer" class="space-y-1.5 sticky top-24"></nav>
+        </aside>
+
+        <main id="moduleWorkspace" class="md:col-span-3 pb-8">
+            </main>
+    </div>
+
+    <div id="moduleTemplates" class="hidden">
+        
+        <div id="tpl-fleet">
+            <div class="space-y-8">
+                <section class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg">
+                    <h2 class="text-base font-semibold mb-5 text-white flex items-center gap-2.5 border-b border-slate-700 pb-3">
+                        <span class="text-xl">📝</span> Регистрация транспорта
+                    </h2>
+                    <form id="vehicleForm" onsubmit="saveVehicle(event)" class="grid grid-cols-1 xs:grid-cols-2 gap-x-5 gap-y-4">
+                        <div class="xs:col-span-2">
+                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Название / Модель</label>
+                            <input type="text" id="model" required placeholder="например, Кировец К-7М" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Гос. номер</label>
+                            <input type="text" id="plate" required placeholder="1234 АБ-7" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-mono focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Окончание Страховки</label>
+                            <input type="date" id="insurance" required class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Окончание Техосмотра</label>
+                            <input type="date" id="inspection" required class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div class="xs:col-span-2 pt-2">
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-blue-600/20 active:scale-[0.98]">
+                                💾 Сохранить транспорт в базу
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="space-y-5">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2 border-b border-slate-700 pb-3">
+                        <span class="text-xl">📋</span> Список автопарка (<span id="count">0</span>)
+                    </h2>
+                    <div id="vehiclesList" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="col-span-full text-center text-slate-500 py-12 flex flex-col items-center gap-3">
+                            <svg class="w-10 h-10 text-slate-700 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Загрузка данных с сервера...
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
 
-        <!-- Заглушка для будущего модуля (например, Главная или Настройки) -->
         <div id="tpl-dashboard">
-            <div class="bg-slate-800 border border-slate-700 rounded-xl p-8 text-center max-w-xl mx-auto mt-8">
-                <span class="text-4xl">👋</span>
-                <h2 class="text-xl font-bold text-white mt-4 mb-2">Добро пожаловать в АРМ</h2>
-                <p class="text-slate-400 text-sm">Выбери нужный рабочий модуль в левом меню для начала работы с локальной базой данных.</p>
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center max-w-xl mx-auto mt-6 md:mt-10 shadow-lg">
+                <span class="text-5xl">👋</span>
+                <h2 class="text-2xl font-bold text-white mt-6 mb-3">АРМ «Великополье»</h2>
+                <p class="text-slate-400 text-sm leading-relaxed">Система контроля автопарка, страховок и техосмотров. <br class="hidden xs:inline"> Выберите нужный модуль в меню.</p>
+                <button onclick="toggleMobileMenu()" class="md:hidden mt-8 bg-slate-700 hover:bg-slate-600 text-white font-medium px-6 py-2.5 rounded-xl transition">
+                    Открыть меню
+                </button>
             </div>
         </div>
-
     </div>
 
-    <!-- СИСТЕМНЫЙ СКРИПТ УПРАВЛЕНИЯ МОДУЛЯМИ -->
     <script>
-        // URL бекенда на Render
         const SERVER_URL = 'https://velikopolye-backend.onrender.com';
-
-        // Список зарегистрированных модулей приложения
         const APP_MODULES = [
             { id: 'dashboard', name: '🏠 Главная панель', init: () => {} },
             { id: 'fleet', name: '🚜 Сельхоз.парк', init: loadVehicles }
         ];
-
         let currentModuleId = 'dashboard';
 
-        // Отрисовка бокового меню
+        // Функция открытия/закрытия мобильного меню
+        function toggleMobileMenu() {
+            const overlay = document.getElementById('mobileMenuOverlay');
+            const drawer = document.getElementById('mobileDrawer');
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-0');
+                    overlay.classList.add('pointer-events-auto');
+                    drawer.classList.remove('-translate-x-full');
+                }, 10);
+            } else {
+                overlay.classList.add('opacity-0');
+                overlay.classList.remove('pointer-events-auto');
+                drawer.classList.add('-translate-x-full');
+                setTimeout(() => { overlay.classList.add('hidden'); }, 300);
+            }
+        }
+
+        // Отрисовка обоих меню (на ПК и мобильной шторке)
         function renderMenu() {
-            const menuContainer = document.getElementById('modulesMenu');
-            menuContainer.innerHTML = APP_MODULES.map(mod => {
+            const pcContainer = document.getElementById('pcMenuContainer');
+            const mobileContainer = document.getElementById('mobileMenuContainer');
+            
+            const menuHtml = APP_MODULES.map(mod => {
                 const isActive = mod.id === currentModuleId;
-                const activeClasses = isActive ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200';
+                const activeClasses = isActive ? 'bg-blue-600 text-white font-semibold shadow-md' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200';
                 return `
-                    <button onclick="switchModule('${mod.id}')" class="w-full text-left px-4 py-3 rounded-xl text-sm transition flex items-center justify-between ${activeClasses}">
+                    <button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-5 py-3.5 rounded-xl text-sm transition flex items-center justify-between active:scale-[0.97] ${activeClasses}">
                         <span>${mod.name}</span>
                         ${isActive ? '<span class="w-2 h-2 bg-white rounded-full"></span>' : ''}
                     </button>
                 `;
             }).join('');
+
+            if(pcContainer) pcContainer.innerHTML = menuHtml;
+            if(mobileContainer) mobileContainer.innerHTML = menuHtml;
         }
 
-        // Переключение модулей
         function switchModule(moduleId) {
             currentModuleId = moduleId;
             renderMenu();
-            
-            // Берем чистый HTML-шаблон модуля и вставляем его в рабочую зону
             const templateHtml = document.getElementById(`tpl-${moduleId}`).innerHTML;
             document.getElementById('moduleWorkspace').innerHTML = templateHtml;
-            
-            // Находим модуль в конфиге и запускаем его стартовую функцию (если есть)
             const targetModule = APP_MODULES.find(m => m.id === moduleId);
-            if (targetModule && targetModule.init) {
-                targetModule.init();
-            }
+            if (targetModule && targetModule.init) targetModule.init();
+            // Скроллим вверх при переключении
+            window.scrollTo(0, 0);
         }
 
-        // Кнопка обновления данных в шапке
         function refreshCurrentModule() {
             const targetModule = APP_MODULES.find(m => m.id === currentModuleId);
-            if (targetModule && targetModule.init) {
-                targetModule.init();
-            }
+            if (targetModule && targetModule.init) targetModule.init();
         }
 
         // --- ЛОГИКА МОДУЛЯ «СЕЛЬХОЗ.ПАРК» ---
         async function loadVehicles() {
             const listContainer = document.getElementById('vehiclesList');
             if (!listContainer) return;
+            // Показываем загрузку
+            listContainer.innerHTML = '<div class="col-span-full text-center text-slate-500 py-12 flex flex-col items-center gap-3"><svg class="w-10 h-10 text-slate-700 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Загрузка данных...</div>';
 
             try {
                 const response = await fetch(`${SERVER_URL}/vehicles`);
@@ -165,7 +197,7 @@
                 document.getElementById('count').innerText = data.length;
                 
                 if(data.length === 0) {
-                    listContainer.innerHTML = `<div class="col-span-full text-center text-slate-500 py-8">В базе пока нет техники</div>`;
+                    listContainer.innerHTML = `<div class="col-span-full text-center text-slate-600 py-12 px-6 border-2 border-dashed border-slate-700 rounded-xl">В базе парка пока нет техники. <br> Используйте форму выше для добавления.</div>`;
                     return;
                 }
 
@@ -173,24 +205,27 @@
                     const insDate = new Date(v.insurance);
                     const inspDate = new Date(v.inspection);
                     const today = new Date();
-                    const insWarning = (insDate - today) / (1000 * 60 * 60 * 24) < 15 ? 'text-red-400 font-bold' : 'text-slate-300';
-                    const inspWarning = (inspDate - today) / (1000 * 60 * 60 * 24) < 15 ? 'text-red-400 font-bold' : 'text-slate-300';
+                    const diffIns = (insDate - today) / (1000 * 60 * 60 * 24);
+                    const diffInsp = (inspDate - today) / (1000 * 60 * 60 * 24);
+                    
+                    const insWarning = diffIns < 0 ? 'text-red-500 font-bold' : (diffIns < 15 ? 'text-red-400' : 'text-slate-300');
+                    const inspWarning = diffInsp < 0 ? 'text-red-500 font-bold' : (diffInsp < 15 ? 'text-red-400' : 'text-slate-300');
 
                     return `
-                        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-md flex flex-col justify-between">
+                        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col justify-between transition hover:border-slate-600 hover:shadow-xl active:scale-[0.98]">
                             <div>
-                                <div class="flex justify-between items-start mb-2">
-                                    <h3 class="font-bold text-white text-sm">${v.model}</h3>
-                                    <span class="bg-slate-900 border border-slate-600 text-[11px] text-slate-300 font-mono px-1.5 py-0.5 rounded">${v.plate}</span>
+                                <div class="flex justify-between items-start mb-3 gap-3">
+                                    <h3 class="font-bold text-white text-base leading-tight">${v.model}</h3>
+                                    <span class="bg-slate-900 border border-slate-600 text-xs text-slate-200 font-mono px-2 py-1 rounded-md shadow-inner">${v.plate}</span>
                                 </div>
-                                <div class="space-y-1 text-[11px] text-slate-400 pt-2 border-t border-slate-700/50">
+                                <div class="space-y-1.5 text-xs text-slate-400 pt-3 border-t border-slate-700/60">
                                     <div class="flex justify-between">
                                         <span>Страховка:</span>
-                                        <span class="${insWarning}">${insDate.toLocaleDateString('ru-RU')}</span>
+                                        <span class="${insWarning} font-medium">${insDate.toLocaleDateString('ru-RU')}</span>
                                     </div>
                                     <div class="flex justify-between">
                                         <span>Техосмотр:</span>
-                                        <span class="${inspWarning}">${inspDate.toLocaleDateString('ru-RU')}</span>
+                                        <span class="${inspWarning} font-medium">${inspDate.toLocaleDateString('ru-RU')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -198,12 +233,16 @@
                     `;
                 }).join('');
             } catch (error) {
-                listContainer.innerHTML = `<div class="col-span-full text-center text-red-400 py-8">Ошибка связи с сервером</div>`;
+                listContainer.innerHTML = `<div class="col-span-full text-center text-red-400 py-12 px-6 border border-red-500/30 bg-red-950/20 rounded-xl">⚠️ Ошибка связи с Python-сервером на Render. <br> Убедитесь, что сервер запущен.</div>`;
             }
         }
 
         async function saveVehicle(e) {
             e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = 'Сохранение...';
+            btn.disabled = true;
+
             const payload = {
                 model: document.getElementById('model').value,
                 plate: document.getElementById('plate').value,
@@ -219,27 +258,28 @@
                 });
                 if (response.ok) {
                     document.getElementById('vehicleForm').reset();
-                    loadVehicles();
+                    await loadVehicles();
                 } else {
                     alert('Ошибка сохранения');
                 }
             } catch (error) {
                 alert('Нет связи с сервером');
+            } finally {
+                btn.innerHTML = '💾 Сохранить транспорт в базу';
+                btn.disabled = false;
             }
         }
 
-        // Запуск системы при загрузке страницы
         window.addEventListener('DOMContentLoaded', () => {
             switchModule('dashboard');
         });
     </script>
 
-    <!-- Автообновление кэша (из прошлого шага) -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js').then(reg => {
-                    setInterval(() => { reg.update(); }, 1000 * 60 * 30); // проверка каждые 30 мин
+                    setInterval(() => { reg.update(); }, 1000 * 60 * 30);
                     reg.onupdatefound = () => {
                         const worker = reg.installing;
                         worker.onstatechange = () => {
