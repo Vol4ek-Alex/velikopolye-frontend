@@ -37,12 +37,10 @@
     <main id="moduleWorkspace" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full"></main>
 
     <script type="module">
-        // Инициализация БД в глобальной видимости
         const SUPABASE_URL = "https://eaiitxfoqlkmykyqqapg.supabase.co"; 
         const SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm"; 
         window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Список зарегистрированных модулей и пути к ним
         const APP_MODULES = [
             { id: 'dashboard', name: '🏠 Главная', file: './js/dashboard.js' },
             { id: 'fleet', name: '🚜 Автопарк', file: './js/fleet.js' }
@@ -50,7 +48,6 @@
 
         let currentModuleId = 'dashboard';
 
-        // Менеджер переключения (динамически подгружает файлы)
         window.switchModule = async (moduleId) => {
             currentModuleId = moduleId;
             renderMenu();
@@ -61,12 +58,9 @@
             const targetModule = APP_MODULES.find(m => m.id === moduleId);
             if (targetModule) {
                 try {
-                    // Трюк с ?v=Date.now() полностью убивает кэш для файлов модулей!
+                    // ?v=Date.now() + Service Worker гарантируют 100% свежий код модулей
                     const module = await import(`${targetModule.file}?v=${Date.now()}`);
-                    
-                    // Рендерим разметку модуля
                     workspace.innerHTML = module.template;
-                    // Запускаем логику модуля
                     if (module.init) module.init();
                 } catch (err) {
                     workspace.innerHTML = `<div class="text-red-500 p-4 bg-red-50 border rounded-xl">Ошибка загрузки файла модуля: ${err.message}</div>`;
@@ -91,17 +85,47 @@
             overlay.classList.toggle('hidden');
         };
 
-        // Логика PWA установки
+        // --- РЕГИСТРАЦИЯ SERVICE WORKER И КОНТРОЛЬ КЭША ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => {
+                        console.log('✅ Service Worker успешно запущен');
+                        
+                        // Проверяем обновления на сервере при каждом запуске
+                        reg.update();
+
+                        // Если найден новый sw.js, сообщаем пользователю и перезагружаем кэш
+                        reg.onupdatefound = () => {
+                            const installingWorker = reg.installing;
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('🔄 Вышло обновление системы! Перезагрузка...');
+                                    setTimeout(() => { window.location.reload(); }, 1000);
+                                }
+                            };
+                        };
+                    })
+                    .catch(err => console.error('❌ Ошибка SW:', err));
+            });
+        }
+
+        // --- ЛОГИКА PWA УСТАНОВКИ НА ТЕЛЕФОН / ПК ---
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); deferredPrompt = e;
+            e.preventDefault(); 
+            deferredPrompt = e;
             const btn = document.getElementById('pwaInstallBtn');
-            if (btn) btn.classList.remove('hidden');
+            if (btn) btn.classList.remove('hidden'); // Показываем кнопку установки в меню
         });
+
         window.installPWA = async () => {
-            if (!deferredPrompt) return; deferredPrompt.prompt();
+            if (!deferredPrompt) return; 
+            deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') document.getElementById('pwaInstallBtn').classList.add('hidden');
+            if (outcome === 'accepted') {
+                document.getElementById('pwaInstallBtn').classList.add('hidden');
+            }
             deferredPrompt = null;
         };
 
