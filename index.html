@@ -23,7 +23,7 @@
         
             <div class="space-y-3">
                 <input type="password" id="sitePinInput" inputmode="numeric" pattern="[0-9]*" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3.5 text-center font-mono text-xl tracking-widest text-gray-900 focus:outline-none focus:border-emerald-500 transition" placeholder="••••">
-                <button onclick="window.checkSiteAccess()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold transition shadow-md">
+                <button onclick="checkSiteAccess()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold transition shadow-md">
                     Войти
                 </button>
             </div>
@@ -39,7 +39,7 @@
                 <p class="text-[10px] text-gray-400 font-medium">ГП «Минсктранс»</p>
             </div>
         </div>
-        <button onclick="window.toggleMobileMenu()" class="text-gray-600 text-2xl">☰</button>
+        <button onclick="toggleMobileMenu()" class="text-gray-600 text-2xl">☰</button>
     </header>
 
     <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between p-4 transition-transform -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
@@ -56,14 +56,14 @@
         </div>
 
         <div class="space-y-3 border-t border-gray-100 pt-4">
-            <button id="pwaInstallBtn" onclick="window.installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
+            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
                 📱 Установить на телефон
             </button>
             <div class="text-xs text-gray-400 text-center">АРМ v1.0 • Модульный • @Vol4ek</div>
         </div>
     </aside>
 
-    <div id="menuOverlay" onclick="window.toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden"></div>
+    <div id="menuOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden"></div>
 
     <main id="moduleWorkspace" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full"></main>
 
@@ -73,30 +73,15 @@
         window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const APP_MODULES = [
-            { id: 'dashboard', name: '🏠 Главная', file: 'js/dashboard.js' },
-            { id: 'fleet', name: '🚜 Автопарк', file: 'js/fleet.js' }
+            { id: 'dashboard', name: '🏠 Главная', file: './js/dashboard.js' },
+            { id: 'fleet', name: '🚜 Автопарк', file: './js/fleet.js' }
         ];
 
         let currentModuleId = 'dashboard';
 
-        // ГЕНЕРАЦИЯ МЕНЮ (Функция вынесена в window для надежности)
-        window.renderMenu = () => {
-            const container = document.getElementById('menuContainer');
-            if (!container) return;
-            container.innerHTML = APP_MODULES.map(mod => {
-                const isActive = mod.id === currentModuleId;
-                const activeClasses = isActive 
-                    ? 'bg-emerald-50 text-emerald-700 font-semibold shadow-sm' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
-                
-                return `<button onclick="window.switchModule('${mod.id}'); if(window.innerWidth < 768) window.toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
-            }).join('');
-        };
-
-        // НАВИГАЦИЯ МЕЖДУ МОДУЛЯМИ
         window.switchModule = async (moduleId) => {
             currentModuleId = moduleId;
-            window.renderMenu();
+            renderMenu();
 
             const workspace = document.getElementById('moduleWorkspace');
             workspace.innerHTML = '<div class="text-center text-gray-400 py-12">Загрузка модуля...</div>';
@@ -104,11 +89,7 @@
             const targetModule = APP_MODULES.find(m => m.id === moduleId);
             if (targetModule) {
                 try {
-                    // Очищаем предыдущие интервалы обновления дашборда, чтобы они не копились
-                    if (window.dashIntervalId) {
-                        clearInterval(window.dashIntervalId);
-                    }
-                    
+                    // ?v=Date.now() + Service Worker гарантируют 100% свежий код модулей
                     const module = await import(`${targetModule.file}?v=${Date.now()}`);
                     workspace.innerHTML = module.template;
                     if (module.init) module.init();
@@ -118,23 +99,34 @@
             }
         };
 
-        // УПРАВЛЕНИЕ МОБИЛЬНЫМ МЕНЮ
+        function renderMenu() {
+            const container = document.getElementById('menuContainer');
+            if (!container) return;
+            container.innerHTML = APP_MODULES.map(mod => {
+                const isActive = mod.id === currentModuleId;
+                const activeClasses = isActive ? 'bg-emerald-50 text-emerald-700 font-semibold shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
+                return `<button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
+            }).join('');
+        }
+
         window.toggleMobileMenu = () => {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('menuOverlay');
-            if (sidebar && overlay) {
-                sidebar.classList.toggle('-translate-x-full');
-                overlay.classList.toggle('hidden');
-            }
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
         };
 
-        // --- РЕГИСТРАЦИЯ SERVICE WORKER ---
+        // --- РЕГИСТРАЦИЯ SERVICE WORKER И КОНТРОЛЬ КЭША ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => {
                         console.log('✅ Service Worker успешно запущен');
+                        
+                        // Проверяем обновления на сервере при каждом запуске
                         reg.update();
+
+                        // Если найден новый sw.js, сообщаем пользователю и перезагружаем кэш
                         reg.onupdatefound = () => {
                             const installingWorker = reg.installing;
                             installingWorker.onstatechange = () => {
@@ -149,13 +141,13 @@
             });
         }
 
-        // --- ЛОГИКА PWA УСТАНОВКИ ---
+        // --- ЛОГИКА PWA УСТАНОВКИ НА ТЕЛЕФОН / ПК ---
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); 
             deferredPrompt = e;
             const btn = document.getElementById('pwaInstallBtn');
-            if (btn) btn.classList.remove('hidden'); 
+            if (btn) btn.classList.remove('hidden'); // Показываем кнопку установки в меню
         });
 
         window.installPWA = async () => {
@@ -169,14 +161,16 @@
         };
 
         // --- ГЛОБАЛЬНАЯ ЗАЩИТА САЙТА ---
-        const SITE_PIN = "7777"; 
+        const SITE_PIN = "7777"; // 💡 ЗАДАТЬ СВОЙ ПИН-КОД ЗДЕСЬ
 
         window.checkSiteAccess = () => {
             const input = document.getElementById('sitePinInput');
             const error = document.getElementById('authErrorMsg');
             
             if (input && input.value === SITE_PIN) {
+                // Запоминаем успешный вход в браузере
                 localStorage.setItem('site_access_granted', 'true');
+                // Скрываем экран блокировки
                 document.getElementById('siteAuthOverlay').classList.add('hidden');
             } else {
                 if (error) error.classList.remove('hidden');
@@ -184,23 +178,20 @@
             }
         };
 
-        window.verifySession = () => {
+        // Функция автоматической проверки при загрузке страницы
+        function verifySession() {
             const overlay = document.getElementById('siteAuthOverlay');
             if (localStorage.getItem('site_access_granted') === 'true') {
                 if (overlay) overlay.classList.add('hidden');
             } else {
                 if (overlay) overlay.classList.remove('hidden');
             }
-        };
+        }
 
-        // БЕЗОПАСНЫЙ ЗАПУСК С ОЧЕРЕДНОСТЬЮ
-        window.verifySession();
-        window.renderMenu(); 
-        
-        // Переключаем модуль сразу после отрисовки каркаса
-        setTimeout(() => {
-            window.switchModule('dashboard');
-        }, 50);
+        document.addEventListener('DOMContentLoaded', () => {
+            verifySession(); // Перекрываем сайт до проверки ПИН-кода
+            switchModule('dashboard');
+        });
     </script>
 </body>
 </html>
