@@ -5,90 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>АРМ «Великополье»</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json">
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen">
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col md:flex-row">
 
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <span>🚜</span> СХК «Великополье»
-            </h1>
-            <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-xl transition shadow-sm">
-                ➕ Добавить технику
-            </button>
-        </div>
+    <header class="md:hidden bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
+        <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2">🚜 Великополье</h1>
+        <button onclick="toggleMobileMenu()" class="text-gray-600 text-2xl">☰</button>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
-        
-        <div class="mb-6 flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-gray-700">Техника в парке (<span id="count">3</span>)</h2>
+    <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between p-4 transition-transform -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
+        <div>
+            <div class="hidden md:flex items-center gap-2 mb-8 px-2">
+                <span class="text-2xl">🚜</span>
+                <h1 class="text-xl font-bold text-gray-800">Великополье</h1>
+            </div>
+            <nav id="menuContainer" class="space-y-1"></nav>
         </div>
 
-        <div id="fleetGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            
-            <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
-                <div class="flex justify-between items-start mb-3">
-                    <h3 class="font-bold text-lg text-gray-800">МТЗ-82.1</h3>
-                    <button onclick="alert('Редактирование')" class="text-gray-400 hover:text-emerald-600 transition text-sm">✏️</button>
-                </div>
-                <p class="text-gray-600 text-sm">Госномер: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-800 font-semibold">1234 AB-7</span></p>
-            </div>
-
-            <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
-                <div class="flex justify-between items-start mb-3">
-                    <h3 class="font-bold text-lg text-gray-800">К744-Р Кировец</h3>
-                    <button onclick="alert('Редактирование')" class="text-gray-400 hover:text-emerald-600 transition text-sm">✏️</button>
-                </div>
-                <p class="text-gray-600 text-sm">Госномер: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-800 font-semibold">5678 CD-7</span></p>
-            </div>
-
-            <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
-                <div class="flex justify-between items-start mb-3">
-                    <h3 class="font-bold text-lg text-gray-800">Полесье GS12</h3>
-                    <button onclick="alert('Редактирование')" class="text-gray-400 hover:text-emerald-600 transition text-sm">✏️</button>
-                </div>
-                <p class="text-gray-600 text-sm">Госномер: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-800 font-semibold">9012 EF-7</span></p>
-            </div>
-
+        <div class="space-y-3 border-t border-gray-100 pt-4">
+            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
+                📱 Установить на телефон
+            </button>
+            <div class="text-xs text-gray-400 text-center">АРМ v4.0 • Модульный</div>
         </div>
-    </main>
+    </aside>
 
-    <div id="vehicleModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white border border-gray-100 p-6 rounded-2xl w-full max-w-md shadow-xl">
-            <h3 class="text-xl font-bold mb-4 text-gray-800">Добавить технику</h3>
-            
-            <form onsubmit="event.preventDefault(); closeModal();">
-                <div class="mb-4">
-                    <label class="block text-gray-600 text-sm font-medium mb-1">Марка / Модель</label>
-                    <input type="text" required class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-900 focus:outline-none focus:border-emerald-500 transition" placeholder="Например, МТЗ-82">
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-gray-600 text-sm font-medium mb-1">Госномер</label>
-                    <input type="text" required class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-900 focus:outline-none focus:border-emerald-500 transition" placeholder="Например, 1234 АВ-7">
-                </div>
-                
-                <div class="flex gap-3">
-                    <button type="button" onclick="closeModal()" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-medium transition">Отмена</button>
-                    <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition shadow-sm">Сохранить</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <div id="menuOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden"></div>
 
-    <script>
-        function openModal() {
-            const modal = document.getElementById('vehicleModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+    <main id="moduleWorkspace" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full"></main>
+
+    <script type="module">
+        // Инициализация БД в глобальной видимости
+        const SUPABASE_URL = "https://eaiitxfoqlkmykyqqapg.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm"; 
+        window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Список зарегистрированных модулей и пути к ним
+        const APP_MODULES = [
+            { id: 'dashboard', name: '🏠 Главная', file: './js/dashboard.js' },
+            { id: 'fleet', name: '🚜 Автопарк', file: './js/fleet.js' }
+        ];
+
+        let currentModuleId = 'dashboard';
+
+        // Менеджер переключения (динамически подгружает файлы)
+        window.switchModule = async (moduleId) => {
+            currentModuleId = moduleId;
+            renderMenu();
+
+            const workspace = document.getElementById('moduleWorkspace');
+            workspace.innerHTML = '<div class="text-center text-gray-400 py-12">Загрузка модуля...</div>';
+
+            const targetModule = APP_MODULES.find(m => m.id === moduleId);
+            if (targetModule) {
+                try {
+                    // Трюк с ?v=Date.now() полностью убивает кэш для файлов модулей!
+                    const module = await import(`${targetModule.file}?v=${Date.now()}`);
+                    
+                    // Рендерим разметку модуля
+                    workspace.innerHTML = module.template;
+                    // Запускаем логику модуля
+                    if (module.init) module.init();
+                } catch (err) {
+                    workspace.innerHTML = `<div class="text-red-500 p-4 bg-red-50 border rounded-xl">Ошибка загрузки файла модуля: ${err.message}</div>`;
+                }
+            }
+        };
+
+        function renderMenu() {
+            const container = document.getElementById('menuContainer');
+            if (!container) return;
+            container.innerHTML = APP_MODULES.map(mod => {
+                const isActive = mod.id === currentModuleId;
+                const activeClasses = isActive ? 'bg-emerald-50 text-emerald-700 font-semibold shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
+                return `<button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
+            }).join('');
         }
 
-        function closeModal() {
-            const modal = document.getElementById('vehicleModal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
+        window.toggleMobileMenu = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('menuOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        };
+
+        // Логика PWA установки
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e;
+            const btn = document.getElementById('pwaInstallBtn');
+            if (btn) btn.classList.remove('hidden');
+        });
+        window.installPWA = async () => {
+            if (!deferredPrompt) return; deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') document.getElementById('pwaInstallBtn').classList.add('hidden');
+            deferredPrompt = null;
+        };
+
+        document.addEventListener('DOMContentLoaded', () => switchModule('dashboard'));
     </script>
 </body>
 </html>
