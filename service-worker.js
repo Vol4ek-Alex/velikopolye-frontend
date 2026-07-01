@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arm-v8'; // Меняем на v4, чтобы сбросить текущий затык
+const CACHE_NAME = 'arm-v9'; // Меняем на v4, чтобы сбросить текущий затык
 const urlsToCache = [
   '/',
   '/index.html',
