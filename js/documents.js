@@ -113,6 +113,26 @@ async function loadDocs() {
     }
 }
 
+async function loadDocs() {
+    try {
+        // Проверяем, подключена ли таблица в Supabase
+        const { data, error } = await window._supabase
+            .from('doc_registry')
+            .select('*')
+            .order('doc_date', { ascending: false });
+            
+        if (error) throw error;
+        documents = data || [];
+    } catch (err) {
+        console.error("Ошибка загрузки документов из Supabase:", err.message);
+        // Если таблицы еще нет или она пустая — делаем пустой массив, чтобы АРМ не зависало
+        documents = [];
+    } finally {
+        // В любом случае принудительно запускаем отрисовку, чтобы убрать надпись "Загрузка..."
+        renderDocs();
+    }
+}
+
 function renderDocs() {
     const tbody = document.getElementById('docTableBody');
     if (!tbody) return;
@@ -120,16 +140,28 @@ function renderDocs() {
     const filtered = documents.filter(d => d.direction === currentFilter);
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-10">Документов в этой папке не найдено</td></tr>`;
+        let msg = currentFilter === 'incoming' 
+            ? '📥 Нет входящих писем. Зарегистрируйте первое!' 
+            : '📤 Нет исходящих писем / служебных записок.';
+            
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-gray-400 py-10 font-medium bg-gray-50/30">
+                    ${msg}
+                </td>
+            </tr>
+        `;
         return;
     }
 
     tbody.innerHTML = filtered.map(d => `
         <tr class="hover:bg-gray-50/50 transition">
-            <td class="p-4 font-mono font-bold text-gray-900">${d.doc_number}</td>
-            <td class="p-4 font-semibold text-gray-700 truncate max-w-[180px]">${d.company}</td>
-            <td class="p-4 text-gray-600 font-medium">${d.subject}</td>
-            <td class="p-4 text-right text-gray-400 text-xs font-medium">${new Date(d.doc_date).toLocaleDateString('ru-RU')}</td>
+            <td class="p-4 font-mono font-bold text-gray-900">${d.doc_number || '—'}</td>
+            <td class="p-4 font-semibold text-gray-700 truncate max-w-[180px]">${d.company || '—'}</td>
+            <td class="p-4 text-gray-600 font-medium">${d.subject || '(Без темы)'}</td>
+            <td class="p-4 text-right text-gray-400 text-xs font-medium">
+                ${d.doc_date ? new Date(d.doc_date).toLocaleDateString('ru-RU') : '—'}
+            </td>
         </tr>
     `).join('');
 }
