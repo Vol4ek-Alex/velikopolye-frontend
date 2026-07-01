@@ -83,14 +83,22 @@ async function loadFleetData() {
 }
 
 function openVehicleModal(id = '', model = '', plate = '') {
+    // 1. Записываем ID (скрытое поле) и модель
     document.getElementById('vehicleId').value = id;
     document.getElementById('modalModel').value = model;
-    document.getElementById('vehiclePlate' ? 'vehiclePlate' : 'modalPlate').value = plate;
+    
+    // 2. Исправленная строка: ищем строго по существующему ID 'modalPlate'
+    document.getElementById('modalPlate').value = plate;
+    
+    // 3. Меняем заголовок модалки в зависимости от действия
     document.getElementById('modalTitle').innerText = id ? 'Редактировать технику' : 'Добавить технику';
     
+    // 4. Показываем окно
     const modal = document.getElementById('vehicleModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 }
 
 function closeVehicleModal() {
