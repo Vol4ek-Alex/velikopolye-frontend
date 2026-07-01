@@ -1,6 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
         
         export async function loadVehicles() {
+            console.log("Запуск loadVehicles...");
             const listContainer = document.getElementById('vehiclesList');
             if (!listContainer) return;
 
