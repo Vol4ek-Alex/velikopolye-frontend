@@ -74,100 +74,83 @@ export const template = `
     </div>
 `;
 
-let refreshIntervalId = null;
-
 export async function init() {
     await loadDashboardData();
-    if (refreshIntervalId) clearInterval(refreshIntervalId);
-    refreshIntervalId = setInterval(loadDashboardData, 5000);
+    // Обновление раз в 5 секунд
+    window.dashIntervalId = setInterval(loadDashboardData, 5000);
 }
 
 async function loadDashboardData() {
     if (!window._supabase) return;
     try {
-        const [vehiclesRes, tasksRes] = await Promise.all([
-            window._supabase.from('vehicles').select('*'),
-            window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false)
-        ]);
+        let { data: vehicles, error: vErr } = await window._supabase.from('vehicles').select('*');
+        let { data: tasks, error: tErr } = await window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false);
 
-        if (vehiclesRes.error) throw vehiclesRes.error;
-        
-        const vehiclesList = vehiclesRes.data || [];
-        const activeTasks = tasksRes.data || [];
+        if (vErr || tErr) return;
 
-        renderStats(vehiclesList);
-        renderSeparatedAlerts(vehiclesList, activeTasks);
-    } catch (err) {
-        console.error("Ошибка Dashboard:", err.message);
+        // Наполняем глобальный кэш
+        window.globalVehicles = vehicles || [];
+        window.globalTasks = tasks || [];
+
+        renderCounters();
+        renderSeparatedAlerts();
+
+    } catch (e) {
+        console.error("Ошибка обновления дашборда:", e);
     }
 }
 
-function renderStats(list) {
-    // 1. Всего техники
-    document.getElementById('dashTotal').innerText = list.length;
+function renderCounters() {
+    const list = window.globalVehicles;
     
-    // 2. Готовы к работе (проверяем тег)
-    document.getElementById('dashReady').innerText = list.filter(v => v.tags && v.tags.includes('Готов')).length;
-    
-    // 3. На хранении (новый счетчик)
-    document.getElementById('dashStorage').innerText = list.filter(v => v.tags && v.tags.includes('На хранении')).length;
-    
-    // 4. В ремонте
-    document.getElementById('dashInRepair').innerText = list.filter(v => v.tags && v.tags.includes('В ремонте')).length;
+    const total = list.length;
+    const ready = list.filter(v => (v.status || '').toLowerCase() === 'готово').length;
+    const storage = list.filter(v => (v.status || '').toLowerCase() === 'хранение').length;
+    const repair = list.filter(v => (v.status || '').toLowerCase() === 'ремонт').length;
+
+    const tEl = document.getElementById('dashTotal');
+    const rEl = document.getElementById('dashReady');
+    const sEl = document.getElementById('dashStorage');
+    const repEl = document.getElementById('dashInRepair');
+
+    if (tEl) tEl.innerText = total;
+    if (rEl) rEl.innerText = ready;
+    if (sEl) sEl.innerText = storage;
+    if (repEl) repEl.innerText = repair;
 }
 
-function renderSeparatedAlerts(list, activeTasks) {
-    const today = new Date();
-    const plateMap = {};
-    list.forEach(v => {
-        plateMap[v.id] = v.plate ? `[${v.plate}]` : '[б/н]';
-    });
+function renderSeparatedAlerts() {
+    const listVehicles = window.globalVehicles;
+    const listTasks = window.globalTasks;
 
-    // 1. ЗАДАЧИ
+    // 1. АКТИВНЫЕ ЗАДАЧИ
     const containerTasks = document.getElementById('containerTasks');
     if (containerTasks) {
-        if (activeTasks.length === 0) {
-            containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет active задач по ремонту</div>`;
+        if (listTasks.length === 0) {
+            containerTasks.innerHTML = `<div class="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/50 text-emerald-950 dark:text-emerald-400 p-3 rounded-lg text-center text-[11px] font-bold">Все текущие ремонты завершены!</div>`;
         } else {
-            containerTasks.innerHTML = activeTasks.map(task => {
-                const plateStr = plateMap[task.vehicle_id] || '';
+            containerTasks.innerHTML = listTasks.map(t => {
                 return `
-                    <div class="p-2.5 bg-amber-50 border-2 border-amber-400 text-gray-950 font-bold rounded-lg text-[11px] shadow-2xs">
-                        <b>${task.vehicle_name || 'Техника'}</b> <span class="text-gray-600 font-mono font-medium">${plateStr}</span>:<br>
-                        <span class="text-amber-950 font-medium mt-0.5 block">${task.text}</span>
+                    <div class="p-2.5 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-400 dark:border-amber-600/40 rounded-lg text-[11px] text-gray-950 dark:text-amber-100 font-bold flex flex-col gap-1">
+                        <div class="flex items-center justify-between text-[10px] text-amber-900 dark:text-amber-400 border-b border-amber-200 dark:border-amber-800 pb-1">
+                            <span>🛠️ ${t.vehicle_name || 'Техника'}</span>
+                        </div>
+                        <div class="pt-0.5 text-gray-900 dark:text-amber-200 font-medium">${t.text}</div>
                     </div>
                 `;
             }).join('');
         }
     }
 
+    // Сборщики алертов для окон 2 и 3
     const warrantyAlerts = [];
     const docAlerts = [];
 
-    list.forEach(v => {
-        const plateStr = v.plate ? ` [${v.plate}]` : ' [б/н]';
+    const now = new Date();
 
-        // Проверка Гостехосмотра
-        if (v.inspection_date) {
-            const diff = Math.ceil((new Date(v.inspection_date) - today) / (1000 * 60 * 60 * 24));
-            if (diff <= 0) {
-                docAlerts.push({ isCritical: true, text: `🛑 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Просрочен Гостехосмотр!</span>` });
-            } else if (diff <= 30) {
-                docAlerts.push({ isCritical: false, text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Техосмотр истекает через <b>${diff} дн.</b>` });
-            }
-        }
+    listVehicles.forEach(v => {
+        const plateStr = v.plate ? ` [${v.plate}]` : '';
 
-        // Проверка Страховки
-        if (v.insurance_date) {
-            const diffIns = Math.ceil((new Date(v.insurance_date) - today) / (1000 * 60 * 60 * 24));
-            if (diffIns <= 0) {
-                docAlerts.push({ isCritical: true, text: `🛑 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Закончилась страховка!</span>` });
-            } else if (diffIns <= 30) {
-                docAlerts.push({ isCritical: false, text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Страховка истекает через <b>${diffIns} дн.</b>` });
-            }
-        }
-
-        // Проверка Гарантии
         // Проверка Гарантии
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         if (vehicleTagsArray.includes('Гарантия')) {
@@ -178,35 +161,61 @@ function renderSeparatedAlerts(list, activeTasks) {
             const hoursLeft = nextTO - hours;
 
             // Определяем тип ТО в зависимости от целевой наработки
-            let toType = "(ТО-1)"; // По умолчанию для x125, x375, x625, x875
+            let toType = "(ТО-1)"; 
             
             if (nextTO % 1000 === 0) {
                 toType = "(ТО-3)";
-            } else if (nextTO % 250 === 0) { // Сюда же автоматически попадает и кратность 500
+            } else if (nextTO % 250 === 0) { 
                 toType = "(ТО-2)";
             }
 
             // Формируем текст уведомления с новым обозначением
             if (hoursLeft <= 30) {
-                warrantyAlerts.push({ status: 'danger', text: `🚨 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Срочно ТО-${nextTO} ${toType}!</span> Осталось <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ status: 'danger', text: `🚨 <b>${v.model}</b><span class="font-mono text-gray-700 dark:text-gray-400">${plateStr}</span>:<br><span class="text-red-700 dark:text-red-400 font-black">Срочно ТО-${nextTO} ${toType}!</span> Осталось <b>${hoursLeft} м/ч</b>.` });
             } else if (hoursLeft <= 60) {
-                warrantyAlerts.push({ status: 'warning', text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Приближается ТО-${nextTO} ${toType}. Осталось <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ status: 'warning', text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700 dark:text-gray-400">${plateStr}</span>:<br>Приближается ТО-${nextTO} ${toType}. Осталось <b>${hoursLeft} м/ч</b>.` });
             } else {
-                warrantyAlerts.push({ status: 'info', text: `⚙️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Наработка ${hours} м/ч. До ТО-${nextTO} ${toType} ещё <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ status: 'info', text: `⚙️ <b>${v.model}</b><span class="font-mono text-gray-700 dark:text-gray-400">${plateStr}</span>:<br>Наработка ${hours} м/ч. До ТО-${nextTO} ${toType} ещё <b>${hoursLeft} м/ч</b>.` });
+            }
+        }
+
+        // Проверка Техосмотра (Гостехосмотр)
+        if (v.inspection_to) {
+            const inspDate = new Date(v.inspection_to);
+            const diffTime = inspDate - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays <= 0) {
+                docAlerts.push({ status: 'danger', text: `❌ <b>${v.model}</b> ${plateStr}: <span class="text-red-700 dark:text-red-400 font-bold">Техосмотр ИСТЕК!</span> (${v.inspection_to})` });
+            } else if (diffDays <= 15) {
+                docAlerts.push({ status: 'warning', text: `⏳ <b>${v.model}</b> ${plateStr}: ТО заканчивается через <b>${diffDays} дн.</b> (${v.inspection_to})` });
+            }
+        }
+
+        // Проверка Страховки
+        if (v.insurance_to) {
+            const insDate = new Date(v.insurance_to);
+            const diffTime = insDate - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays <= 0) {
+                docAlerts.push({ status: 'danger', text: `❌ <b>${v.model}</b> ${plateStr}: <span class="text-red-700 dark:text-red-400 font-bold">Страховка ИСТЕКЛА!</span> (${v.insurance_to})` });
+            } else if (diffDays <= 15) {
+                docAlerts.push({ status: 'warning', text: `⏳ <b>${v.model}</b> ${plateStr}: Страховка заканчивается через <b>${diffDays} дн.</b> (${v.insurance_to})` });
             }
         }
     });
 
-    // 2. ГАРАНТИЯ
+    // 2. РЕНДЕР ГАРАНТИИ
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
-            containerWarranty.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет гарантийной техники на контроле</div>`;
+            containerWarranty.innerHTML = `<div class="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/50 text-emerald-950 dark:text-emerald-400 p-3 rounded-lg text-center text-[11px] font-bold">Нет гарантийной техники на контроле</div>`;
         } else {
             containerWarranty.innerHTML = warrantyAlerts.map(a => {
-                let c = "bg-blue-50 border-blue-300 text-blue-950 font-medium";
-                if (a.status === 'danger') c = "bg-red-50 border-red-300 text-red-950 font-bold";
-                if (a.status === 'warning') c = "bg-amber-50 border-amber-300 text-amber-950 font-medium";
+                let c = "bg-blue-50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-900/50 text-blue-950 dark:text-blue-300 font-medium";
+                if (a.status === 'danger') c = "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-900/50 text-red-950 dark:text-red-200 font-bold";
+                if (a.status === 'warning') c = "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/50 text-amber-950 dark:text-amber-200 font-medium";
                 return `<div class="p-2.5 border rounded-lg text-[11px] ${c}">${a.text}</div>`;
             }).join('');
         }
@@ -216,10 +225,11 @@ function renderSeparatedAlerts(list, activeTasks) {
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
         if (docAlerts.length === 0) {
-            containerDocs.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-900 p-3 rounded-lg text-center text-[11px] font-bold">Все документы в полном порядке!</div>`;
+            containerDocs.innerHTML = `<div class="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/50 text-emerald-900 dark:text-emerald-400 p-3 rounded-lg text-center text-[11px] font-bold">Все документы в полном порядке!</div>`;
         } else {
             containerDocs.innerHTML = docAlerts.map(a => {
-                const c = a.isCritical ? "bg-red-50 border-red-300 text-red-950 font-bold" : "bg-amber-50 border-amber-300 text-amber-950 font-medium";
+                let c = "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/50 text-amber-950 dark:text-amber-200 font-medium";
+                if (a.status === 'danger') c = "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-900/50 text-red-950 dark:text-red-200 font-bold";
                 return `<div class="p-2.5 border rounded-lg text-[11px] ${c}">${a.text}</div>`;
             }).join('');
         }
