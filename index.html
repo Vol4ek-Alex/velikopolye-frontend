@@ -114,7 +114,9 @@
             container.innerHTML = APP_MODULES.map(mod => {
                 const isActive = mod.id === currentModuleId;
                 // Добавлена поддержка темной темы в генерацию стилей кнопок меню:
-                const activeClasses = isActive ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100';
+                const activeClasses = isActive 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold shadow-sm' 
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100';
                 return `<button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
             }).join('');
         }
