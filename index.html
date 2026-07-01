@@ -4,118 +4,158 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>АРМ «Великополье»</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="manifest.json">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style>
-        body { background-color: #111827; color: #F9FAFB; }
-    </style>
 </head>
-<body class="font-sans min-h-screen flex flex-col">
+<body class="bg-slate-900 text-slate-100 font-sans antialiased">
 
-    <header class="bg-[#0B0F19] border-b border-[#374151] px-4 py-3 flex justify-between items-center">
-        <h1 id="app-title" class="text-lg font-bold text-white">СХК «Великополье»</h1>
-        <button onclick="loadModules()" class="text-sm text-[#9CA3AF] active:text-white">🔄 Обновить</button>
+    <!-- Шапка -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                🚜 СХК «Великополье» <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30">Парк Техники</span>
+            </h1>
+            <button onclick="loadVehicles()" class="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                🔄 Обновить
+            </button>
+        </div>
     </header>
 
-    <main class="flex-1 flex flex-col md:flex-row">
-        <div id="sidebar" class="bg-[#0B0F19] p-4 space-y-2 md:w-64 border-r border-[#374151]">
-            <p class="text-xs text-[#9CA3AF] font-semibold uppercase tracking-wider mb-2">Модули АРМ</p>
-            <div id="modules-menu" class="space-y-1"></div>
-        </div>
+    <!-- Основной контейнер -->
+    <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Форма добавления/редактирования -->
+        <section class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg h-fit">
+            <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2 border-b border-slate-700 pb-2">
+                📝 Регистрация транспорта
+            </h2>
+            <form id="vehicleForm" onsubmit="saveVehicle(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Название / Модель</label>
+                    <input type="text" id="model" required placeholder="например, Кировец К-7М" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Гос. номер</label>
+                    <input type="text" id="plate" required placeholder="например, 1234 АБ-7" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Окончание Страховки</label>
+                        <input type="date" id="insurance" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Окончание Техосмотра</label>
+                        <input type="date" id="inspection" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition mt-2 shadow-lg shadow-blue-600/20">
+                    💾 Сохранить в базу
+                </button>
+            </form>
+        </section>
 
-        <div class="flex-1 p-4">
-            <div id="module-card" class="bg-[#1F2937] border border-[#374151] rounded-lg p-5 shadow-xl hidden">
-                <h2 id="module-name" class="text-xl font-bold text-white mb-4">Выберите раздел</h2>
-                <div id="module-content" class="space-y-4"></div>
+        <!-- Список техники -->
+        <section class="md:col-span-2 space-y-4">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2 border-b border-slate-700 pb-2">
+                📋 Список автопарка (<span id="count">0</span>)
+            </h2>
+            <div id="vehiclesList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Карточки техники будут загружаться сюда -->
+                <div class="col-span-full text-center text-slate-500 py-8">Загрузка данных...</div>
             </div>
-        </div>
+        </section>
+
     </main>
 
     <script>
-        // Сюда потом вставишь адрес от Render
-        const SERVER_URL = 'https://velikopolye-backend.onrender.com'; 
-        let currentInputs = {};
+        // Вставь сюда точный URL твоего бекенда с Render
+        const SERVER_URL = 'https://velikopolye-backend.onrender.com';
 
-        async function loadModules() {
+        // Функция загрузки списка техники
+        async function loadVehicles() {
             try {
-                const res = await fetch(`${SERVER_URL}/api/modules`);
-                const modules = await res.json();
-                const menuContainer = document.getElementById('modules-menu');
-                menuContainer.innerHTML = '';
+                const response = await fetch(`${SERVER_URL}/vehicles`);
+                const data = await response.json();
+                const container = document.getElementById('vehiclesList');
+                document.getElementById('count').innerText = data.length;
+                
+                if(data.length === 0) {
+                    container.innerHTML = `<div class="col-span-full text-center text-slate-500 py-8">В базе пока нет техники</div>`;
+                    return;
+                }
 
-                Object.entries(modules).forEach(([id, title]) => {
-                    const btn = document.createElement('button');
-                    btn.className = "w-full text-left px-3 py-3 rounded text-[#9CA3AF] hover:bg-[#1F2937] hover:text-white active:bg-[#3B82F6] transition font-medium text-sm";
-                    btn.innerText = title;
-                    btn.onclick = () => openModule(id);
-                    menuContainer.appendChild(btn);
-                });
-            } catch (err) {
-                alert('Ошибка соединения с сервером АРМ');
+                container.innerHTML = data.map(v => {
+                    const insDate = new Date(v.insurance);
+                    const inspDate = new Date(v.inspection);
+                    const today = new Date();
+                    
+                    // Подсветка если до конца осталось меньше 15 дней
+                    const insWarning = (insDate - today) / (1000 * 60 * 60 * 24) < 15 ? 'text-red-400 font-bold' : 'text-slate-300';
+                    const inspWarning = (inspDate - today) / (1000 * 60 * 60 * 24) < 15 ? 'text-red-400 font-bold' : 'text-slate-300';
+
+                    return `
+                        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-md flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="font-bold text-white text-base">${v.model}</h3>
+                                    <span class="bg-slate-900 border border-slate-600 text-xs text-slate-300 font-mono px-2 py-0.5 rounded">${v.plate}</span>
+                                </div>
+                                <div class="space-y-1.5 text-xs text-slate-400 pt-2 border-t border-slate-700/50">
+                                    <div class="flex justify-between">
+                                        <span>Страховка до:</span>
+                                        <span class="${insWarning}">${insDate.toLocaleDateString('ru-RU')}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Техосмотр до:</span>
+                                        <span class="${inspWarning}">${inspDate.toLocaleDateString('ru-RU')}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error(error);
+                document.getElementById('vehiclesList').innerHTML = `<div class="col-span-full text-center text-red-400 py-8">Ошибка связи с сервером</div>`;
             }
         }
 
-        async function openModule(id) {
-            const res = await fetch(`${SERVER_URL}/api/module/${id}`);
-            const moduleData = await res.json();
-            
-            document.getElementById('module-name').innerText = moduleData.title;
-            const content = document.getElementById('module-content');
-            content.innerHTML = '';
-            currentInputs = {};
+        // Функция отправки новой техники на сервер
+        async function saveVehicle(e) {
+            e.preventDefault();
+            const payload = {
+                model: document.getElementById('model').value,
+                plate: document.getElementById('plate').value,
+                insurance: document.getElementById('insurance').value,
+                inspection: document.getElementById('inspection').value
+            };
 
-            moduleData.schema.forEach(elem => {
-                if (elem.type === 'label') {
-                    const p = document.createElement('p');
-                    p.className = "text-sm text-[#9CA3AF]";
-                    p.innerText = elem.text;
-                    content.appendChild(p);
-                } 
-                else if (elem.type === 'input') {
-                    const div = document.createElement('div');
-                    div.className = "flex flex-col space-y-1";
-                    div.innerHTML = `
-                        <label class="text-xs text-[#9CA3AF] font-bold">${elem.label}</label>
-                        <input type="text" id="${elem.id}" placeholder="${elem.placeholder}" 
-                               class="bg-[#111827] border border-[#374151] rounded px-3 py-2 text-white focus:outline-none focus:border-[#3B82F6]">
-                    `;
-                    content.appendChild(div);
-                } 
-                else if (elem.type === 'button') {
-                    const btn = document.createElement('button');
-                    btn.className = "w-full bg-[#3B82F6] text-white py-2.5 rounded font-bold hover:bg-blue-600 active:scale-95 transition text-sm shadow-lg";
-                    btn.innerText = elem.text;
-                    btn.onclick = () => sendAction(elem.action_id, moduleData.schema);
-                    content.appendChild(btn);
+            try {
+                const response = await fetch(`${SERVER_URL}/vehicles`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    document.getElementById('vehicleForm').reset();
+                    loadVehicles();
+                } else {
+                    alert('Ошибка при сохранении данных');
                 }
-            });
-
-            document.getElementById('module-card').classList.remove('hidden');
+            } catch (error) {
+                alert('Не удалось связаться с сервером');
+            }
         }
 
-        async function sendAction(actionId, schema) {
-            const payload = {};
-            schema.forEach(elem => {
-                if (elem.type === 'input') {
-                    const inputEl = document.getElementById(elem.id);
-                    if (inputEl) payload[elem.id] = inputEl.value;
-                }
-            });
-
-            const res = await fetch(`${SERVER_URL}/api/action/${actionId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const result = await res.json();
-            alert(result.message);
-        }
-
-        loadModules();
+        // Автозагрузка при старте страницы
+        window.addEventListener('DOMContentLoaded', loadVehicles);
     </script>
+
+    <!-- Регистрация Service Worker для PWA -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
