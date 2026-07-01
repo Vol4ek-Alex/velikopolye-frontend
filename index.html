@@ -6,7 +6,7 @@
     <title>АРМ «Великополье»</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json"></link>
 </head>
 <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col md:flex-row">
 
@@ -17,193 +17,122 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ф-л СХК «Великополье»</p>
-                <h2 class="text-xl font-black text-gray-800">Вход в систему АРМ</h2>
-                <p class="text-xs text-gray-400 mt-1">Для доступа к панели управления введите ПИН-код</p>
+                <h3 class="text-xl font-black text-gray-900 tracking-tight">Авторизация в системе</h3>
+                <p class="text-xs text-gray-500 font-medium mt-1">Доступ только для сотрудников предприятия</p>
             </div>
-        
-            <div class="space-y-3">
-                <input type="password" id="sitePinInput" inputmode="numeric" pattern="[0-9]*" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3.5 text-center font-mono text-xl tracking-widest text-gray-900 focus:outline-none focus:border-emerald-500 transition" placeholder="••••">
-                <button onclick="checkSiteAccess()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold transition shadow-md">
-                    Войти
-                </button>
+            <div class="space-y-2">
+                <input type="password" id="sitePinInput" maxlength="4" placeholder="Введите ПИН-код" 
+                       class="w-full text-center tracking-[0.5em] text-xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-emerald-600 transition">
+                <p id="authErrorMsg" class="text-red-600 text-xs font-bold hidden">❌ Неверный ПИН-код доступа</p>
             </div>
-            <p id="authErrorMsg" class="text-xs font-semibold text-red-600 hidden">❌ Неверный ПИН-код! Доступ ограничен.</p>
+            <button onclick="window.checkSiteAccess()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-xl transition shadow-md">
+                Войти в АРМ
+            </button>
         </div>
     </div>
 
-    <header class="md:hidden bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
-        <div>
-            <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ф-л СХК «Великополье»</p>
-            <h1 class="text-lg font-black text-gray-900 tracking-tight leading-tight">«Великополье»</h1>
-            <p class="text-[10px] text-gray-500 font-medium mt-0.5">ГП «Минсктранс»</p>
-        </div>
-        <div class="mt-4 flex items-center justify-between bg-gray-100 dark:bg-gray-800/60 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
-            <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Режим экрана</span>
-            <button onclick="window.toggleDarkMode()" id="themeBtn" class="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-yellow-400 transition shadow-xs text-sm flex items-center justify-center border border-gray-300/70 dark:border-gray-600">
-                🌙
-            </button>
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="text-xl">🚜</span>
-            <div>
-                <h1 class="text-sm font-bold text-gray-800 leading-tight">СХК «Великополье»</h1>
-                <p class="text-[10px] text-gray-400 font-medium">ГП «Минсктранс»</p>
-            </div>
-        </div>
-        <button onclick="toggleMobileMenu()" class="text-gray-600 text-2xl">☰</button>
-        
-    </header>
-
-    <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between p-4 transition-transform -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
-        <div>
-            <div class="hidden md:flex items-center gap-3 mb-8 px-2 border-b border-gray-100 pb-5">
-                <span class="text-3xl bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 shadow-sm flex items-center justify-center">🚜</span>
-                <div class="flex flex-col justify-center">
-                    <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider leading-none mb-1 block">ф-л СХК</span>
-                    <h1 class="text-lg font-black text-gray-800 leading-tight tracking-tight">«Великополье»</h1>
-                    <span class="text-[11px] font-medium text-gray-400 leading-none mt-1 block">ГП «Минсктранс»</span>
+    <div class="w-full md:w-64 bg-white dark:bg-gray-900 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 p-5 flex flex-col justify-between shrink-0">
+        <div class="space-y-6">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/50 rounded-xl border border-emerald-100 dark:border-emerald-900 flex items-center justify-center text-xl shadow-xs">
+                    🚜
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ф-л СХК «Великополье»</p>
+                    <h1 class="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-tight">«Великополье»</h1>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium mt-0.5">ГП «Минсктранс»</p>
                 </div>
             </div>
-            <nav id="menuContainer" class="space-y-1"></nav>
+
+            <div class="flex items-center justify-between bg-gray-100 dark:bg-gray-800/60 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
+                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 pl-1">Режим экрана</span>
+                <button onclick="window.toggleDarkMode()" id="themeBtn" class="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-yellow-400 transition shadow-xs text-sm flex items-center justify-center border border-gray-300/70 dark:border-gray-600">
+                    🌙
+                </button>
+            </div>
+
+            <nav class="space-y-1">
+                <button id="nav-dashboard" onclick="window.switchModule('dashboard')" 
+                        class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold transition text-left">
+                    <span>📊</span> Главная
+                </button>
+                <button id="nav-fleet" onclick="window.switchModule('fleet')" 
+                        class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold transition text-left">
+                    <span>🚜</span> Автопарк
+                </button>
+            </nav>
         </div>
 
-        <div class="space-y-3 border-t border-gray-100 pt-4">
-            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
+        <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+            <button id="btnInstallPWA" class="hidden w-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-3 py-2 rounded-lg text-[11px] font-bold transition items-center justify-center gap-1.5">
                 📱 Установить на телефон
             </button>
-            <div class="text-xs text-gray-400 text-center">АРМ v1.0 • Модульный • @Vol4ek</div>
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium leading-relaxed">
+                АРМ v1.0 • Модульный • @Vol4ek
+            </div>
         </div>
-    </aside>
+    </div>
 
-    <div id="menuOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden"></div>
-
-    <main id="moduleWorkspace" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full"></main>
+    <main id="mainContent" class="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+        <div class="text-gray-400 text-xs py-12 text-center">Загрузка модулей системы...</div>
+    </main>
 
     <script type="module">
-        const SUPABASE_URL = "https://eaiitxfoqlkmykyqqapg.supabase.co"; 
-        const SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm"; 
-        window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        import { supabaseConfig } from './js/config.js';
+        
+        // Глобальный Supabase клиент
+        window._supabase = supabase.createClient(supabaseConfig.url, supabaseConfig.key);
 
-        const APP_MODULES = [
-            { id: 'dashboard', name: '🏠 Главная', file: './js/dashboard.js' },
-            { id: 'fleet', name: '🚜 Автопарк', file: './js/fleet.js' }
-        ];
+        // Кэш данных в памяти
+        window.globalVehicles = [];
+        window.globalCategories = [];
+        window.globalTasks = [];
 
-        let currentModuleId = 'dashboard';
+        // Импорт модулей
+        const modules = {
+            dashboard: () => import('./js/dashboard.js'),
+            fleet: () => import('./js/fleet.js')
+        };
 
-        window.switchModule = async (moduleId) => {
-            currentModuleId = moduleId;
-            renderMenu();
+        // Глобальная функция переключения модулей
+        window.switchModule = async function(moduleName) {
+            if (!modules[moduleName]) return;
 
-            const workspace = document.getElementById('moduleWorkspace');
-            workspace.innerHTML = '<div class="text-center text-gray-400 py-12">Загрузка модуля...</div>';
+            // Очищаем интервал дашборда при уходе с него
+            if (window.dashIntervalId) {
+                clearInterval(window.dashIntervalId);
+                window.dashIntervalId = null;
+            }
 
-            const targetModule = APP_MODULES.find(m => m.id === moduleId);
-            if (targetModule) {
-                try {
-                    // ?v=Date.now() + Service Worker гарантируют 100% свежий код модулей
-                    const module = await import(`${targetModule.file}?v=${Date.now()}`);
-                    workspace.innerHTML = module.template;
-                    if (module.init) module.init();
-                } catch (err) {
-                    workspace.innerHTML = `<div class="text-red-500 p-4 bg-red-50 border rounded-xl">Ошибка загрузки файла модуля: ${err.message}</div>`;
+            // Визуальное обновление пунктов меню
+            ['dashboard', 'fleet'].forEach(name => {
+                const btn = document.getElementById(`nav-${name}`);
+                if (btn) {
+                    if (name === moduleName) {
+                        btn.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-black transition text-left bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20";
+                    } else {
+                        btn.className = "w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold transition text-left text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-100";
+                    }
                 }
-            }
-        };
-
-        function renderMenu() {
-            const container = document.getElementById('menuContainer');
-            if (!container) return;
-            container.innerHTML = APP_MODULES.map(mod => {
-                const isActive = mod.id === currentModuleId;
-                const activeClasses = isActive ? 'bg-emerald-50 text-emerald-700 font-semibold shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
-                return `<button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center justify-between ${activeClasses}"><span>${mod.name}</span>${isActive ? '<span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>' : ''}</button>`;
-            }).join('');
-        }
-
-        window.toggleMobileMenu = () => {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('menuOverlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
-        };
-
-        // --- РЕГИСТРАЦИЯ SERVICE WORKER И КОНТРОЛЬ КЭША ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => {
-                        console.log('✅ Service Worker успешно запущен');
-                        
-                        // Проверяем обновления на сервере при каждом запуске
-                        reg.update();
-
-                        // Если найден новый sw.js, сообщаем пользователю и перезагружаем кэш
-                        reg.onupdatefound = () => {
-                            const installingWorker = reg.installing;
-                            installingWorker.onstatechange = () => {
-                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('🔄 Вышло обновление системы! Перезагрузка...');
-                                    setTimeout(() => { window.location.reload(); }, 1000);
-                                }
-                            };
-                        };
-                    })
-                    .catch(err => console.error('❌ Ошибка SW:', err));
             });
-        }
 
-        // --- ЛОГИКА PWA УСТАНОВКИ НА ТЕЛЕФОН / ПК ---
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); 
-            deferredPrompt = e;
-            const btn = document.getElementById('pwaInstallBtn');
-            if (btn) btn.classList.remove('hidden'); // Показываем кнопку установки в меню
-        });
-
-        window.installPWA = async () => {
-            if (!deferredPrompt) return; 
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                document.getElementById('pwaInstallBtn').classList.add('hidden');
-            }
-            deferredPrompt = null;
-        };
-
-        // --- ГЛОБАЛЬНАЯ ЗАЩИТА САЙТА ---
-        const SITE_PIN = "7777"; // 💡 ЗАДАТЬ СВОЙ ПИН-КОД ЗДЕСЬ
-
-        window.checkSiteAccess = () => {
-            const input = document.getElementById('sitePinInput');
-            const error = document.getElementById('authErrorMsg');
-            
-            if (input && input.value === SITE_PIN) {
-                // Запоминаем успешный вход в браузере
-                localStorage.setItem('site_access_granted', 'true');
-                // Скрываем экран блокировки
-                document.getElementById('siteAuthOverlay').classList.add('hidden');
-            } else {
-                if (error) error.classList.remove('hidden');
-                if (input) { input.value = ''; input.focus(); }
+            try {
+                const mod = await modules[moduleName]();
+                document.getElementById('mainContent').innerHTML = mod.template;
+                if (typeof mod.init === 'function') {
+                    await mod.init();
+                }
+            } catch (err) {
+                console.error(`Ошибка загрузки модуля ${moduleName}:`, err);
+                document.getElementById('mainContent').innerHTML = `<div class="text-red-500 text-xs">Ошибка загрузки интерфейса: ${err.message}</div>`;
             }
         };
 
-        // Функция автоматической проверки при загрузке страницы
-        function verifySession() {
-            const overlay = document.getElementById('siteAuthOverlay');
-            if (localStorage.getItem('site_access_granted') === 'true') {
-                if (overlay) overlay.classList.add('hidden');
-            } else {
-                if (overlay) overlay.classList.remove('hidden');
-            }
-        }
         // --- ЛОГИКА ТЕМНОЙ ТЕМЫ ---
         window.toggleDarkMode = function() {
             const isDark = document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    
+            
             const btn = document.getElementById('themeBtn');
             if (btn) btn.innerText = isDark ? '☀️' : '🌙';
         };
@@ -213,18 +142,66 @@
             const savedTheme = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-    
+            
             if (isDark) {
                 document.documentElement.classList.add('dark');
                 document.addEventListener("DOMContentLoaded", () => {
-            const btn = document.getElementById('themeBtn');
-            if (btn) btn.innerText = '☀️';
+                    const btn = document.getElementById('themeBtn');
+                    if (btn) btn.innerText = '☀️';
+                });
+            }
+        })();
+
+        // --- ГЛОБАЛЬНАЯ ЗАЩИТА САЙТА ---
+        const SITE_PIN = "7777"; 
+
+        window.checkSiteAccess = () => {
+            const input = document.getElementById('sitePinInput');
+            const error = document.getElementById('authErrorMsg');
+            
+            if (input && input.value === SITE_PIN) {
+                localStorage.setItem('site_access_granted', 'true');
+                document.getElementById('siteAuthOverlay').classList.add('hidden');
+            } else {
+                if (error) error.classList.remove('hidden');
+                if (input) { input.value = ''; input.focus(); }
+            }
+        };
+
+        function verifySession() {
+            const overlay = document.getElementById('siteAuthOverlay');
+            if (localStorage.getItem('site_access_granted') === 'true') {
+                if (overlay) overlay.classList.add('hidden');
+            } else {
+                if (overlay) overlay.classList.remove('hidden');
+            }
+        }
+
+        // PWA обработчик
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('btnInstallPWA');
+            if (btn) btn.style.display = 'flex';
+        });
+
+        const btnInstall = document.getElementById('btnInstallPWA');
+        if (btnInstall) {
+            btnInstall.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    btnInstall.style.display = 'none';
+                }
+                deferredPrompt = null;
             });
-    }
-})();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            verifySession(); // Перекрываем сайт до проверки ПИН-кода
-            switchModule('dashboard');
+            verifySession(); 
+            window.switchModule('dashboard');
         });
     </script>
 </body>

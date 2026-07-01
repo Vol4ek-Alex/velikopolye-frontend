@@ -1,12 +1,11 @@
 export const template = `
     <div class="mb-6">
-        <h2 class="text-xl font-bold text-gray-950 tracking-tight">Панель управления</h2>
-        <p class="text-xs text-gray-600 font-medium">Оперативная сводка по филиалу СХК «Великополье»</p>
+        <h2 class="text-xl font-bold text-gray-950 dark:text-white tracking-tight">Панель управления</h2>
+        <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Оперативная сводка по филиалу СХК «Великополье»</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        
-        <div class="md:col-span-1 bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-950 rounded-2xl p-5 shadow-sm text-white flex flex-col justify-between min-h-[115px]">
+        <div class="md:col-span-1 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900 border-2 border-gray-950 rounded-2xl p-5 shadow-sm text-white flex flex-col justify-between min-h-[115px]">
             <div class="flex items-center justify-between">
                 <p class="text-[10px] font-black uppercase tracking-wider text-gray-400">Общий автопарк</p>
                 <span class="text-xs bg-white/10 px-2 py-0.5 rounded-md font-bold text-gray-300">Всего</span>
@@ -17,69 +16,59 @@ export const template = `
             </div>
         </div>
 
-        <div class="md:col-span-2 grid grid-cols-3 gap-3 bg-white border-2 border-gray-400/80 rounded-2xl p-3.5 shadow-2xs">
-            
-            <div class="bg-emerald-50/60 border-2 border-emerald-500/30 rounded-xl p-3 flex flex-col justify-between">
-                <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+        <div class="md:col-span-2 grid grid-cols-3 gap-3 bg-white dark:bg-gray-900 border-2 border-gray-400/80 dark:border-gray-800 rounded-2xl p-3.5 shadow-2xs">
+            <div class="bg-emerald-50/60 dark:bg-emerald-950/20 border-2 border-emerald-500/30 dark:border-emerald-500/20 rounded-xl p-3 flex flex-col justify-between">
+                <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block animate-pulse"></span> Готово
                 </p>
-                <h4 id="dashReady" class="text-2xl font-black text-gray-950 mt-2">0</h4>
+                <h4 id="dashReady" class="text-2xl font-black text-gray-950 dark:text-white mt-2">0</h4>
             </div>
 
-            <div class="bg-blue-50/60 border-2 border-blue-500/20 rounded-xl p-3 flex flex-col justify-between">
-                <p class="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
+            <div class="bg-blue-50/60 dark:bg-blue-950/20 border-2 border-blue-500/20 dark:border-blue-500/20 rounded-xl p-3 flex flex-col justify-between">
+                <p class="text-[10px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-400 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span> Хранение
                 </p>
-                <h4 id="dashStorage" class="text-2xl font-black text-gray-950 mt-2">0</h4>
+                <h4 id="dashStorage" class="text-2xl font-black text-gray-950 dark:text-white mt-2">0</h4>
             </div>
 
-            <div class="bg-red-50/60 border-2 border-red-500/30 rounded-xl p-3 flex flex-col justify-between">
-                <p class="text-[10px] font-black uppercase tracking-wider text-red-800 flex items-center gap-1">
+            <div class="bg-red-50/60 dark:bg-red-950/20 border-2 border-red-500/30 dark:border-red-500/20 rounded-xl p-3 flex flex-col justify-between">
+                <p class="text-[10px] font-black uppercase tracking-wider text-red-800 dark:text-red-400 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-red-600 inline-block"></span> Ремонт
                 </p>
-                <h4 id="dashInRepair" class="text-2xl font-black text-gray-950 mt-2">0</h4>
+                <h4 id="dashInRepair" class="text-2xl font-black text-gray-950 dark:text-white mt-2">0</h4>
             </div>
-
         </div>
     </div>
 
     <div class="grid gap-6 lg:grid-cols-3 mb-6">
-        
         <div class="space-y-2.5">
-            <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
+            <h3 class="text-xs font-black text-gray-900 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1">
                 📋 Активные задачи по ремонту
             </h3>
-            <div id="containerTasks" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-                <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
-            </div>
+            <div id="containerTasks" class="space-y-2 max-h-[380px] overflow-y-auto pr-1"></div>
         </div>
 
         <div class="space-y-2.5">
-            <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
+            <h3 class="text-xs font-black text-gray-900 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1">
                 🛠️ Гарантийное обслуживание (ТО)
             </h3>
-            <div id="containerWarranty" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-                <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
-            </div>
+            <div id="containerWarranty" class="space-y-2 max-h-[380px] overflow-y-auto pr-1"></div>
         </div>
 
         <div class="space-y-2.5">
-            <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
+            <h3 class="text-xs font-black text-gray-900 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1">
                 ⚙️ Сроки документов (ТО и Страховка)
             </h3>
-            <div id="containerDocs" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-                <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
-            </div>
+            <div id="containerDocs" class="space-y-2 max-h-[380px] overflow-y-auto pr-1"></div>
         </div>
-
     </div>
 
-    <div class="bg-white border-2 border-gray-400/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
+    <div class="bg-white dark:bg-gray-900 border-2 border-gray-400/80 dark:border-gray-800 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
         <div class="space-y-0.5">
-            <p class="text-xs font-bold text-gray-950">Необходимо внести изменения или записать лог ремонта?</p>
-            <p class="text-[11px] text-gray-600 font-medium">Перейдите в соответствующий раздел для редактирования карточек</p>
+            <p class="text-xs font-bold text-gray-950 dark:text-white">Необходимо внести изменения или записать лог ремонта?</p>
+            <p class="text-[11px] text-gray-600 dark:text-gray-400 font-medium">Перейдите в соответствующий раздел для редактирования карточек</p>
         </div>
-        <button onclick="window.switchModule('fleet')" class="bg-gray-950 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-xs">
+        <button onclick="window.switchModule('fleet')" class="bg-gray-950 dark:bg-emerald-600 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-xs">
             Перейти в Автопарк ➔
         </button>
     </div>
