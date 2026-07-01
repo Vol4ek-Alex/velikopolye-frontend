@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col md:flex-row">
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col md:flex-row">
 
     <div id="siteAuthOverlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
         <div class="bg-white border border-gray-100 p-6 rounded-2xl w-full max-w-sm shadow-2xl text-center space-y-5">
@@ -32,6 +32,17 @@
     </div>
 
     <header class="md:hidden bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
+        <div>
+            <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ф-л СХК «Великополье»</p>
+            <h1 class="text-lg font-black text-gray-900 tracking-tight leading-tight">«Великополье»</h1>
+            <p class="text-[10px] text-gray-500 font-medium mt-0.5">ГП «Минсктранс»</p>
+        </div>
+        <div class="mt-4 flex items-center justify-between bg-gray-100 dark:bg-gray-800/60 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
+            <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Режим экрана</span>
+            <button onclick="window.toggleDarkMode()" id="themeBtn" class="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-yellow-400 transition shadow-xs text-sm flex items-center justify-center border border-gray-300/70 dark:border-gray-600">
+                🌙
+            </button>
+        </div>
         <div class="flex items-center gap-2">
             <span class="text-xl">🚜</span>
             <div>
@@ -40,6 +51,7 @@
             </div>
         </div>
         <button onclick="toggleMobileMenu()" class="text-gray-600 text-2xl">☰</button>
+        
     </header>
 
     <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between p-4 transition-transform -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
@@ -187,7 +199,29 @@
                 if (overlay) overlay.classList.remove('hidden');
             }
         }
+        // --- ЛОГИКА ТЕМНОЙ ТЕМЫ ---
+        window.toggleDarkMode = function() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    
+            const btn = document.getElementById('themeBtn');
+            if (btn) btn.innerText = isDark ? '☀️' : '🌙';
+        };
 
+        // Проверка темы при загрузке
+        (function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.addEventListener("DOMContentLoaded", () => {
+            const btn = document.getElementById('themeBtn');
+            if (btn) btn.innerText = '☀️';
+            });
+    }
+})();
         document.addEventListener('DOMContentLoaded', () => {
             verifySession(); // Перекрываем сайт до проверки ПИН-кода
             switchModule('dashboard');
