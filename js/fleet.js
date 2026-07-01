@@ -142,7 +142,7 @@ function hasUrgentDates(v) {
         if (!dateStr) return false;
         return Math.ceil((new Date(dateStr) - today) / (1000 * 60 * 60 * 24)) <= 30;
     };
-    return checkUrgency(v.inspection_date) || checkUrgency(v.insurance_date);
+    return checkUrgency(v.inspection) || checkUrgency(v.insurance);
 }
 
 async function loadFleetData() {
@@ -216,8 +216,8 @@ function renderCategorizedGrid(vehiclesList) {
                 
                 <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     ${list.map(v => {
-                        const inspectionBadge = getDateBadge(v.inspection_date);
-                        const insuranceBadge = getDateBadge(v.insurance_date);
+                        const inspectionBadge = getDateBadge(v.inspection);
+                        const insuranceBadge = getDateBadge(v.insurance);
                         return `
                             <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between relative overflow-hidden">
                                 <div class="absolute top-0 right-0 bg-gray-100 text-gray-500 text-[10px] font-mono px-2.5 py-1 rounded-bl-xl border-l border-b border-gray-200">
@@ -268,7 +268,7 @@ function renderCategorizedGrid(vehiclesList) {
     vehiclesList.forEach(v => {
         const btn = document.getElementById(`btn-edit-${v.id}`);
         if (btn) {
-            btn.onclick = () => openVehicleModal(v.id, v.model, v.plate, v.inspection_date, v.insurance_date, v.type, v.inv_number, v.vin_number);
+            btn.onclick = () => openVehicleModal(v.id, v.model, v.plate, v.inspection, v.insurance, v.type, v.inv_number, v.vin_number);
         }
     });
 }
@@ -334,8 +334,8 @@ async function handleFormSubmit(e) {
         plate: document.getElementById('modalPlate').value,
         inv_number: document.getElementById('modalInvNumber').value,
         vin_number: document.getElementById('modalVinNumber').value || null,
-        inspection_date: document.getElementById('modalInspection').value || null,
-        insurance_date: document.getElementById('modalInsurance').value || null
+        inspection: document.getElementById('modalInspection').value || null,
+        insurance: document.getElementById('modalInsurance').value || null
     };
 
     try {
