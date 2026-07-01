@@ -51,11 +51,10 @@ export const template = `
                     </div>
                     <div>
                         <label class="block text-gray-600 text-sm font-medium mb-1">Основной статус (Тег)</label>
-                        <select id="modalStatusTag" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:border-emerald-500 transition">
+                        <select id="vehicleStatus" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500">
                             <option value="Готов">🟢 Готов к работе</option>
-                            <option value="В работе">🔵 В работе</option>
                             <option value="В ремонте">🔴 В ремонте</option>
-                            <option value="Гарантия">🟠 На гарантии</option>
+                            <option value="Консервация">🟡 На консервации</option>
                         </select>
                     </div>
                 </div>
