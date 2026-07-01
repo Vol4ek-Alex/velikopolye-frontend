@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>АРМ «Великополье»</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <style>
-        /* Стили для шторки меню на телефоне */
         #mobileMenuOverlay { transition: opacity 0.3s; }
         #mobileDrawer { transition: transform 0.3s ease-out; }
     </style>
@@ -19,9 +19,8 @@
 
     <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 shadow-md viewport-fit">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center h-16">
-            
             <div class="flex items-center gap-3">
-                <button onclick="toggleMobileMenu()" class="md:hidden p-1.5 bg-slate-700 rounded-lg hover:bg-slate-600 transition" aria-label="Открыть меню">
+                <button onclick="toggleMobileMenu()" class="md:hidden p-1.5 bg-slate-700 rounded-lg hover:bg-slate-600 transition">
                     <svg class="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                 </button>
                 <h1 class="font-bold tracking-tight text-white flex items-center gap-2">
@@ -31,7 +30,7 @@
                 </h1>
             </div>
 
-            <button onclick="refreshCurrentModule()" class="bg-blue-600 hover:bg-blue-500 text-white p-2 md:px-4 md:py-2 rounded-xl flex items-center gap-2 transition shadow-md shadow-blue-600/20" aria-label="Обновить данные">
+            <button onclick="refreshCurrentModule()" class="bg-blue-600 hover:bg-blue-500 text-white p-2 md:px-4 md:py-2 rounded-xl flex items-center gap-2 transition shadow-md shadow-blue-600/20">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 <span class="hidden md:inline text-sm font-medium">Обновить данные</span>
             </button>
@@ -42,17 +41,16 @@
         <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-[280px] bg-slate-800 p-5 shadow-2xl transform -translate-x-full z-50 overscroll-contain flex flex-col" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-8 pb-3 border-b border-slate-700">
                 <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Модули АРМ</h2>
-                <button onclick="toggleMobileMenu()" class="p-1.5 bg-slate-700 rounded-lg text-slate-300 hover:text-white" aria-label="Закрыть">
+                <button onclick="toggleMobileMenu()" class="p-1.5 bg-slate-700 rounded-lg text-slate-300 hover:text-white">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <nav id="mobileMenuContainer" class="space-y-1.5 flex-grow overflow-y-auto pr-2"></nav>
-            <div class="pt-4 border-t border-slate-700/50 mt-auto text-center text-xs text-slate-600">v1.1 (v5)</div>
+            <div class="pt-4 border-t border-slate-700/50 mt-auto text-center text-xs text-slate-600">v1.2 (Direct Supabase)</div>
         </aside>
     </div>
 
     <div class="max-w-7xl mx-auto p-4 md:pt-6 grid grid-cols-1 md:grid-cols-4 md:gap-8">
-        
         <aside class="hidden md:block md:col-span-1 space-y-2 pb-6">
             <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3">Доступные модули</h2>
             <nav id="pcMenuContainer" class="space-y-1.5 sticky top-24"></nav>
@@ -63,7 +61,6 @@
     </div>
 
     <div id="moduleTemplates" class="hidden">
-        
         <div id="tpl-fleet">
             <div class="space-y-8">
                 <section class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg">
@@ -100,20 +97,17 @@
                         <span class="text-xl">📋</span> Список автопарка (<span id="count">0</span>)
                     </h2>
                     <div id="vehiclesList" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div class="col-span-full text-center text-slate-500 py-12 flex flex-col items-center gap-3">
-                            <svg class="w-10 h-10 text-slate-700 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Загрузка данных с сервера...
-                        </div>
+                        <div class="col-span-full text-center text-slate-500 py-12">Загрузка данных...</div>
                     </div>
                 </section>
             </div>
         </div>
 
         <div id="tpl-dashboard">
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center max-w-xl mx-auto mt-6 md:mt-10 shadow-lg">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center max-w-xl mx-auto mt-6 shadow-lg">
                 <span class="text-5xl">👋</span>
                 <h2 class="text-2xl font-bold text-white mt-6 mb-3">АРМ «Великополье»</h2>
-                <p class="text-slate-400 text-sm leading-relaxed">Система контроля автопарка, страховок и техосмотров. <br class="hidden xs:inline"> Выберите нужный модуль в меню.</p>
+                <p class="text-slate-400 text-sm leading-relaxed">Прямое подключение к облаку Supabase активно.</p>
                 <button onclick="toggleMobileMenu()" class="md:hidden mt-8 bg-slate-700 hover:bg-slate-600 text-white font-medium px-6 py-2.5 rounded-xl transition">
                     Открыть меню
                 </button>
@@ -122,14 +116,19 @@
     </div>
 
     <script>
-        const SERVER_URL = 'https://velikopolye-backend.onrender.com';
+        // ИНИЦИАЛИЗАЦИЯ SUPABASE НАПРЯМУЮ ВО ФРОНТЕНДЕ
+        // Замени эти значения на свои из Supabase (как на скриншотах):
+        const SUPABASE_URL = "https://eaiitxfoqlkmykyqqapg.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_твоя_строка_ключа"; 
+
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         const APP_MODULES = [
             { id: 'dashboard', name: '🏠 Главная панель', init: () => {} },
             { id: 'fleet', name: '🚜 Сельхоз.парк', init: loadVehicles }
         ];
         let currentModuleId = 'dashboard';
 
-        // Функция открытия/закрытия мобильного меню
         function toggleMobileMenu() {
             const overlay = document.getElementById('mobileMenuOverlay');
             const drawer = document.getElementById('mobileDrawer');
@@ -148,22 +147,19 @@
             }
         }
 
-        // Отрисовка обоих меню (на ПК и мобильной шторке)
         function renderMenu() {
             const pcContainer = document.getElementById('pcMenuContainer');
             const mobileContainer = document.getElementById('mobileMenuContainer');
-            
             const menuHtml = APP_MODULES.map(mod => {
                 const isActive = mod.id === currentModuleId;
                 const activeClasses = isActive ? 'bg-blue-600 text-white font-semibold shadow-md' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200';
                 return `
-                    <button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-5 py-3.5 rounded-xl text-sm transition flex items-center justify-between active:scale-[0.97] ${activeClasses}">
+                    <button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" class="w-full text-left px-5 py-3.5 rounded-xl text-sm transition flex items-center justify-between ${activeClasses}">
                         <span>${mod.name}</span>
                         ${isActive ? '<span class="w-2 h-2 bg-white rounded-full"></span>' : ''}
                     </button>
                 `;
             }).join('');
-
             if(pcContainer) pcContainer.innerHTML = menuHtml;
             if(mobileContainer) mobileContainer.innerHTML = menuHtml;
         }
@@ -171,11 +167,9 @@
         function switchModule(moduleId) {
             currentModuleId = moduleId;
             renderMenu();
-            const templateHtml = document.getElementById(`tpl-${moduleId}`).innerHTML;
-            document.getElementById('moduleWorkspace').innerHTML = templateHtml;
+            document.getElementById('moduleWorkspace').innerHTML = document.getElementById(`tpl-${moduleId}`).innerHTML;
             const targetModule = APP_MODULES.find(m => m.id === moduleId);
             if (targetModule && targetModule.init) targetModule.init();
-            // Скроллим вверх при переключении
             window.scrollTo(0, 0);
         }
 
@@ -184,20 +178,24 @@
             if (targetModule && targetModule.init) targetModule.init();
         }
 
-        // --- ЛОГИКА МОДУЛЯ «СЕЛЬХОЗ.ПАРК» ---
+        // --- ЛОГИКА РАБОТЫ С БАЗОЙ ДАННЫХ SUPABASE НАПРЯМУЮ ---
         async function loadVehicles() {
             const listContainer = document.getElementById('vehiclesList');
             if (!listContainer) return;
-            // Показываем загрузку
-            listContainer.innerHTML = '<div class="col-span-full text-center text-slate-500 py-12 flex flex-col items-center gap-3"><svg class="w-10 h-10 text-slate-700 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Загрузка данных...</div>';
 
             try {
-                const response = await fetch(`${SERVER_URL}/vehicles`);
-                const data = await response.json();
+                // Запрос к Supabase без посредников
+                const { data, error } = await _supabase
+                    .from('vehicles')
+                    .select('*')
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
                 document.getElementById('count').innerText = data.length;
                 
                 if(data.length === 0) {
-                    listContainer.innerHTML = `<div class="col-span-full text-center text-slate-600 py-12 px-6 border-2 border-dashed border-slate-700 rounded-xl">В базе парка пока нет техники. <br> Используйте форму выше для добавления.</div>`;
+                    listContainer.innerHTML = `<div class="col-span-full text-center text-slate-600 py-12 px-6 border-2 border-dashed border-slate-700 rounded-xl">В базе парка пока нет техники.</div>`;
                     return;
                 }
 
@@ -212,11 +210,11 @@
                     const inspWarning = diffInsp < 0 ? 'text-red-500 font-bold' : (diffInsp < 15 ? 'text-red-400' : 'text-slate-300');
 
                     return `
-                        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col justify-between transition hover:border-slate-600 hover:shadow-xl active:scale-[0.98]">
+                        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
                             <div>
                                 <div class="flex justify-between items-start mb-3 gap-3">
                                     <h3 class="font-bold text-white text-base leading-tight">${v.model}</h3>
-                                    <span class="bg-slate-900 border border-slate-600 text-xs text-slate-200 font-mono px-2 py-1 rounded-md shadow-inner">${v.plate}</span>
+                                    <span class="bg-slate-900 border border-slate-600 text-xs text-slate-200 font-mono px-2 py-1 rounded-md">${v.plate}</span>
                                 </div>
                                 <div class="space-y-1.5 text-xs text-slate-400 pt-3 border-t border-slate-700/60">
                                     <div class="flex justify-between">
@@ -233,7 +231,8 @@
                     `;
                 }).join('');
             } catch (error) {
-                listContainer.innerHTML = `<div class="col-span-full text-center text-red-400 py-12 px-6 border border-red-500/30 bg-red-950/20 rounded-xl">⚠️ Ошибка связи с Python-сервером на Render. <br> Убедитесь, что сервер запущен.</div>`;
+                console.error(error);
+                listContainer.innerHTML = `<div class="col-span-full text-center text-red-400 py-12 px-6 border border-red-500/30 bg-red-950/20 rounded-xl">⚠️ Ошибка получения данных из Supabase: <br> ${error.message}</div>`;
             }
         }
 
@@ -243,7 +242,7 @@
             btn.innerHTML = 'Сохранение...';
             btn.disabled = true;
 
-            const payload = {
+            const row = {
                 model: document.getElementById('model').value,
                 plate: document.getElementById('plate').value,
                 insurance: document.getElementById('insurance').value,
@@ -251,19 +250,17 @@
             };
 
             try {
-                const response = await fetch(`${SERVER_URL}/vehicles`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (response.ok) {
-                    document.getElementById('vehicleForm').reset();
-                    await loadVehicles();
-                } else {
-                    alert('Ошибка сохранения');
-                }
+                // Прямая вставка строки в таблицу 'vehicles'
+                const { error } = await _supabase
+                    .from('vehicles')
+                    .insert([row]);
+
+                if (error) throw error;
+
+                document.getElementById('vehicleForm').reset();
+                await loadVehicles();
             } catch (error) {
-                alert('Нет связи с сервером');
+                alert('Ошибка сохранения в Supabase: ' + error.message);
             } finally {
                 btn.innerHTML = '💾 Сохранить транспорт в базу';
                 btn.disabled = false;
@@ -279,7 +276,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js').then(reg => {
-                    setInterval(() => { reg.update(); }, 1000 * 60 * 30);
+                    setInterval(() => { reg.update(); }, 1000 * 60 * 10);
                     reg.onupdatefound = () => {
                         const worker = reg.installing;
                         worker.onstatechange = () => {
