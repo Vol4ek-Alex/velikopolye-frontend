@@ -140,8 +140,10 @@ export async function init() {
     if (savedCats) categories = JSON.parse(savedCats);
     if (!categories.includes("Без категории")) categories.push("Без категории");
 
+    // Восстанавливаем значение поиска в поле ввода, если оно было введено ранее
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
+        searchInput.value = searchQuery; // Чтобы текст не пропадал при переключениях модулей
         searchInput.oninput = (e) => {
             searchQuery = e.target.value.toLowerCase();
             renderFleet();
@@ -168,12 +170,12 @@ export async function init() {
         renderFleet();
     };
 
-    await loadAllData();
+    await loadAllData(true); // Первый запуск — рендерим панели полностью
     if (refreshIntervalId) clearInterval(refreshIntervalId);
-    refreshIntervalId = setInterval(loadAllData, 5000);
+    refreshIntervalId = setInterval(() => loadAllData(false), 5000); // При автообновлении НЕ пересоздаем панель категорий
 }
 
-async function loadAllData() {
+async function loadAllData(isFirstLoad = false) {
     if (!window._supabase) return;
     try {
         const { data: vData, error: vErr } = await window._supabase.from('vehicles').select('*');
@@ -193,7 +195,11 @@ async function loadAllData() {
             if (!tErr && tData) tasks = tData;
         } catch(e) { tasks = []; }
 
-        renderCategoriesBar();
+        // Важно: рендерим панель категорий только при первой загрузке или ручных изменениях,
+        // чтобы не сбрасывать фокусы и состояния элементов каждые 5 секунд.
+        if (isFirstLoad) {
+            renderCategoriesBar();
+        }
         renderFleet();
     } catch (e) {
         console.error(e);
@@ -440,7 +446,7 @@ async function handleFormSubmit() {
             await window._supabase.from('vehicles').insert([payload]);
         }
         window.closeVModal();
-        await loadAllData();
+        await loadAllData(true);
     } catch (e) { alert(e.message); }
 }
 
@@ -451,7 +457,7 @@ async function handleDeleteVehicle() {
         try {
             await window._supabase.from('vehicles').delete().eq('id', id);
             window.closeVModal();
-            await loadAllData();
+            await loadAllData(true);
         } catch (e) { alert(e.message); }
     }
 }
@@ -484,19 +490,15 @@ function renderCategoriesModalList() {
     window.deleteCustomCategory = async (idx) => {
         const catName = categories[idx];
         if (confirm(`Удалить категорию "${catName}"? Все машины из неё будут переведены в "Без категории".`)) {
-            
-            // Если подключен Supabase, обновляем записи в БД
             if (window._supabase) {
                 try {
                     await window._supabase.from('vehicles').update({ type: 'Без категории' }).eq('type', catName);
                 } catch(err) { console.error("Ошибка переноса ТС:", err); }
             }
-
             categories.splice(idx, 1);
             localStorage.setItem('fleet_custom_categories', JSON.stringify(categories));
             renderCategoriesModalList();
-            renderCategoriesBar();
-            await loadAllData();
+            await loadAllData(true);
         }
     };
 }
@@ -537,7 +539,7 @@ window.addVehicleTask = async () => {
     try {
         await window._supabase.from('vehicle_tasks').insert([{ vehicle_id: parseInt(vId), vehicle_name: vName, text: textInput.value.trim(), is_completed: false }]);
         textInput.value = "";
-        await loadAllData();
+        await loadAllData(true);
         renderTasksListInsideModal();
     } catch (e) { console.error(e); }
 };
@@ -546,7 +548,7 @@ window.completeTask = async (taskId) => {
     if (!window._supabase) return;
     try {
         await window._supabase.from('vehicle_tasks').update({ is_completed: true }).eq('id', taskId);
-        await loadAllData();
+        await loadAllData(true);
         const modal = document.getElementById('tasksModal');
         if (modal && !modal.classList.contains('hidden')) renderTasksListInsideModal();
     } catch (e) { console.error(e); }
