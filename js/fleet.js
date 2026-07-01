@@ -1,22 +1,24 @@
 export const template = `
-    <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 backdrop-blur-md bg-white/60 p-4 rounded-2xl border border-white/40 shadow-sm">
+    <!-- Главная панель управления -->
+    <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 backdrop-blur-md bg-white/60 p-4 rounded-2xl border border-white/40 shadow-xs">
         <div class="space-y-1">
             <h2 class="text-2xl font-black text-gray-800 tracking-tight">🚜 Управление автопарком</h2>
             <p class="text-xs text-gray-500 font-medium">Динамический учет, контроль ТО, страховки и логов запчастей</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <button id="showProblemsBtn" onclick="window.toggleProblemsFilter()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+            <button id="showProblemsBtn" onclick="window.toggleProblemsFilter()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5">
                 ⚠️ Проблемная техника
             </button>
-            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2.5 rounded-xl text-xs font-bold transition shadow-sm">
+            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2.5 rounded-xl text-xs font-bold transition shadow-xs">
                 ⚙️ Категории
             </button>
-            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm">
+            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-xs">
                 ➕ Добавить технику
             </button>
         </div>
     </div>
 
+    <!-- Поиск, Категории и Сортировка -->
     <div class="space-y-4 mb-6 backdrop-blur-md bg-white/40 p-4 rounded-2xl border border-white/20 shadow-xs">
         <div class="flex flex-col sm:flex-row gap-3">
             <input type="text" id="vehicleSearchInput" class="flex-1 bg-white/80 border border-gray-200/60 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500 shadow-xs transition" placeholder="Поиск по модели, госномеру, инвентарному, VIN или тегам...">
@@ -27,15 +29,20 @@ export const template = `
             </select>
         </div>
         
+        <!-- Кнопки категорий -->
         <div class="flex flex-wrap gap-1.5" id="fleetCategoriesBar">
             <div class="text-xs text-gray-400">Загрузка категорий...</div>
         </div>
     </div>
 
+    <!-- Основной контейнер вывода техники -->
     <div id="fleetGridContainer" class="space-y-6">
         <div class="text-center text-gray-400 py-10 font-medium">Загрузка данных автопарка...</div>
     </div>
 
+    <!-- ================= МОДАЛЬНЫЕ ОКНА ================= -->
+
+    <!-- 1. Окно Техники -->
     <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white/95 border border-white rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
             <h3 id="vModalTitle" class="text-lg font-black text-gray-800">Карточка техники</h3>
@@ -98,6 +105,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- 2. Управление категориями -->
     <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white border border-gray-100 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
             <h3 class="text-base font-black text-gray-800">⚙️ Управление категориями</h3>
@@ -110,6 +118,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- 3. Окно Задач -->
     <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white border border-gray-100 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
             <div class="space-y-1">
@@ -173,8 +182,8 @@ export async function init() {
         const btn = document.getElementById('showProblemsBtn');
         if (btn) {
             btn.className = filterProblemsOnly 
-                ? "bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5"
-                : "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5";
+                ? "bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+                : "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5";
         }
         renderFleet();
     };
@@ -195,7 +204,6 @@ async function loadAllData() {
         const { data: vData, error: vErr } = await window._supabase.from('vehicles').select('*');
         if (!vErr && vData) {
             vehicles = vData;
-            // Динамически вытягиваем из базы категории, если их там больше, чем в нашем массиве
             vData.forEach(v => {
                 if (v.type && !categories.map(c => c.toLowerCase()).includes(v.type.toLowerCase())) {
                     categories.push(v.type);
@@ -260,8 +268,8 @@ function renderFleet() {
             let hasProblem = false;
             if (v.tags && v.tags.includes('Гарантия')) hasProblem = true;
             const now = new Date();
-            if (v.inspection_date && (new Date(v.inspection_date) - now) / (1000*60*60*24) <= 15) hasProblem = true;
-            if (v.insurance_date && (new Date(v.insurance_date) - now) / (1000*60*60*24) <= 15) hasProblem = true;
+            if (v.inspection_date && (new Date(v.inspection_date) - now) / (1000*60*60*24) <= 30) hasProblem = true;
+            if (v.insurance_date && (new Date(v.insurance_date) - now) / (1000*60*60*24) <= 30) hasProblem = true;
             return hasProblem;
         }
 
@@ -275,10 +283,7 @@ function renderFleet() {
         return 0;
     });
 
-    // Показываем технику без категорий в отдельном блоке, если фильтр "Все"
     let html = "";
-    
-    // Группируем по категориям, присутствующим в текущем отфильтрованном списке
     const uniqueTypesInFiltered = [...new Set(filtered.map(v => v.type || "Без категории"))];
 
     uniqueTypesInFiltered.forEach(cat => {
@@ -288,85 +293,107 @@ function renderFleet() {
         html += `
             <div class="space-y-3">
                 <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider pl-1">${cat} (${catList.length})</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     ${catList.map(v => {
                         const now = new Date();
-                        let toClass = "text-gray-800";
-                        if (v.inspection_date) {
-                            const days = (new Date(v.inspection_date) - now) / (1000*60*60*24);
-                            if (days < 0) toClass = "text-red-600 font-black";
-                            else if (days <= 15) toClass = "text-amber-600 font-black";
-                        }
+                        
+                        // Хелпер динамического расчета стилей для порогов документов (30 дн = оранжевый, <=0 = красный)
+                        const getStatusClasses = (dateStr) => {
+                            if (!dateStr) return "text-gray-400 font-medium";
+                            const days = (new Date(dateStr) - now) / (1000*60*60*24);
+                            if (days <= 0) return "text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md font-black";
+                            if (days <= 30) return "text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md font-black";
+                            return "text-gray-700 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md font-bold";
+                        };
 
-                        let insClass = "text-gray-800";
-                        if (v.insurance_date) {
-                            const days = (new Date(v.insurance_date) - now) / (1000*60*60*24);
-                            if (days < 0) insClass = "text-red-600 font-black";
-                            else if (days <= 15) insClass = "text-amber-600 font-black";
-                        }
+                        const toStyle = getStatusClasses(v.inspection_date);
+                        const insStyle = getStatusClasses(v.insurance_date);
 
                         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
                         const vTasks = tasks.filter(t => t.vehicle_id === v.id);
-
-                        // Безопасный JSON для передачи в onclick
                         const safeVehicleJson = JSON.stringify(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
                         return `
-                            <div class="backdrop-blur-md bg-white/70 border border-white/40 rounded-2xl p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between space-y-4">
-                                <div class="space-y-2">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <div>
-                                            <h4 class="font-black text-gray-900 text-base tracking-tight leading-tight">${v.model}</h4>
-                                            <div class="text-[11px] text-gray-400 font-bold mt-0.5 tracking-wider uppercase">
-                                                ${v.plate || 'б/н'} ${v.inv_number ? `• Инв. ${v.inv_number}` : ''}
-                                            </div>
-                                        </div>
-                                        <div class="flex flex-col items-end gap-1">
+                            <!-- СВЕРХСОВРЕМЕННАЯ КАРТОЧКА ТЕХНИКИ -->
+                            <div class="relative overflow-hidden backdrop-blur-lg bg-white/75 border border-white/50 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[220px]">
+                                
+                                <!-- Верхний правый угол: инв. номер на сером аккуратном фоне -->
+                                ${v.inv_number ? `
+                                    <div class="absolute top-3 right-3 bg-gray-100/80 border border-gray-200/40 px-2 py-0.5 rounded-md text-[10px] font-bold text-gray-500 tracking-wide">
+                                        #${v.inv_number}
+                                    </div>
+                                ` : ''}
+
+                                <div class="space-y-3">
+                                    <!-- Заголовок и теги -->
+                                    <div class="space-y-1.5 pr-16">
+                                        <h4 class="font-black text-gray-900 text-base tracking-tight leading-tight truncate">${v.model}</h4>
+                                        <div class="flex flex-wrap gap-1">
                                             ${vehicleTagsArray.map(t => {
                                                 let c = "bg-gray-100 text-gray-700";
-                                                if (t === 'Готов') c = "bg-emerald-50 text-emerald-700 border border-emerald-100";
-                                                if (t === 'В ремонте') c = "bg-red-50 text-red-700 border border-red-100";
-                                                if (t === 'На хранении') c = "bg-amber-50 text-amber-700 border border-amber-100";
-                                                if (t === 'Гарантия') c = "bg-blue-50 text-blue-700 border border-blue-100";
-                                                return `<span class="${c} text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wide">${t}</span>`;
+                                                if (t === 'Готов') c = "bg-emerald-50 text-emerald-700 border border-emerald-100/60";
+                                                if (t === 'В ремонте') c = "bg-red-50 text-red-700 border border-red-100/60";
+                                                if (t === 'На хранении') c = "bg-amber-50 text-amber-700 border border-amber-100/60";
+                                                if (t === 'Гарантия') c = "bg-blue-50 text-blue-700 border border-blue-100/60";
+                                                return `<span class="${c} text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">${t}</span>`;
                                             }).join('')}
                                         </div>
                                     </div>
                                     
-                                    ${v.vin_number ? `<div class="text-[10px] font-mono bg-gray-50/60 p-1.5 rounded-lg border border-gray-100 text-gray-500 truncate">⚙️ VIN: ${v.vin_number}</div>` : ''}
+                                    <!-- Крупный Госномер и компактный VIN рядом в одну строку -->
+                                    <div class="flex items-center gap-3 py-1">
+                                        <div class="bg-gray-900 text-white font-mono font-black text-sm px-3 py-1 rounded-lg shadow-2xs tracking-wider border border-gray-800">
+                                            ${v.plate || 'БЕЗ НОМЕРА'}
+                                        </div>
+                                        ${v.vin_number ? `
+                                            <div class="text-[10px] font-mono text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100 truncate max-w-[130px]" title="${v.vin_number}">
+                                                № ${v.vin_number}
+                                            </div>
+                                        ` : ''}
+                                    </div>
                                     
+                                    <!-- Логи задач на запчасти -->
                                     <div class="space-y-1">
                                         ${vTasks.map(t => `
-                                            <div class="text-xs bg-amber-50/50 border border-amber-100 text-amber-900 p-2 rounded-xl flex items-center justify-between">
-                                                <span class="font-medium line-clamp-2">📌 ${t.text}</span>
-                                                <button onclick="window.completeTask(${t.id})" class="text-[10px] text-emerald-600 font-bold ml-1 hover:underline">Ок</button>
+                                            <div class="text-[11px] bg-amber-50/70 border border-amber-100/60 text-amber-900 p-2 rounded-xl flex items-center justify-between">
+                                                <span class="font-medium line-clamp-1">📌 ${t.text}</span>
+                                                <button onclick="window.completeTask(${t.id})" class="text-[10px] text-emerald-600 font-bold ml-2 hover:underline shrink-0">Ок</button>
                                             </div>
                                         `).join('')}
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 text-xs">
-                                    <div>
-                                        <span class="text-gray-400 block font-medium">Наработка:</span>
-                                        <span class="font-bold text-gray-800">${v.current_hours || 0} м/ч</span>
+                                <!-- Нижний блок метрик и кнопок действий -->
+                                <div class="pt-3 mt-2 border-t border-gray-100/70 text-[11px] space-y-2">
+                                    <div class="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                                        <div>
+                                            <span class="text-gray-400 block font-medium">Наработка:</span>
+                                            <span class="font-extrabold text-gray-800 text-xs">${v.current_hours || 0} м/ч</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-gray-400 block font-medium mb-0.5">Техосмотр:</span>
+                                            <span class="${toStyle}">${v.inspection_date ? new Date(v.inspection_date).toLocaleDateString('ru-RU') : '—'}</span>
+                                        </div>
+                                        <div>
+                                            <!-- Пусто для выравнивания сетки -->
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-gray-400 block font-medium mb-0.5">Страховка:</span>
+                                            <span class="${insStyle}">${v.insurance_date ? new Date(v.insurance_date).toLocaleDateString('ru-RU') : '—'}</span>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <span class="text-gray-400 block font-medium">Гостехосмотр:</span>
-                                        <span class="${toClass}">${v.inspection_date ? new Date(v.inspection_date).toLocaleDateString('ru-RU') : '—'}</span>
-                                    </div>
-                                    <div class="pt-1">
-                                        <span class="text-gray-400 block font-medium">Страховка:</span>
-                                        <span class="${insClass}">${v.insurance_date ? new Date(v.insurance_date).toLocaleDateString('ru-RU') : '—'}</span>
-                                    </div>
-                                    <div class="pt-1 flex flex-col gap-1 items-end justify-end">
-                                        <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[10px] text-center font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-lg hover:bg-gray-200 transition">
+
+                                    <!-- Кнопки быстрых действий -->
+                                    <div class="grid grid-cols-2 gap-2 pt-1">
+                                        <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[10px] text-center font-bold text-gray-600 bg-gray-50 border border-gray-200/40 py-1.5 rounded-lg hover:bg-gray-100 transition">
                                             ✏️ Редактировать
                                         </button>
-                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[10px] text-center font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg hover:bg-emerald-100 transition">
+                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[10px] text-center font-bold text-emerald-600 bg-emerald-50 border border-emerald-100/50 py-1.5 rounded-lg hover:bg-emerald-100 transition">
                                             📝 Задачи (${vTasks.length})
                                         </button>
                                     </div>
                                 </div>
+
                             </div>
                         `;
                     }).join('')}
@@ -440,7 +467,6 @@ function openVehicleModal(vehicle = null) {
 async function handleFormSubmit() {
     if (!window._supabase) return;
     const id = document.getElementById('vId').value;
-    
     const selectedTags = [];
     document.querySelectorAll('input[name="vTags"]:checked').forEach(cb => selectedTags.push(cb.value));
 
@@ -577,7 +603,7 @@ window.addVehicleTask = async () => {
         await loadAllData();
         renderTasksListInsideModal();
     } catch (e) {
-        alert("Ошибка сохранения задачи: " + e.message);
+        alert("Ошибка保存задачи: " + e.message);
     }
 };
 
