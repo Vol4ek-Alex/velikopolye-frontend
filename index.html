@@ -6,47 +6,89 @@
     <title>АРМ «Великополье»</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen">
-    
-    <header class="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
-        <h1 class="text-xl font-bold">🚜 СХК «Великополье»</h1>
-        <button onclick="window.loadFleet()" class="bg-slate-700 hover:bg-slate-600 text-sm px-3 py-1.5 rounded-lg transition">🔄 Обновить</button>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <span>🚜</span> СХК «Великополье»
+            </h1>
+            <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-xl transition shadow-sm">
+                ➕ Добавить технику
+            </button>
+        </div>
     </header>
 
-    <main id="app" class="p-4 max-w-7xl mx-auto">
-        <div id="content">Загрузка приложения...</div>
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        
+        <div class="mb-6 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-700">Техника в парке (<span id="count">3</span>)</h2>
+        </div>
+
+        <div id="fleetGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-bold text-lg text-gray-800">МТЗ-82.1</h3>
+                    <button onclick="alert('Редактирование')" class="text-gray-400 hover:text-emerald-600 transition text-sm">✏️</button>
+                </div>
+                <p class="text-gray-600 text-sm">Госномер: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-800 font-semibold">1234 AB-7</span></p>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-bold text-lg text-gray-800">К744-Р Кировец</h3>
+                    <button onclick="alert('Редактирование')" class="text-gray-400 hover:text-emerald-600 transition text-sm">✏️</button>
+                </div>
+                <p class="text-gray-600 text-sm">Госномер: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-800 font-semibold">5678 CD-7</span></p>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-bold text-lg text-gray-800">Полесье GS12</h3>
+                    <button onclick="alert('Редактирование')" class="text-gray-400 hover:text-emerald-600 transition text-sm">✏️</button>
+                </div>
+                <p class="text-gray-600 text-sm">Госномер: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-800 font-semibold">9012 EF-7</span></p>
+            </div>
+
+        </div>
     </main>
 
-    <div id="vehicleModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl w-full max-w-md shadow-2xl">
-            <h3 id="modalTitle" class="text-xl font-bold mb-4 text-white">Добавить технику</h3>
+    <div id="vehicleModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white border border-gray-100 p-6 rounded-2xl w-full max-w-md shadow-xl">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Добавить технику</h3>
             
-            <form id="vehicleForm" onsubmit="window.handleFormSubmit(event)">
-                <input type="hidden" id="vehicleId">
-                
+            <form onsubmit="event.preventDefault(); closeModal();">
                 <div class="mb-4">
-                    <label class="block text-slate-400 text-sm mb-1">Марка / Модель</label>
-                    <input type="text" id="modalModel" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" placeholder="Например, МТЗ-82">
+                    <label class="block text-gray-600 text-sm font-medium mb-1">Марка / Модель</label>
+                    <input type="text" required class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-900 focus:outline-none focus:border-emerald-500 transition" placeholder="Например, МТЗ-82">
                 </div>
                 
                 <div class="mb-6">
-                    <label class="block text-slate-400 text-sm mb-1">Госномер</label>
-                    <input type="text" id="modalPlate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" placeholder="Например, 1234 АВ-7">
+                    <label class="block text-gray-600 text-sm font-medium mb-1">Госномер</label>
+                    <input type="text" required class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-900 focus:outline-none focus:border-emerald-500 transition" placeholder="Например, 1234 АВ-7">
                 </div>
                 
                 <div class="flex gap-3">
-                    <button type="button" onclick="window.closeModal()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl transition">Отмена</button>
-                    <button type="submit" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition">Сохранить</button>
+                    <button type="button" onclick="closeModal()" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-medium transition">Отмена</button>
+                    <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition shadow-sm">Сохранить</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script type="module">
-        const script = document.createElement('script');
-        script.type = 'module';
-        script.src = `js/app.js?v=${Date.now()}`;
-        document.body.appendChild(script);
+    <script>
+        function openModal() {
+            const modal = document.getElementById('vehicleModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('vehicleModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
     </script>
 </body>
 </html>
