@@ -16,7 +16,7 @@ export const template = `
             Категории
         </button>
         <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap">
-            + Техника
+            + карта
         </button>
     </div>
 </div>

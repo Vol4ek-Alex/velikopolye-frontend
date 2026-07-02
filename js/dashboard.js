@@ -227,10 +227,20 @@ async function loadDashboardData() {
 }
 
 function renderStats(list) {
-    document.getElementById('dashTotal').innerText = list.length;
-    document.getElementById('dashReady').innerText = list.filter(v => v.tags && v.tags.includes('Готов')).length;
-    document.getElementById('dashStorage').innerText = list.filter(v => v.tags && v.tags.includes('На хранении')).length;
-    document.getElementById('dashInRepair').innerText = list.filter(v => v.tags && v.tags.includes('В ремонте')).length;
+    const stats = {
+        'dashTotal': list.length,
+        'dashReady': list.filter(v => v.tags && v.tags.includes('Готов')).length,
+        'dashStorage': list.filter(v => v.tags && v.tags.includes('На хранении')).length,
+        'dashInRepair': list.filter(v => v.tags && v.tags.includes('В ремонте')).length
+    };
+
+    // Перебираем объект и обновляем только те элементы, которые нашли на странице
+    for (const [id, value] of Object.entries(stats)) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerText = value;
+        }
+    }
 }
 
 function populateVehicleDropdown(vehicles) {
@@ -290,36 +300,77 @@ function dashToggleLocalVisibility(vehicleId, isChecked) {
 
 function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDate, insDate) {
     activeModalVehicleId = id;
-    document.getElementById('modalVehicleTitle').innerText = model;
-    document.getElementById('modalVehiclePlate').innerText = plate ? `[${plate}]` : '[б/н]';
-    
-    document.getElementById('inputModalCurrentHours').value = current;
-    document.getElementById('inputModalZeroHours').value = zero;
-    document.getElementById('inputModalStepHours').value = step;
-    
-    document.getElementById('inputModalInspectionDate').value = inspectDate || '';
-    document.getElementById('inputModalInsuranceDate').value = insDate || '';
 
-    document.getElementById('modalWarrantySection').classList.remove('hidden');
-    document.getElementById('modalDocsSection').classList.add('hidden');
-    document.getElementById('dashEditModal').classList.remove('hidden');
+    // Безопасная функция для обновления текста
+    const setInner = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+    };
+
+    // Безопасная функция для обновления значений input
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
+
+    setInner('modalVehicleTitle', model);
+    setInner('modalVehiclePlate', plate ? `[${plate}]` : '[б/н]');
+
+    setVal('inputModalCurrentHours', current);
+    setVal('inputModalZeroHours', zero);
+    setVal('inputModalStepHours', step);
+
+    setVal('inputModalInspectionDate', inspectDate || '');
+    setVal('inputModalInsuranceDate', insDate || '');
+
+    // Безопасная работа с классами
+    const warrantySec = document.getElementById('modalWarrantySection');
+    if (warrantySec) warrantySec.classList.remove('hidden');
+
+    const docsSec = document.getElementById('modalDocsSection');
+    if (docsSec) docsSec.classList.add('hidden');
+
+    const editModal = document.getElementById('dashEditModal');
+    if (editModal) editModal.classList.remove('hidden');
 }
 
 function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero, step) {
     activeModalVehicleId = id;
-    document.getElementById('modalVehicleTitle').innerText = model;
-    document.getElementById('modalVehiclePlate').innerText = plate ? `[${plate}]` : '[б/н]';
-    
-    document.getElementById('inputModalInspectionDate').value = inspectDate || '';
-    document.getElementById('inputModalInsuranceDate').value = insDate || '';
-    
-    document.getElementById('inputModalCurrentHours').value = current;
-    document.getElementById('inputModalZeroHours').value = zero;
-    document.getElementById('inputModalStepHours').value = step;
 
-    document.getElementById('modalDocsSection').classList.remove('hidden');
-    document.getElementById('modalWarrantySection').classList.add('hidden');
-    document.getElementById('dashEditModal').classList.remove('hidden');
+    // Вспомогательные функции для безопасной работы с DOM
+    const setInner = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+    };
+
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
+
+    const toggleClass = (id, className, action) => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (action === 'remove') el.classList.remove(className);
+            else el.classList.add(className);
+        }
+    };
+
+    // Обновление текстовых полей
+    setInner('modalVehicleTitle', model);
+    setInner('modalVehiclePlate', plate ? `[${plate}]` : '[б/н]');
+    
+    // Обновление значений в полях ввода
+    setVal('inputModalInspectionDate', inspectDate || '');
+    setVal('inputModalInsuranceDate', insDate || '');
+    setVal('inputModalCurrentHours', current);
+    setVal('inputModalZeroHours', zero);
+    setVal('inputModalStepHours', step);
+
+    // Работа с отображением секций
+    toggleClass('modalDocsSection', 'hidden', 'remove');
+    toggleClass('modalWarrantySection', 'hidden', 'add');
+    toggleClass('dashEditModal', 'hidden', 'remove');
 }
 
 function dashCloseModal() {
