@@ -101,6 +101,49 @@ export const template = `
         </div>
     </div>
 
+    <div id="dashEditModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs z-[150] flex items-center justify-center p-4 hidden">
+        <div class="bg-white border-2 border-gray-950 p-5 rounded-2xl w-full max-w-sm shadow-2xl space-y-4 relative">
+            <button onclick="window.dashCloseModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-900 font-bold text-base">✕</button>
+            
+            <div>
+                <h4 id="modalVehicleTitle" class="text-sm font-black text-gray-950 leading-tight">Модель техники</h4>
+                <p id="modalVehiclePlate" class="text-[10px] font-mono text-gray-500 mt-0.5">[0000 AA-7]</p>
+            </div>
+
+            <div id="modalWarrantySection" class="space-y-3 pt-2 border-t border-gray-100 hidden">
+                <div>
+                    <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Текущая наработка (м/ч)</label>
+                    <input type="number" id="inputModalCurrentHours" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-2.5 font-bold focus:border-emerald-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Нулевая база</label>
+                        <input type="number" id="inputModalZeroHours" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-2.5 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Периодичность ТО</label>
+                        <input type="number" id="inputModalStepHours" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-2.5 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div id="modalDocsSection" class="space-y-3 pt-2 border-t border-gray-100 hidden">
+                <div>
+                    <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Дата Гостехосмотра</label>
+                    <input type="date" id="inputModalInspectionDate" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none bg-white">
+                </div>
+                <div>
+                    <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Дата Страховки</label>
+                    <input type="date" id="inputModalInsuranceDate" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none bg-white">
+                </div>
+            </div>
+
+            <button onclick="window.dashSaveModalData()" class="w-full bg-gray-950 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition shadow-md text-xs text-center">
+                Сохранить изменения
+            </button>
+        </div>
+    </div>
+
     <div class="bg-white border-2 border-gray-400/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between relative z-10">
         <div class="space-y-0.5">
             <p class="text-xs font-bold text-gray-950">Необходимо внести комплексные изменения или записать лог ремонта?</p>
@@ -114,25 +157,24 @@ export const template = `
 
 let refreshIntervalId = null;
 let clockIntervalId = null;
+let activeModalVehicleId = null;
 
 export async function init() {
     window.dashCompleteTask = dashCompleteTask;
     window.dashAddRepairTask = dashAddRepairTask;
     window.dashToggleFilterDropdown = dashToggleFilterDropdown;
     window.dashToggleLocalVisibility = dashToggleLocalVisibility;
-    window.dashToggleInlineMenu = dashToggleInlineMenu;
     
-    window.dashUpdateHours = dashUpdateHours;
-    window.dashUpdateDocDate = dashUpdateDocDate;
+    // Функции центрального модального окна
+    window.dashOpenWarrantyModal = dashOpenWarrantyModal;
+    window.dashOpenDocsModal = dashOpenDocsModal;
+    window.dashCloseModal = dashCloseModal;
+    window.dashSaveModalData = dashSaveModalData;
 
     document.addEventListener('click', function(e) {
         const drop = document.getElementById('dashFilterDropdown');
         if (drop && !drop.contains(e.target) && !e.target.closest('button')) {
             drop.classList.add('hidden');
-        }
-        
-        if (!e.target.closest('.inline-edit-trigger') && !e.target.closest('.inline-edit-menu')) {
-            document.querySelectorAll('.inline-edit-menu').forEach(el => el.classList.add('hidden'));
         }
     });
 
@@ -210,16 +252,6 @@ function dashToggleFilterDropdown(e) {
     if (drop) drop.classList.toggle('hidden');
 }
 
-function dashToggleInlineMenu(e, menuId) {
-    e.stopPropagation();
-    const menu = document.getElementById(menuId);
-    if (menu) {
-        const isHidden = menu.classList.contains('hidden');
-        document.querySelectorAll('.inline-edit-menu').forEach(el => el.classList.add('hidden'));
-        if (isHidden) menu.classList.remove('hidden');
-    }
-}
-
 function renderFilterCheckboxes(vehicles) {
     const container = document.getElementById('dashFilterCheckboxes');
     if (!container) return;
@@ -257,29 +289,76 @@ function dashToggleLocalVisibility(vehicleId, isChecked) {
     }
 }
 
-async function dashUpdateHours(vehicleId, type, value) {
-    let field = 'current_hours';
-    if (type === 'zero') field = 'zero_hours';
-    if (type === 'period') field = 'step_hours';
-    const numValue = parseInt(value);
-    if (isNaN(numValue) || numValue < 0) return;
-    try {
-        const { error } = await window._supabase.from('vehicles').update({ [field]: numValue }).eq('id', vehicleId);
-        if (error) throw error;
-        await loadDashboardData();
-    } catch (err) {
-        console.error("Ошибка сохранения наработки:", err.message);
-    }
+// ОТКРЫТИЕ МОДАЛКИ ДЛЯ ГАРАНТИИ
+function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDate, insDate) {
+    activeModalVehicleId = id;
+    document.getElementById('modalVehicleTitle').innerText = model;
+    document.getElementById('modalVehiclePlate').innerText = plate ? `[${plate}]` : '[б/н]';
+    
+    document.getElementById('inputModalCurrentHours').value = current;
+    document.getElementById('inputModalZeroHours').value = zero;
+    document.getElementById('inputModalStepHours').value = step;
+    
+    // Заполняем скрытые поля дат, чтобы не стереть при сохранении
+    document.getElementById('inputModalInspectionDate').value = inspectDate || '';
+    document.getElementById('inputModalInsuranceDate').value = insDate || '';
+
+    document.getElementById('modalWarrantySection').classList.remove('hidden');
+    document.getElementById('modalDocsSection').classList.add('hidden');
+    document.getElementById('dashEditModal').classList.remove('hidden');
 }
 
-async function dashUpdateDocDate(vehicleId, field, value) {
-    if (!value) return;
+// ОТКРЫТИЕ МОДАЛКИ ДЛЯ ДОКУМЕНТОВ
+function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero, step) {
+    activeModalVehicleId = id;
+    document.getElementById('modalVehicleTitle').innerText = model;
+    document.getElementById('modalVehiclePlate').innerText = plate ? `[${plate}]` : '[б/н]';
+    
+    document.getElementById('inputModalInspectionDate').value = inspectDate || '';
+    document.getElementById('inputModalInsuranceDate').value = insDate || '';
+    
+    // Заполняем скрытые поля моточасов, чтобы не стереть при сохранении
+    document.getElementById('inputModalCurrentHours').value = current;
+    document.getElementById('inputModalZeroHours').value = zero;
+    document.getElementById('inputModalStepHours').value = step;
+
+    document.getElementById('modalDocsSection').classList.remove('hidden');
+    document.getElementById('modalWarrantySection').classList.add('hidden');
+    document.getElementById('dashEditModal').classList.remove('hidden');
+}
+
+function dashCloseModal() {
+    document.getElementById('dashEditModal').classList.add('hidden');
+    activeModalVehicleId = null;
+}
+
+// СОХРАНЕНИЕ ДАННЫХ ИЗ МОДАЛЬНОГО ОКНА ПО ЦЕНТРУ ЭКРАНА
+async function dashSaveModalData() {
+    if (!activeModalVehicleId) return;
+    
+    const curHrs = parseInt(document.getElementById('inputModalCurrentHours').value) || 0;
+    const zeroHrs = parseInt(document.getElementById('inputModalZeroHours').value) || 0;
+    const stepHrs = parseInt(document.getElementById('inputModalStepHours').value) || 125;
+    const inspectDt = document.getElementById('inputModalInspectionDate').value || null;
+    const insDt = document.getElementById('inputModalInsuranceDate').value || null;
+
     try {
-        const { error } = await window._supabase.from('vehicles').update({ [field]: value }).eq('id', vehicleId);
+        const { error } = await window._supabase
+            .from('vehicles')
+            .update({
+                current_hours: curHrs,
+                zero_hours: zeroHrs,
+                step_hours: stepHrs,
+                inspection_date: inspectDt,
+                insurance_date: insDt
+            })
+            .eq('id', activeModalVehicleId);
+
         if (error) throw error;
+        dashCloseModal();
         await loadDashboardData();
     } catch (err) {
-        console.error("Ошибка сохранения даты:", err.message);
+        alert("Ошибка сохранения: " + err.message);
     }
 }
 
@@ -356,6 +435,7 @@ function renderSeparatedAlerts(list, activeTasks) {
     const docAlerts = [];
 
     list.forEach(v => {
+        const cleanPlate = v.plate || '';
         const plateStr = v.plate ? ` [${v.plate}]` : ' [б/н]';
 
         // ДОКУМЕНТЫ (ТЕХОСМОТР)
@@ -365,12 +445,15 @@ function renderSeparatedAlerts(list, activeTasks) {
                 docAlerts.push({
                     id: v.id,
                     model: v.model,
-                    plate: plateStr,
+                    plate: cleanPlate,
+                    plateLabel: plateStr,
                     daysLeft: diff,
                     isCritical: diff <= 0,
-                    type: 'inspection_date',
-                    label: 'Техосмотр',
-                    value: v.inspection_date,
+                    inspectDate: v.inspection_date,
+                    insDate: v.insurance_date,
+                    current: v.current_hours || 0,
+                    zero: v.zero_hours || 0,
+                    step: v.step_hours || 125,
                     statusText: diff <= 0 ? `🛑 Просрочен Гостехосмотр!` : `⚠️ Техосмотр истекает через ${diff} дн.`
                 });
             }
@@ -383,12 +466,15 @@ function renderSeparatedAlerts(list, activeTasks) {
                 docAlerts.push({
                     id: v.id,
                     model: v.model,
-                    plate: plateStr,
+                    plate: cleanPlate,
+                    plateLabel: plateStr,
                     daysLeft: diffIns,
                     isCritical: diffIns <= 0,
-                    type: 'insurance_date',
-                    label: 'Страховка',
-                    value: v.insurance_date,
+                    inspectDate: v.inspection_date,
+                    insDate: v.insurance_date,
+                    current: v.current_hours || 0,
+                    zero: v.zero_hours || 0,
+                    step: v.step_hours || 125,
                     statusText: diffIns <= 0 ? `🛑 Закончилась страховка!` : `⚠️ Страховка истекает через ${diffIns} дн.`
                 });
             }
@@ -424,24 +510,25 @@ function renderSeparatedAlerts(list, activeTasks) {
             warrantyAlerts.push({
                 id: v.id,
                 status: status,
-                hoursLeft: hoursLeft, // Ключ для сортировки (меньше = хуже)
+                hoursLeft: hoursLeft,
                 model: v.model,
-                plate: plateStr,
+                plate: cleanPlate,
+                plateLabel: plateStr,
                 hours: hours,
                 zeroHours: zeroHours,
                 stepHours: stepHours,
+                inspectDate: v.inspection_date,
+                insDate: v.insurance_date,
                 text: statusText
             });
         }
     });
 
-    // СОРТИРОВКА ГАРАНТИИ (Меньше м/ч осталось -> выше в списке)
+    // СОРТИРОВКА: Меньше м/ч или дней осталось -> выше в списке (меньше=хуже)
     warrantyAlerts.sort((a, b) => a.hoursLeft - b.hoursLeft);
-
-    // СОРТИРОВКА ДОКУМЕНТОВ (Меньше дней осталось -> выше в списке)
     docAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
 
-    // 2. КОМПАКТНЫЙ РЕНДЕР ГАРАНТИИ С ВЫПАДАЮЩИМ МЕНЮ ПО КЛИКУ НА ✏️
+    // 2. КОМПАКТНЫЙ РЕНДЕР ГАРАНТИИ
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
@@ -452,30 +539,14 @@ function renderSeparatedAlerts(list, activeTasks) {
                 if (a.status === 'danger') cardClass = "bg-red-50/50 border-red-200 text-red-950";
                 if (a.status === 'warning') cardClass = "bg-amber-50/50 border-amber-200 text-amber-950";
                 
-                const menuId = `warranty_menu_${a.id}`;
                 return `
-                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col relative ${cardClass}">
+                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col ${cardClass}">
                         <div class="flex items-center justify-between gap-1">
                             <div class="truncate">
-                                <span class="font-extrabold">${a.model}</span> <span class="font-mono text-[9px] text-gray-500">${a.plate}</span>
+                                <span class="font-extrabold">${a.model}</span> <span class="font-mono text-[9px] text-gray-500">${a.plateLabel}</span>
                                 <p class="text-gray-900 mt-0.5">${a.text}</p>
                             </div>
-                            <button onclick="window.dashToggleInlineMenu(event, '${menuId}')" class="inline-edit-trigger p-1 hover:bg-black/5 rounded text-xs" title="Изменить параметры">✏️</button>
-                        </div>
-                        
-                        <div id="${menuId}" class="inline-edit-menu absolute right-2 top-7 bg-white border border-gray-300 rounded-xl shadow-xl p-2.5 z-40 hidden space-y-2 w-48 text-gray-900">
-                            <div>
-                                <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Текущие м/ч</label>
-                                <input type="number" value="${a.hours}" onchange="window.dashUpdateHours(${a.id}, 'current', this.value)" class="w-full text-xs border border-gray-300 rounded px-1.5 py-0.5 font-bold focus:border-emerald-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Нулевая база (Сброс)</label>
-                                <input type="number" value="${a.zeroHours}" onchange="window.dashUpdateHours(${a.id}, 'zero', this.value)" class="w-full text-xs border border-gray-300 rounded px-1.5 py-0.5 focus:border-emerald-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Периодичность ТО</label>
-                                <input type="number" value="${a.stepHours}" onchange="window.dashUpdateHours(${a.id}, 'period', this.value)" class="w-full text-xs border border-gray-300 rounded px-1.5 py-0.5 focus:border-emerald-500 focus:outline-none">
-                            </div>
+                            <button onclick="window.dashOpenWarrantyModal(${a.id}, '${a.model}', '${a.plate}', ${a.hours}, ${a.zeroHours}, ${a.stepHours}, '${a.inspectDate || ''}', '${a.insDate || ''}')" class="p-1 hover:bg-black/5 rounded text-xs" title="Изменить параметры">✏️</button>
                         </div>
                     </div>
                 `;
@@ -483,28 +554,22 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     }
 
-    // 3. КОМПАКТНЫЙ РЕНДЕР СРОКОВ ДОКУМЕНТОВ С ВЫПАДАЮЩИМ КАЛЕНДАРЕМ ПО КЛИКУ НА ✏️
+    // 3. КОМПАКТНЫЙ РЕНДЕР СРОКОВ ДОКУМЕНТОВ
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
         if (docAlerts.length === 0) {
             containerDocs.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-900 p-3 rounded-lg text-center text-[11px] font-bold">Все документы в порядке!</div>`;
         } else {
-            containerDocs.innerHTML = docAlerts.map((d, index) => {
+            containerDocs.innerHTML = docAlerts.map(d => {
                 const cardClass = d.isCritical ? "bg-red-50/50 border-red-200 text-red-950" : "bg-amber-50/50 border-amber-200 text-amber-950";
-                const menuId = `doc_menu_${d.id}_${index}`;
                 return `
-                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col relative ${cardClass}">
+                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col ${cardClass}">
                         <div class="flex items-center justify-between gap-1">
                             <div class="truncate">
-                                <span class="font-extrabold">${d.model}</span> <span class="font-mono text-[9px] text-gray-500">${d.plate}</span>
+                                <span class="font-extrabold">${d.model}</span> <span class="font-mono text-[9px] text-gray-500">${d.plateLabel}</span>
                                 <p class="mt-0.5 text-gray-900 font-medium">${d.statusText}</p>
                             </div>
-                            <button onclick="window.dashToggleInlineMenu(event, '${menuId}')" class="inline-edit-trigger p-1 hover:bg-black/5 rounded text-xs" title="Изменить дату">✏️</button>
-                        </div>
-                        
-                        <div id="${menuId}" class="inline-edit-menu absolute right-2 top-7 bg-white border border-gray-300 rounded-xl shadow-xl p-2 z-40 hidden w-44 text-gray-900">
-                            <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Новая дата для: ${d.label}</label>
-                            <input type="date" value="${d.value}" onchange="window.dashUpdateDocDate(${d.id}, '${d.type}', this.value)" class="w-full text-xs border border-gray-300 rounded px-1.5 py-1 focus:border-emerald-500 focus:outline-none bg-white font-medium">
+                            <button onclick="window.dashOpenDocsModal(${d.id}, '${d.model}', '${d.plate}', '${d.inspectDate || ''}', '${d.insDate || ''}', ${d.current}, ${d.zero}, ${d.step})" class="p-1 hover:bg-black/5 rounded text-xs" title="Изменить даты">✏️</button>
                         </div>
                     </div>
                 `;
