@@ -184,17 +184,15 @@ let selectedCategory = "all";
 let currentSort = "name_asc";
 let refreshIntervalId = null;
 
-// Универсальная функция сохранения настроек в облако Supabase
+// Универсальная функция для отправки настроек в Supabase
 async function saveSettingsToSupabase(key, data) {
     if (!window._supabase) return;
     try {
-        const { error } = await window._supabase
+        await window._supabase
             .from('fleet_config')
             .upsert({ key: key, data: data }, { onConflict: 'key' });
-        
-        if (error) throw error;
     } catch (err) {
-        console.error("Ошибка синхронизации конфигурации:", err.message);
+        console.error("Ошибка сохранения конфигурации:", err.message);
     }
 }
 
@@ -238,7 +236,7 @@ export async function init() {
 async function loadAllData(isFirstLoad = false) {
     if (!window._supabase) return;
     try {
-        // Одновременный запрос техники, задач и списков конфигурации
+        // Запрашиваем из Supabase технику, активные задачи и глобальные конфиги одновременно
         const [vRes, tRes, confRes] = await Promise.all([
             window._supabase.from('vehicles').select('*'),
             window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false),
@@ -265,18 +263,15 @@ async function loadAllData(isFirstLoad = false) {
             categories = [...new Set(categories)];
         }
 
-        if (tRes.data) {
-            tasks = tRes.data;
-        } else {
-            tasks = [];
-        }
+        if (tRes.data) tasks = tRes.data;
+        else tasks = [];
 
         if (isFirstLoad) {
             renderCategoriesBar();
         }
         renderFleet();
     } catch (e) {
-        console.error("Ошибка при загрузке данных:", e);
+        console.error("Ошибка при загрузке данных из Supabase:", e);
     }
 }
 
