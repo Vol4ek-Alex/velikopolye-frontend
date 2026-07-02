@@ -184,17 +184,21 @@ let selectedCategory = "all";
 let currentSort = "name_asc";
 let refreshIntervalId = null;
 
+// Универсальная функция сохранения настроек в облако Supabase
+async function saveSettingsToSupabase(key, data) {
+    if (!window._supabase) return;
+    try {
+        const { error } = await window._supabase
+            .from('fleet_config')
+            .upsert({ key: key, data: data }, { onConflict: 'key' });
+        
+        if (error) throw error;
+    } catch (err) {
+        console.error("Ошибка синхронизации конфигурации:", err.message);
+    }
+}
+
 export async function init() {
-    const savedCats = localStorage.getItem('fleet_custom_categories');
-    if (savedCats) categories = JSON.parse(savedCats);
-    if (!categories.includes("Без категории")) categories.push("Без категории");
-
-    const savedTags = localStorage.getItem('fleet_custom_tags');
-    if (savedTags) baseTags = JSON.parse(savedTags);
-
-    const savedDrivers = localStorage.getItem('fleet_custom_drivers');
-    if (savedDrivers) drivers = JSON.parse(savedDrivers);
-
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
         searchInput.value = searchQuery;
@@ -234,10 +238,25 @@ export async function init() {
 async function loadAllData(isFirstLoad = false) {
     if (!window._supabase) return;
     try {
-        const { data: vData, error: vErr } = await window._supabase.from('vehicles').select('*');
-        if (!vErr && vData) {
-            vehicles = vData;
-            vData.forEach(v => {
+        // Одновременный запрос техники, задач и списков конфигурации
+        const [vRes, tRes, confRes] = await Promise.all([
+            window._supabase.from('vehicles').select('*'),
+            window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false),
+            window._supabase.from('fleet_config').select('*')
+        ]);
+
+        if (confRes.data && confRes.data.length > 0) {
+            confRes.data.forEach(item => {
+                if (item.key === 'categories') categories = item.data;
+                if (item.key === 'drivers') drivers = item.data;
+                if (item.key === 'tags') baseTags = item.data;
+            });
+        }
+        if (!categories.includes("Без категории")) categories.push("Без категории");
+
+        if (vRes.data) {
+            vehicles = vRes.data;
+            vRes.data.forEach(v => {
                 const typeName = v.type || "Без категории";
                 if (!categories.map(c => c.toLowerCase()).includes(typeName.toLowerCase())) {
                     categories.push(typeName);
@@ -246,17 +265,18 @@ async function loadAllData(isFirstLoad = false) {
             categories = [...new Set(categories)];
         }
 
-        try {
-            const { data: tData, error: tErr } = await window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false);
-            if (!tErr && tData) tasks = tData;
-        } catch(e) { tasks = []; }
+        if (tRes.data) {
+            tasks = tRes.data;
+        } else {
+            tasks = [];
+        }
 
         if (isFirstLoad) {
             renderCategoriesBar();
         }
         renderFleet();
     } catch (e) {
-        console.error(e);
+        console.error("Ошибка при загрузке данных:", e);
     }
 }
 
@@ -308,7 +328,7 @@ function renderFleet() {
         const invStr = v.inv_number ? v.inv_number.toLowerCase() : '';
         const vinStr = v.vin_number ? v.vin_number.toLowerCase() : '';
         const tagsStr = v.tags ? v.tags.toLowerCase() : '';
-        const driverStr = v.notes ? v.notes.toLowerCase() : ''; // Поле notes хранит имя водителя
+        const driverStr = v.notes ? v.notes.toLowerCase() : ''; 
 
         const queryMatch = modelStr.includes(searchQuery) || plateStr.includes(searchQuery) || invStr.includes(searchQuery) || vinStr.includes(searchQuery) || tagsStr.includes(searchQuery) || driverStr.includes(searchQuery);
         if (!queryMatch) return false;
@@ -471,7 +491,7 @@ function openVehicleModal(vehicle = null) {
         document.getElementById('vId').value = vehicle.id;
         document.getElementById('vCategory').value = vehicle.type || 'Без категории';
         document.getElementById('vName').value = vehicle.model || '';
-        document.getElementById('vDriver').value = vehicle.notes || ''; //notes хранит ФИО водителя
+        document.getElementById('vDriver').value = vehicle.notes || ''; 
         document.getElementById('vPlate').value = vehicle.plate || '';
         document.getElementById('vInv').value = vehicle.inv_number || '';
         document.getElementById('vHours').value = vehicle.current_hours || 0;
@@ -505,7 +525,7 @@ async function handleFormSubmit() {
     const payload = {
         type: document.getElementById('vCategory').value,
         model: document.getElementById('vName').value,
-        notes: document.getElementById('vDriver').value, // ИМЯ ВОДИТЕЛЯ ИДЕТ СЮДА
+        notes: document.getElementById('vDriver').value, 
         plate: document.getElementById('vPlate').value,
         inv_number: document.getElementById('vInv').value,
         current_hours: parseInt(document.getElementById('vHours').value) || 0,
@@ -555,7 +575,7 @@ function renderTagsModalList() {
         </div>
     `).join('');
 
-    window.addCustomTag = () => {
+    window.addCustomTag = async () => {
         const nameInput = document.getElementById('newTagNameInput');
         const colorInput = document.getElementById('newTagColorInput');
         if (nameInput && nameInput.value.trim()) {
@@ -563,17 +583,17 @@ function renderTagsModalList() {
                 name: nameInput.value.trim(),
                 color: colorInput.value
             });
-            localStorage.setItem('fleet_custom_tags', JSON.stringify(baseTags));
+            await saveSettingsToSupabase('tags', baseTags);
             nameInput.value = "";
             renderTagsModalList();
             renderFleet();
         }
     };
 
-    window.deleteCustomTag = (idx) => {
+    window.deleteCustomTag = async (idx) => {
         if (confirm(`Удалить тег "${baseTags[idx].name}" из списка?`)) {
             baseTags.splice(idx, 1);
-            localStorage.setItem('fleet_custom_tags', JSON.stringify(baseTags));
+            await saveSettingsToSupabase('tags', baseTags);
             renderTagsModalList();
             renderFleet();
         }
@@ -594,20 +614,20 @@ function renderDriversModalList() {
         </div>
     `).join('');
 
-    window.addCustomDriver = () => {
+    window.addCustomDriver = async () => {
         const input = document.getElementById('newDriverNameInput');
         if (input && input.value.trim()) {
             drivers.push(input.value.trim());
-            localStorage.setItem('fleet_custom_drivers', JSON.stringify(drivers));
+            await saveSettingsToSupabase('drivers', drivers);
             input.value = "";
             renderDriversModalList();
         }
     };
 
-    window.deleteCustomDriver = (idx) => {
+    window.deleteCustomDriver = async (idx) => {
         if (confirm(`Удалить водителя "${drivers[idx]}" из общего списка?`)) {
             drivers.splice(idx, 1);
-            localStorage.setItem('fleet_custom_drivers', JSON.stringify(drivers));
+            await saveSettingsToSupabase('drivers', drivers);
             renderDriversModalList();
         }
     };
@@ -627,11 +647,11 @@ function renderCategoriesModalList() {
         </div>
     `).join('');
 
-    window.addCustomCategory = () => {
+    window.addCustomCategory = async () => {
         const input = document.getElementById('newCatInput');
         if (input && input.value.trim()) {
             categories.push(input.value.trim());
-            localStorage.setItem('fleet_custom_categories', JSON.stringify(categories));
+            await saveSettingsToSupabase('categories', categories);
             input.value = "";
             renderCategoriesModalList();
             renderCategoriesBar();
@@ -648,7 +668,7 @@ function renderCategoriesModalList() {
                 } catch(err) { console.error("Ошибка переноса ТС:", err); }
             }
             categories.splice(idx, 1);
-            localStorage.setItem('fleet_custom_categories', JSON.stringify(categories));
+            await saveSettingsToSupabase('categories', categories);
             renderCategoriesModalList();
             await loadAllData(true);
         }
