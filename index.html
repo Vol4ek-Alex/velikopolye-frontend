@@ -76,36 +76,29 @@
     </header>
 
     <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between p-4 transition-transform -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
-        <div>
-            <div class="hidden md:flex items-center gap-3 mb-8 px-2 border-b border-gray-100 pb-5">
-                <span class="text-3xl bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 shadow-sm flex items-center justify-center">🚜</span>
-                <div class="flex flex-col justify-center">
-                    <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider leading-none mb-1 block">ф-л СХК</span>
-                    <h1 class="text-lg font-black text-gray-800 leading-tight tracking-tight">«Великополье»</h1>
-                    <span class="text-[11px] font-medium text-gray-400 leading-none mt-1 block">ГП «Минсктранс»</span>
+        <!-- БЛОК ПОЛЬЗОВАТЕЛЯ С ФИКСИРОВАННОЙ ГЕОМЕТРИЕЙ -->
+        <div class="space-y-4 border-t border-gray-100 pt-4 mt-auto">
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between shadow-3xs gap-3">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <span class="text-lg flex-shrink-0">👤</span>
+                    <div class="min-w-0 flex-1">
+                        <p id="userBoxName" class="text-xs font-black text-gray-900 truncate leading-tight">Загрузка...</p>
+                        <p id="userBoxRole" class="text-[9px] font-bold text-gray-500 uppercase tracking-wide mt-1 truncate">Загрузка...</p>
+                    </div>
                 </div>
+                <!-- Фиксированная кнопка-дверь (flex-shrink-0 и точные размеры) -->
+                <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 rounded-lg transition shadow-3xs text-sm">
+                    🚪
+                </button>
             </div>
-            <nav id="menuContainer" class="space-y-1"></nav>
-        </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between shadow-3xs gap-2">
-            <div class="flex items-center gap-2 truncate">
-                <span class="text-lg flex-shrink-0">👤</span>
-                <div class="truncate">
-                <!-- Здесь имя теперь будет меняться динамически -->
-                    <p id="userBoxName" class="text-xs font-black text-gray-900 truncate leading-tight">Загрузка...</p>
-                    <p id="userBoxRole" class="text-[9px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Загрузка...</p>
-                </div>
-            </div>
-            <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 rounded-lg transition shadow-3xs">
-            🚪
-            </button>
-        </div>
-
-            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
+            <!-- Кнопка PWA с правильным поведением -->
+            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center shadow-3xs">
                 📱 Установить на телефон
             </button>
-            <div class="text-xs text-gray-400 text-center">АРМ v1.0 • Модульный • @Vol4ek</div>
+            
+            <!-- Копирайт с отступом снизу -->
+            <div class="text-[10px] text-gray-400 text-center pt-1 pb-2">АРМ v1.0 • Модульный • @Vol4ek</div>
         </div>
     </aside>
 
