@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <style>
-        /* Оригинальный красивый сельскохозяйственный узор (линии борозд поля и текстура) */
+        /* Строгий фирменный сельскохозяйственный узор */
         .farm-pattern-bg {
             background-color: #f8fafc;
             background-image: 
@@ -80,22 +80,17 @@
         </div>
 
         <div class="space-y-3 border-t border-gray-100 pt-4">
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2.5 shadow-3xs">
-                <div class="flex items-center gap-2.5">
-                    <span class="text-xl">👤</span>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between shadow-3xs gap-2">
+                <div class="flex items-center gap-2 truncate">
+                    <span class="text-lg flex-shrink-0">👤</span>
                     <div class="truncate">
-                        <p id="userBoxName" class="text-xs font-black text-gray-900 truncate leading-tight">Александр А. В.</p>
-                        <p id="userBoxRole" class="text-[10px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Загрузка...</p>
+                        <p class="text-xs font-black text-gray-900 truncate leading-tight">Александр А. В.</p>
+                        <p id="userBoxRole" class="text-[9px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Загрузка...</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-gray-200/60">
-                    <button onclick="window.forceClearSystemCache()" title="Принудительно обновить систему и сбросить кэш" class="bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 text-[10px] font-bold py-1.5 rounded-lg transition text-center shadow-3xs">
-                        🔄 Кэш
-                    </button>
-                    <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold py-1.5 rounded-lg transition text-center shadow-3xs">
-                        🚪 Выйти
-                    </button>
-                </div>
+                <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg transition shadow-3xs">
+                    🚪
+                </button>
             </div>
 
             <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
@@ -160,9 +155,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => {
-                        reg.update();
-                    })
+                    .then(reg => { reg.update(); })
                     .catch(err => console.error('❌ Ошибка SW:', err));
             });
         }
@@ -193,9 +186,7 @@
             const roleSelect = document.getElementById('authRoleSelect');
             
             if (input && input.value === SITE_PIN) {
-                if (roleSelect) {
-                    localStorage.setItem('user_role', roleSelect.value);
-                }
+                if (roleSelect) localStorage.setItem('user_role', roleSelect.value);
                 localStorage.setItem('site_access_granted', 'true');
                 document.getElementById('siteAuthOverlay').classList.add('hidden');
                 updateSidebarUser();
@@ -210,27 +201,6 @@
             const roleEl = document.getElementById('userBoxRole');
             if (roleEl) roleEl.innerText = role;
         }
-
-        window.forceClearSystemCache = () => {
-            if (confirm("Вы действительно хотите принудительно обновить приложение и очистить локальный кэш?")) {
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(registrations => {
-                        for (let registration of registrations) {
-                            registration.unregister();
-                        }
-                    });
-                }
-                const currentRole = localStorage.getItem('user_role');
-                const access = localStorage.getItem('site_access_granted');
-                localStorage.clear();
-                sessionStorage.clear();
-                
-                if (currentRole) localStorage.setItem('user_role', currentRole);
-                if (access) localStorage.setItem('site_access_granted', access);
-                
-                window.location.reload(true);
-            }
-        };
 
         window.logoutSystemUser = () => {
             if (confirm("Выйти из текущей учетной записи?")) {
