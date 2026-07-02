@@ -43,6 +43,9 @@ export const template = `
         <div class="bg-white rounded-xl w-full max-w-md p-6 border-2 border-gray-400 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 id="vModalTitle" class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-2">Карточка техники</h3>
             <form id="vForm" class="space-y-3.5 text-xs">
+
+            <form id="vForm" onsubmit="window.handleVehicleFormSubmit(event)" class="space-y-3.5 text-xs">
+            </form> ```
                 <input type="hidden" id="vId">
                 
                 <div class="grid grid-cols-2 gap-3">
@@ -203,14 +206,6 @@ export async function init() {
         };
     }
 
-    const form = document.getElementById('vForm');
-    if (form) {
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            await handleFormSubmit();
-        };
-    }
-
     const delBtn = document.getElementById('vDeleteBtn');
     if (delBtn) delBtn.onclick = handleDeleteVehicle;
 
@@ -219,7 +214,10 @@ export async function init() {
     window.openCategoriesModal = () => renderCategoriesModalList();
     window.openTagsModal = () => renderTagsModalList();
     window.openDriversModal = () => renderDriversModalList();
-    
+    window.handleVehicleFormSubmit = async (e) => {
+    e.preventDefault();
+    await handleFormSubmit();
+    };
     window.handleSortChange = (val) => {
         currentSort = val;
         renderFleet();
