@@ -8,17 +8,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <style>
-        /* Надежный бесшовный сельскохозяйственный узор (точки и линии борозд поля) на чистом SVG */
+        /* Оригинальный красивый сельскохозяйственный узор (линии борозд поля и текстура) */
         .farm-pattern-bg {
             background-color: #f8fafc;
-            background-image: radial-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px);
-            background-size: 20px 20px, 40px 40px;
+            background-image: 
+                radial-gradient(#cbd5e1 1.5px, transparent 1.5px), 
+                linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+                linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px, 48px 48px, 48px 48px;
         }
     </style>
 </head>
 <body class="farm-pattern-bg text-gray-900 min-h-screen flex flex-col md:flex-row">
 
-    <!-- ЭКРАН АВТОРИЗАЦИИ (ЛОГИН-ПАНЕЛЬ) — БЕЗ ФИО -->
     <div id="siteAuthOverlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
         <div class="bg-white border border-gray-100 p-6 rounded-2xl w-full max-w-sm shadow-2xl text-center space-y-5">
             <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 shadow-sm flex items-center justify-center text-3xl mx-auto">
@@ -64,7 +66,6 @@
         <button onclick="toggleMobileMenu()" class="text-gray-600 text-2xl">☰</button>
     </header>
 
-    <!-- БОКОВАЯ ПАНЕЛЬ (САЙДБАР) — ТУТ ФИО ОСТАЕТСЯ И ВЫВОДИТСЯ -->
     <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between p-4 transition-transform -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
         <div>
             <div class="hidden md:flex items-center gap-3 mb-8 px-2 border-b border-gray-100 pb-5">
@@ -79,12 +80,10 @@
         </div>
 
         <div class="space-y-3 border-t border-gray-100 pt-4">
-            <!-- БЛОК ПРОФИЛЯ С ФИО, ДОЛЖНОСТЬЮ И КНОПКАМИ -->
             <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2.5 shadow-3xs">
                 <div class="flex items-center gap-2.5">
                     <span class="text-xl">👤</span>
                     <div class="truncate">
-                        <!-- Здесь ФИО выводится, как и требовалось -->
                         <p id="userBoxName" class="text-xs font-black text-gray-900 truncate leading-tight">Александр А. В.</p>
                         <p id="userBoxRole" class="text-[10px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Загрузка...</p>
                     </div>
@@ -163,14 +162,6 @@
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => {
                         reg.update();
-                        reg.onupdatefound = () => {
-                            const installingWorker = reg.installing;
-                            installingWorker.onstatechange = () => {
-                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    setTimeout(() => { window.location.reload(); }, 1000);
-                                }
-                            };
-                        };
                     })
                     .catch(err => console.error('❌ Ошибка SW:', err));
             });
@@ -194,7 +185,6 @@
             deferredPrompt = null;
         };
 
-        // --- ЛОГИКА АВТОРИЗАЦИИ И СЕССИЙ ---
         const SITE_PIN = "7777"; 
 
         window.checkSiteAccess = () => {
@@ -221,7 +211,6 @@
             if (roleEl) roleEl.innerText = role;
         }
 
-        // Принудительное очищение кэша Service Worker и локальной памяти
         window.forceClearSystemCache = () => {
             if (confirm("Вы действительно хотите принудительно обновить приложение и очистить локальный кэш?")) {
                 if ('serviceWorker' in navigator) {
@@ -243,7 +232,6 @@
             }
         };
 
-        // Разлогин из системы
         window.logoutSystemUser = () => {
             if (confirm("Выйти из текущей учетной записи?")) {
                 localStorage.removeItem('site_access_granted');
