@@ -8,14 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <style>
-        /* Строгий фирменный сельскохозяйственный узор */
+        /* Аккуратный, мягкий и профессиональный точечный фон, который не рябит */
         .farm-pattern-bg {
             background-color: #f8fafc;
-            background-image: 
-                radial-gradient(#cbd5e1 1.5px, transparent 1.5px), 
-                linear-gradient(to right, #e2e8f0 1px, transparent 1px),
-                linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
-            background-size: 24px 24px, 48px 48px, 48px 48px;
+            background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
         }
     </style>
 </head>
@@ -88,7 +85,7 @@
                         <p id="userBoxRole" class="text-[9px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Загрузка...</p>
                     </div>
                 </div>
-                <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg transition shadow-3xs">
+                <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 rounded-lg transition shadow-3xs">
                     🚪
                 </button>
             </div>

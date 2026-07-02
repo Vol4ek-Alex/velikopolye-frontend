@@ -165,7 +165,6 @@ export async function init() {
     window.dashToggleFilterDropdown = dashToggleFilterDropdown;
     window.dashToggleLocalVisibility = dashToggleLocalVisibility;
     
-    // Функции центрального модального окна
     window.dashOpenWarrantyModal = dashOpenWarrantyModal;
     window.dashOpenDocsModal = dashOpenDocsModal;
     window.dashCloseModal = dashCloseModal;
@@ -289,7 +288,6 @@ function dashToggleLocalVisibility(vehicleId, isChecked) {
     }
 }
 
-// ОТКРЫТИЕ МОДАЛКИ ДЛЯ ГАРАНТИИ
 function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDate, insDate) {
     activeModalVehicleId = id;
     document.getElementById('modalVehicleTitle').innerText = model;
@@ -299,7 +297,6 @@ function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDat
     document.getElementById('inputModalZeroHours').value = zero;
     document.getElementById('inputModalStepHours').value = step;
     
-    // Заполняем скрытые поля дат, чтобы не стереть при сохранении
     document.getElementById('inputModalInspectionDate').value = inspectDate || '';
     document.getElementById('inputModalInsuranceDate').value = insDate || '';
 
@@ -308,7 +305,6 @@ function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDat
     document.getElementById('dashEditModal').classList.remove('hidden');
 }
 
-// ОТКРЫТИЕ МОДАЛКИ ДЛЯ ДОКУМЕНТОВ
 function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero, step) {
     activeModalVehicleId = id;
     document.getElementById('modalVehicleTitle').innerText = model;
@@ -317,7 +313,6 @@ function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero
     document.getElementById('inputModalInspectionDate').value = inspectDate || '';
     document.getElementById('inputModalInsuranceDate').value = insDate || '';
     
-    // Заполняем скрытые поля моточасов, чтобы не стереть при сохранении
     document.getElementById('inputModalCurrentHours').value = current;
     document.getElementById('inputModalZeroHours').value = zero;
     document.getElementById('inputModalStepHours').value = step;
@@ -332,7 +327,6 @@ function dashCloseModal() {
     activeModalVehicleId = null;
 }
 
-// СОХРАНЕНИЕ ДАННЫХ ИЗ МОДАЛЬНОГО ОКНА ПО ЦЕНТРУ ЭКРАНА
 async function dashSaveModalData() {
     if (!activeModalVehicleId) return;
     
@@ -407,7 +401,6 @@ function renderSeparatedAlerts(list, activeTasks) {
     list.forEach(v => { plateMap[v.id] = v.plate ? `[${v.plate}]` : '[б/н]'; });
     const hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
 
-    // 1. РЕНДЕР ЗАДАЧ
     const containerTasks = document.getElementById('containerTasks');
     if (containerTasks) {
         if (activeTasks.length > 0) {
@@ -438,7 +431,6 @@ function renderSeparatedAlerts(list, activeTasks) {
         const cleanPlate = v.plate || '';
         const plateStr = v.plate ? ` [${v.plate}]` : ' [б/н]';
 
-        // ДОКУМЕНТЫ (ТЕХОСМОТР)
         if (v.inspection_date) {
             const diff = Math.ceil((new Date(v.inspection_date) - today) / (1000 * 60 * 60 * 24));
             if (diff <= 30) {
@@ -459,7 +451,6 @@ function renderSeparatedAlerts(list, activeTasks) {
             }
         }
 
-        // ДОКУМЕНТЫ (СТРАХОВКА)
         if (v.insurance_date) {
             const diffIns = Math.ceil((new Date(v.insurance_date) - today) / (1000 * 60 * 60 * 24));
             if (diffIns <= 30) {
@@ -480,7 +471,6 @@ function renderSeparatedAlerts(list, activeTasks) {
             }
         }
 
-        // ГАРАНТИЯ
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         if (vehicleTagsArray.includes('Гарантия') && !hiddenVehicles.includes(v.id)) {
             const hours = v.current_hours || 0;
@@ -524,11 +514,9 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     });
 
-    // СОРТИРОВКА: Меньше м/ч или дней осталось -> выше в списке (меньше=хуже)
     warrantyAlerts.sort((a, b) => a.hoursLeft - b.hoursLeft);
     docAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
 
-    // 2. КОМПАКТНЫЙ РЕНДЕР ГАРАНТИИ
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
@@ -554,7 +542,6 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     }
 
-    // 3. КОМПАКТНЫЙ РЕНДЕР СРОКОВ ДОКУМЕНТОВ
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
         if (docAlerts.length === 0) {
