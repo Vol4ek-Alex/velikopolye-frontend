@@ -242,7 +242,6 @@ async function dashCompleteTask(taskId) {
     }
 }
 
-// ИСПРАВЛЕНО: Приведение аргумента к числу (Number), чтобы поиск по кешу срабатывал корректно
 function dashOpenModal(vehicleId) {
     const targetId = Number(vehicleId);
     const v = (window.dashCachedVehicles || []).find(item => item.id === targetId);
@@ -295,7 +294,7 @@ async function dashSaveModalData() {
         if (error) throw error;
         dashCloseModal();
         await loadDashboardData();
-    } catch (err) catch (err) {
+    } catch (err) {
         alert("Ошибка сохранения: " + err.message);
     }
 }
