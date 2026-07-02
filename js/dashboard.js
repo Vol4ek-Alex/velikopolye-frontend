@@ -20,7 +20,7 @@ export const template = `
                 <span class="text-xs bg-white/10 px-2 py-0.5 rounded-md font-bold text-gray-300">Всего</span>
             </div>
             <div class="mt-2 flex items-baseline gap-1">
-                <h3 id="dashTotal" class="text-4xl font-black tracking-tight">60</h3>
+                <h3 id="dashTotal" class="text-4xl font-black tracking-tight">0</h3>
                 <span class="text-xs font-bold text-gray-400">ед. техники</span>
             </div>
         </div>
@@ -30,21 +30,21 @@ export const template = `
                 <p class="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block animate-pulse"></span> Готово
                 </p>
-                <h4 id="dashReady" class="text-2xl font-black text-gray-950 mt-2">50</h4>
+                <h4 id="dashReady" class="text-2xl font-black text-gray-950 mt-2">0</h4>
             </div>
 
             <div class="bg-blue-50/60 border-2 border-blue-500/20 rounded-xl p-3 flex flex-col justify-between">
                 <p class="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span> Хранение
                 </p>
-                <h4 id="dashStorage" class="text-2xl font-black text-gray-950 mt-2">1</h4>
+                <h4 id="dashStorage" class="text-2xl font-black text-gray-950 mt-2">0</h4>
             </div>
 
             <div class="bg-red-50/60 border-2 border-red-500/30 rounded-xl p-3 flex flex-col justify-between">
                 <p class="text-[10px] font-black uppercase tracking-wider text-red-800 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-red-600 inline-block"></span> Ремонт
                 </p>
-                <h4 id="dashInRepair" class="text-2xl font-black text-gray-950 mt-2">10</h4>
+                <h4 id="dashInRepair" class="text-2xl font-black text-gray-950 mt-2">0</h4>
             </div>
         </div>
     </div>
@@ -58,10 +58,10 @@ export const template = `
             
             <div class="bg-white border-2 border-gray-300 rounded-xl p-2.5 space-y-2 shadow-2xs">
                 <select id="taskVehicleSelect" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-lg p-1.5 focus:outline-none focus:border-emerald-500 font-medium">
-                    <option value="">-- Общая заметка (без привязки к технике) --</option>
+                    <option value="">-- Общая заметка (без привязки) --</option>
                 </select>
                 <div class="flex gap-1.5">
-                    <input type="text" id="taskTextInput" placeholder="Текст задачи или пометки..." class="flex-1 text-xs bg-gray-50 border border-gray-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500">
+                    <input type="text" id="taskTextInput" placeholder="Текст задачи..." class="flex-1 text-xs bg-gray-50 border border-gray-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500">
                     <button onclick="window.dashAddRepairTask()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-xs">＋</button>
                 </div>
             </div>
@@ -77,12 +77,12 @@ export const template = `
                     🛠️ Гарантийный контроль (ТО)
                 </h3>
                 <button onclick="window.dashToggleFilterDropdown(event)" class="text-[11px] bg-white hover:bg-gray-50 border border-gray-300 font-bold px-2.5 py-1 rounded-lg transition shadow-3xs">
-                    ⚙️ Выбрать технику
+                    ⚙️ Фильтр
                 </button>
             </div>
 
             <div id="dashFilterDropdown" class="absolute right-0 top-8 w-64 bg-white border border-gray-300 rounded-xl shadow-xl p-3 z-50 space-y-2 hidden max-h-[350px] overflow-y-auto">
-                <p class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b pb-1">Отображать на главной:</p>
+                <p class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b pb-1">Отображать технику:</p>
                 <div id="dashFilterCheckboxes" class="space-y-1.5 text-xs"></div>
             </div>
 
@@ -120,8 +120,8 @@ export async function init() {
     window.dashAddRepairTask = dashAddRepairTask;
     window.dashToggleFilterDropdown = dashToggleFilterDropdown;
     window.dashToggleLocalVisibility = dashToggleLocalVisibility;
+    window.dashToggleInlineMenu = dashToggleInlineMenu;
     
-    // Новые глобальные инлайн функции изменения данных
     window.dashUpdateHours = dashUpdateHours;
     window.dashUpdateDocDate = dashUpdateDocDate;
 
@@ -130,9 +130,12 @@ export async function init() {
         if (drop && !drop.contains(e.target) && !e.target.closest('button')) {
             drop.classList.add('hidden');
         }
+        
+        if (!e.target.closest('.inline-edit-trigger') && !e.target.closest('.inline-edit-menu')) {
+            document.querySelectorAll('.inline-edit-menu').forEach(el => el.classList.add('hidden'));
+        }
     });
 
-    // Запуск живых часов
     if (clockIntervalId) clearInterval(clockIntervalId);
     startLiveClock();
 
@@ -146,7 +149,6 @@ function startLiveClock() {
         const now = new Date();
         const timeEl = document.getElementById('dashLiveTime');
         const dateEl = document.getElementById('dashLiveDate');
-        
         if (timeEl) timeEl.innerText = now.toLocaleTimeString('ru-RU');
         if (dateEl) {
             const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
@@ -193,7 +195,6 @@ function renderStats(list) {
 function populateVehicleDropdown(vehicles) {
     const select = document.getElementById('taskVehicleSelect');
     if (!select || select.options.length > 1) return;
-    
     const sorted = [...vehicles].sort((a,b) => a.model.localeCompare(b.model));
     sorted.forEach(v => {
         const opt = document.createElement('option');
@@ -209,33 +210,35 @@ function dashToggleFilterDropdown(e) {
     if (drop) drop.classList.toggle('hidden');
 }
 
+function dashToggleInlineMenu(e, menuId) {
+    e.stopPropagation();
+    const menu = document.getElementById(menuId);
+    if (menu) {
+        const isHidden = menu.classList.contains('hidden');
+        document.querySelectorAll('.inline-edit-menu').forEach(el => el.classList.add('hidden'));
+        if (isHidden) menu.classList.remove('hidden');
+    }
+}
+
 function renderFilterCheckboxes(vehicles) {
     const container = document.getElementById('dashFilterCheckboxes');
     if (!container) return;
-    
     const hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
-    
     const warrantyVehicles = vehicles.filter(v => {
         const tags = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         return tags.includes('Гарантия');
     });
-
     if (warrantyVehicles.length === 0) {
         container.innerHTML = `<p class="text-gray-400 text-[11px] py-1 text-center font-medium">Нет гарантийной техники</p>`;
         return;
     }
-
     warrantyVehicles.sort((a,b) => a.model.localeCompare(b.model));
-
     container.innerHTML = warrantyVehicles.map(v => {
-        const isVisible = !hiddenVehicles.includes(v.id);
-        const isChecked = isVisible ? 'checked' : '';
-        const nameStr = `${v.model} ${v.plate ? '('+v.plate+')' : '(б/н)'}`;
-        
+        const isChecked = !hiddenVehicles.includes(v.id) ? 'checked' : '';
         return `
             <label class="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-gray-50 rounded px-1 text-gray-900 font-medium">
                 <input type="checkbox" ${isChecked} onchange="window.dashToggleLocalVisibility(${v.id}, this.checked)" class="w-3.5 h-3.5 rounded text-emerald-600 border-gray-300 focus:ring-emerald-500">
-                <span class="truncate">${nameStr}</span>
+                <span class="truncate">${v.model} ${v.plate ? '('+v.plate+')' : '(б/н)'}</span>
             </label>
         `;
     }).join('');
@@ -249,27 +252,19 @@ function dashToggleLocalVisibility(vehicleId, isChecked) {
         if (!hiddenVehicles.includes(vehicleId)) hiddenVehicles.push(vehicleId);
     }
     localStorage.setItem('dash_hidden_warranty', JSON.stringify(hiddenVehicles));
-    
     if (window.dashCachedVehicles && window.dashCachedTasks) {
         renderSeparatedAlerts(window.dashCachedVehicles, window.dashCachedTasks);
     }
 }
 
-// Прямое инлайн-редактирование наработки, нулевой точки и периодичности ТО
 async function dashUpdateHours(vehicleId, type, value) {
     let field = 'current_hours';
     if (type === 'zero') field = 'zero_hours';
     if (type === 'period') field = 'step_hours';
-
     const numValue = parseInt(value);
     if (isNaN(numValue) || numValue < 0) return;
-
     try {
-        const { error } = await window._supabase
-            .from('vehicles')
-            .update({ [field]: numValue })
-            .eq('id', vehicleId);
-
+        const { error } = await window._supabase.from('vehicles').update({ [field]: numValue }).eq('id', vehicleId);
         if (error) throw error;
         await loadDashboardData();
     } catch (err) {
@@ -277,15 +272,10 @@ async function dashUpdateHours(vehicleId, type, value) {
     }
 }
 
-// Прямое инлайн-редактирование дат документов (техосмотр и страховка)
 async function dashUpdateDocDate(vehicleId, field, value) {
     if (!value) return;
     try {
-        const { error } = await window._supabase
-            .from('vehicles')
-            .update({ [field]: value })
-            .eq('id', vehicleId);
-
+        const { error } = await window._supabase.from('vehicles').update({ [field]: value }).eq('id', vehicleId);
         if (error) throw error;
         await loadDashboardData();
     } catch (err) {
@@ -296,22 +286,16 @@ async function dashUpdateDocDate(vehicleId, field, value) {
 async function dashAddRepairTask() {
     const select = document.getElementById('taskVehicleSelect');
     const input = document.getElementById('taskTextInput');
-    
     if (!input || !input.value.trim()) return;
-
     let vehicleId = null;
     let vehicleName = "Заметка / Пометка";
-
     if (select && select.value) {
         const parsed = JSON.parse(select.value);
         vehicleId = parsed.id;
         vehicleName = parsed.name;
     }
-
     const userRole = localStorage.getItem('user_role') || 'Сотрудник';
-    const authorSignature = ` [${userRole}]`;
-    const finalTaskText = `${input.value.trim()}${authorSignature}`;
-
+    const finalTaskText = `${input.value.trim()} [${userRole}]`;
     try {
         const { error } = await window._supabase.from('vehicle_tasks').insert([{
             vehicle_id: vehicleId,
@@ -319,24 +303,18 @@ async function dashAddRepairTask() {
             text: finalTaskText,
             is_completed: false
         }]);
-
         if (error) throw error;
-        
         input.value = '';
         if (select) select.value = '';
         await loadDashboardData();
     } catch (err) {
-        alert("Ошибка добавления заметки: " + err.message);
+        alert("Ошибка добавления: " + err.message);
     }
 }
 
 async function dashCompleteTask(taskId) {
     try {
-        const { error } = await window._supabase
-            .from('vehicle_tasks')
-            .update({ is_completed: true })
-            .eq('id', taskId);
-
+        const { error } = await window._supabase.from('vehicle_tasks').update({ is_completed: true }).eq('id', taskId);
         if (error) throw error;
         await loadDashboardData();
     } catch (err) {
@@ -348,36 +326,29 @@ function renderSeparatedAlerts(list, activeTasks) {
     const today = new Date();
     const plateMap = {};
     list.forEach(v => { plateMap[v.id] = v.plate ? `[${v.plate}]` : '[б/н]'; });
-
     const hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
 
-    // 1. АКТИВНЫЕ ЗАДАЧИ
+    // 1. РЕНДЕР ЗАДАЧ
     const containerTasks = document.getElementById('containerTasks');
     if (containerTasks) {
         if (activeTasks.length > 0) {
             containerTasks.innerHTML = activeTasks.map(task => {
                 const plateStr = plateMap[task.vehicle_id] || '';
-                const isSystemTask = task.vehicle_id !== null;
-                
                 return `
-                    <div class="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs shadow-3xs flex flex-col justify-between gap-2.5">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="space-y-1">
-                                <span class="font-extrabold text-[10px] uppercase tracking-wider text-amber-800">
-                                    ${isSystemTask ? '🚜 ' + task.vehicle_name : '📝 Заметка'}
-                                </span>
-                                <span class="text-gray-500 font-mono text-[10px]">${plateStr}</span>
-                                <p class="text-gray-900 font-semibold leading-snug">${task.text}</p>
+                    <div class="p-2 bg-amber-50 border border-amber-300 rounded-lg text-[11px] flex flex-col justify-between gap-1.5 shadow-3xs">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <span class="font-extrabold text-[9px] uppercase tracking-wider text-amber-800">${task.vehicle_id ? '🚜 ' + task.vehicle_name : '📝 Заметка'}</span>
+                                <span class="text-gray-500 font-mono text-[9px]">${plateStr}</span>
+                                <p class="text-gray-900 font-semibold leading-tight mt-0.5">${task.text}</p>
                             </div>
-                            <button onclick="window.dashCompleteTask('${task.id}')" class="bg-amber-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg transition whitespace-nowrap shadow-3xs">
-                                Закрыть
-                            </button>
+                            <button onclick="window.dashCompleteTask('${task.id}')" class="bg-amber-600 hover:bg-emerald-700 text-white text-[9px] font-bold px-2 py-0.5 rounded transition shadow-3xs">Готово</button>
                         </div>
                     </div>
                 `;
             }).join('');
         } else {
-            containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-950 p-4 rounded-xl text-center text-xs font-bold">Нет активных задач и заметок</div>`;
+            containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет активных задач</div>`;
         }
     }
 
@@ -387,57 +358,48 @@ function renderSeparatedAlerts(list, activeTasks) {
     list.forEach(v => {
         const plateStr = v.plate ? ` [${v.plate}]` : ' [б/н]';
 
-        // Формирование блока дат документов с интерактивным изменением (сохранение по событию change)
+        // ДОКУМЕНТЫ (ТЕХОСМОТР)
         if (v.inspection_date) {
             const diff = Math.ceil((new Date(v.inspection_date) - today) / (1000 * 60 * 60 * 24));
-            const criticalClass = diff <= 0 ? "text-red-600 font-black animate-pulse" : (diff <= 30 ? "font-black text-amber-700" : "font-bold text-gray-700");
-            const statusText = diff <= 0 ? "Просрочен Гостехосмотр!" : `Техосмотр истекает через ${diff} дн.`;
-            
-            docAlerts.push({
-                id: v.id,
-                model: v.model,
-                plate: plateStr,
-                isCritical: diff <= 0,
-                html: `
-                    <div class="space-y-2">
-                        <p class="text-[11px] leading-tight ${criticalClass}">${statusText}</p>
-                        <div class="flex items-center gap-1.5 mt-1">
-                            <span class="text-[10px] text-gray-500 font-medium">Новая дата ТО:</span>
-                            <input type="date" value="${v.inspection_date}" onchange="window.dashUpdateDocDate(${v.id}, 'inspection_date', this.value)" class="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-500 bg-white">
-                        </div>
-                    </div>`
-            });
+            if (diff <= 30) {
+                docAlerts.push({
+                    id: v.id,
+                    model: v.model,
+                    plate: plateStr,
+                    daysLeft: diff,
+                    isCritical: diff <= 0,
+                    type: 'inspection_date',
+                    label: 'Техосмотр',
+                    value: v.inspection_date,
+                    statusText: diff <= 0 ? `🛑 Просрочен Гостехосмотр!` : `⚠️ Техосмотр истекает через ${diff} дн.`
+                });
+            }
         }
 
+        // ДОКУМЕНТЫ (СТРАХОВКА)
         if (v.insurance_date) {
             const diffIns = Math.ceil((new Date(v.insurance_date) - today) / (1000 * 60 * 60 * 24));
-            const criticalClass = diffIns <= 0 ? "text-red-600 font-black animate-pulse" : (diffIns <= 30 ? "font-black text-amber-700" : "font-bold text-gray-700");
-            const statusText = diffIns <= 0 ? "Закончилась страховка!" : `Страховка истекает через ${diffIns} дн.`;
-
-            docAlerts.push({
-                id: v.id,
-                model: v.model,
-                plate: plateStr,
-                isCritical: diffIns <= 0,
-                html: `
-                    <div class="space-y-2 border-t border-gray-200/50 pt-1.5 mt-1.5">
-                        <p class="text-[11px] leading-tight ${criticalClass}">${statusText}</p>
-                        <div class="flex items-center gap-1.5 mt-1">
-                            <span class="text-[10px] text-gray-500 font-medium">Новая Страховка:</span>
-                            <input type="date" value="${v.insurance_date}" onchange="window.dashUpdateDocDate(${v.id}, 'insurance_date', this.value)" class="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-500 bg-white">
-                        </div>
-                    </div>`
-            });
+            if (diffIns <= 30) {
+                docAlerts.push({
+                    id: v.id,
+                    model: v.model,
+                    plate: plateStr,
+                    daysLeft: diffIns,
+                    isCritical: diffIns <= 0,
+                    type: 'insurance_date',
+                    label: 'Страховка',
+                    value: v.insurance_date,
+                    statusText: diffIns <= 0 ? `🛑 Закончилась страховка!` : `⚠️ Страховка истекает через ${diffIns} дн.`
+                });
+            }
         }
 
-        // ПОЛНОЦЕННЫЙ ОРИГИНАЛЬНЫЙ КОНТРОЛЬ МОТОЧАСОВ С КАСТОМИЗАЦИЕЙ С КЛАВИАТУРЫ
+        // ГАРАНТИЯ
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         if (vehicleTagsArray.includes('Гарантия') && !hiddenVehicles.includes(v.id)) {
             const hours = v.current_hours || 0;
             const zeroHours = v.zero_hours || 0;
-            const stepHours = v.step_hours || 125; // Кастомная периодичность (дефолт 125)
-
-            // Расчет с учетом нулевой точки и кастомного шага ТО
+            const stepHours = v.step_hours || 125;
             const relativeHours = hours - zeroHours;
             const nextTO = zeroHours + (Math.ceil((relativeHours + 1) / stepHours) * stepHours);
             const hoursLeft = nextTO - hours;
@@ -450,61 +412,69 @@ function renderSeparatedAlerts(list, activeTasks) {
             }
 
             let status = 'info';
-            let alertText = `Наработка ${hours} м/ч. До ${toType} (${nextTO}) ещё <span class="font-bold">${hoursLeft} м/ч</span>.`;
-
+            let statusText = `⚙️ Наработка ${hours} м/ч. До ${toType} (${nextTO}) ещё <b>${hoursLeft} м/ч</b>.`;
             if (hoursLeft <= 10) {
                 status = 'danger';
-                alertText = `<span class="text-red-600 font-extrabold">Срочно ${toType} (${nextTO})!</span> Осталось <span class="font-black">${hoursLeft} м/ч</span>.`;
+                statusText = `🚨 <span class="text-red-700 font-black">Срочно ${toType} (${nextTO})!</span> Осталось <b>${hoursLeft} м/ч</b>.`;
             } else if (hoursLeft <= 35) {
                 status = 'warning';
-                alertText = `Подходит срок ${toType}. Осталось <span class="font-bold">${hoursLeft} м/ч</span>.`;
+                statusText = `⚠️ Срок ${toType} (${nextTO}). Осталось <b>${hoursLeft} м/ч</b>.`;
             }
 
             warrantyAlerts.push({
                 id: v.id,
                 status: status,
+                hoursLeft: hoursLeft, // Ключ для сортировки (меньше = хуже)
                 model: v.model,
                 plate: plateStr,
                 hours: hours,
                 zeroHours: zeroHours,
                 stepHours: stepHours,
-                text: alertText
+                text: statusText
             });
         }
     });
 
-    // 2. РЕНДЕР КАРТОЧЕК ГАРАНТИИ + ФУНКЦИОНАЛ ИЗМЕНЕНИЯ ЧАСОВ НА СТОЛЕ
+    // СОРТИРОВКА ГАРАНТИИ (Меньше м/ч осталось -> выше в списке)
+    warrantyAlerts.sort((a, b) => a.hoursLeft - b.hoursLeft);
+
+    // СОРТИРОВКА ДОКУМЕНТОВ (Меньше дней осталось -> выше в списке)
+    docAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
+
+    // 2. КОМПАКТНЫЙ РЕНДЕР ГАРАНТИИ С ВЫПАДАЮЩИМ МЕНЮ ПО КЛИКУ НА ✏️
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
-            containerWarranty.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-950 p-4 rounded-xl text-center text-xs font-bold">Нет подконтрольной гарантийной техники</div>`;
+            containerWarranty.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет техники на контроле</div>`;
         } else {
             containerWarranty.innerHTML = warrantyAlerts.map(a => {
                 let cardClass = "bg-blue-50/40 border-blue-200 text-blue-950";
-                if (a.status === 'danger') cardClass = "bg-red-50/60 border-red-300 text-red-950";
-                if (a.status === 'warning') cardClass = "bg-amber-50/60 border-amber-300 text-amber-950";
+                if (a.status === 'danger') cardClass = "bg-red-50/50 border-red-200 text-red-950";
+                if (a.status === 'warning') cardClass = "bg-amber-50/50 border-amber-200 text-amber-950";
                 
+                const menuId = `warranty_menu_${a.id}`;
                 return `
-                    <div class="p-3 border-2 rounded-xl text-xs space-y-2.5 shadow-3xs ${cardClass}">
-                        <div class="flex items-center justify-between">
-                            <p class="font-bold">${a.model} <span class="font-mono text-gray-500 text-[11px]">${a.plate}</span></p>
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/60 border border-black/5 uppercase tracking-wide">Гарантия</span>
+                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col relative ${cardClass}">
+                        <div class="flex items-center justify-between gap-1">
+                            <div class="truncate">
+                                <span class="font-extrabold">${a.model}</span> <span class="font-mono text-[9px] text-gray-500">${a.plate}</span>
+                                <p class="text-gray-900 mt-0.5">${a.text}</p>
+                            </div>
+                            <button onclick="window.dashToggleInlineMenu(event, '${menuId}')" class="inline-edit-trigger p-1 hover:bg-black/5 rounded text-xs" title="Изменить параметры">✏️</button>
                         </div>
                         
-                        <p class="text-[11px] leading-tight">${a.text}</p>
-                        
-                        <div class="grid grid-cols-3 gap-1.5 pt-2 border-t border-gray-400/20 text-[10px]">
+                        <div id="${menuId}" class="inline-edit-menu absolute right-2 top-7 bg-white border border-gray-300 rounded-xl shadow-xl p-2.5 z-40 hidden space-y-2 w-48 text-gray-900">
                             <div>
-                                <label class="block text-gray-500 font-bold mb-0.5">Текущие м/ч</label>
-                                <input type="number" value="${a.hours}" onblur="window.dashUpdateHours(${a.id}, 'current', this.value)" class="w-full border border-gray-300 rounded px-1.5 py-0.5 font-bold focus:outline-none focus:border-emerald-500">
+                                <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Текущие м/ч</label>
+                                <input type="number" value="${a.hours}" onchange="window.dashUpdateHours(${a.id}, 'current', this.value)" class="w-full text-xs border border-gray-300 rounded px-1.5 py-0.5 font-bold focus:border-emerald-500 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-gray-500 font-bold mb-0.5">Нулевая база</label>
-                                <input type="number" value="${a.zeroHours}" onblur="window.dashUpdateHours(${a.id}, 'zero', this.value)" class="w-full border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-500">
+                                <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Нулевая база (Сброс)</label>
+                                <input type="number" value="${a.zeroHours}" onchange="window.dashUpdateHours(${a.id}, 'zero', this.value)" class="w-full text-xs border border-gray-300 rounded px-1.5 py-0.5 focus:border-emerald-500 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-gray-500 font-bold mb-0.5">Период ТО</label>
-                                <input type="number" value="${a.stepHours}" onblur="window.dashUpdateHours(${a.id}, 'period', this.value)" class="w-full border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-500">
+                                <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Периодичность ТО</label>
+                                <input type="number" value="${a.stepHours}" onchange="window.dashUpdateHours(${a.id}, 'period', this.value)" class="w-full text-xs border border-gray-300 rounded px-1.5 py-0.5 focus:border-emerald-500 focus:outline-none">
                             </div>
                         </div>
                     </div>
@@ -513,29 +483,28 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     }
 
-    // 3. РЕНДЕР КАРТОЧЕК СРОКОВ ДОКУМЕНТОВ
+    // 3. КОМПАКТНЫЙ РЕНДЕР СРОКОВ ДОКУМЕНТОВ С ВЫПАДАЮЩИМ КАЛЕНДАРЕМ ПО КЛИКУ НА ✏️
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
         if (docAlerts.length === 0) {
-            containerDocs.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-900 p-4 rounded-xl text-center text-xs font-bold">Все документы в полном порядке!</div>`;
+            containerDocs.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-900 p-3 rounded-lg text-center text-[11px] font-bold">Все документы в порядке!</div>`;
         } else {
-            // Группируем документы по одной машине для чистоты интерфейса
-            const groupedDocs = {};
-            docAlerts.forEach(item => {
-                if (!groupedDocs[item.id]) {
-                    groupedDocs[item.id] = { model: item.model, plate: item.plate, isCritical: item.isCritical, htmls: [] };
-                }
-                if (item.isCritical) groupedDocs[item.id].isCritical = true;
-                groupedDocs[item.id].htmls.push(item.html);
-            });
-
-            containerDocs.innerHTML = Object.values(groupedDocs).map(g => {
-                const cardClass = g.isCritical ? "bg-red-50/60 border-red-300 text-red-950" : "bg-amber-50/60 border-amber-300 text-amber-950";
+            containerDocs.innerHTML = docAlerts.map((d, index) => {
+                const cardClass = d.isCritical ? "bg-red-50/50 border-red-200 text-red-950" : "bg-amber-50/50 border-amber-200 text-amber-950";
+                const menuId = `doc_menu_${d.id}_${index}`;
                 return `
-                    <div class="p-3 border-2 rounded-xl text-xs space-y-2 shadow-3xs ${cardClass}">
-                        <p class="font-bold border-b border-gray-400/20 pb-1">${g.model} <span class="font-mono text-gray-500 text-[11px]">${g.plate}</span></p>
-                        <div class="space-y-1.5">
-                            ${g.htmls.join('')}
+                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col relative ${cardClass}">
+                        <div class="flex items-center justify-between gap-1">
+                            <div class="truncate">
+                                <span class="font-extrabold">${d.model}</span> <span class="font-mono text-[9px] text-gray-500">${d.plate}</span>
+                                <p class="mt-0.5 text-gray-900 font-medium">${d.statusText}</p>
+                            </div>
+                            <button onclick="window.dashToggleInlineMenu(event, '${menuId}')" class="inline-edit-trigger p-1 hover:bg-black/5 rounded text-xs" title="Изменить дату">✏️</button>
+                        </div>
+                        
+                        <div id="${menuId}" class="inline-edit-menu absolute right-2 top-7 bg-white border border-gray-300 rounded-xl shadow-xl p-2 z-40 hidden w-44 text-gray-900">
+                            <label class="block text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Новая дата для: ${d.label}</label>
+                            <input type="date" value="${d.value}" onchange="window.dashUpdateDocDate(${d.id}, '${d.type}', this.value)" class="w-full text-xs border border-gray-300 rounded px-1.5 py-1 focus:border-emerald-500 focus:outline-none bg-white font-medium">
                         </div>
                     </div>
                 `;
