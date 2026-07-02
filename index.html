@@ -7,14 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
-    <style>
-        /* Аккуратный, мягкий и профессиональный точечный фон, который не рябит */
-        .farm-pattern-bg {
-            background-color: #f8fafc;
-            background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
-            background-size: 24px 24px;
-        }
-    </style>
+        <style>
+          /* Стильный, чистый и глубокий фон без лишнего визуального шума */
+            .farm-pattern-bg {
+                background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            }
+           /* Плавный скроллбар для эстетики */
+           ::-webkit-scrollbar {
+                width: 6px;
+            }
+           ::-webkit-scrollbar-track { 
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 3px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+        </style>
 </head>
 <body class="farm-pattern-bg text-gray-900 min-h-screen flex flex-col md:flex-row">
 
