@@ -226,7 +226,6 @@ async function loadAllData(isFirstLoad = false) {
             window._supabase.from('fleet_tags').select('*')
         ]);
 
-        // Преобразуем ответы из таблиц в массивы объектов/строк
         categories = catRes.data ? catRes.data.map(c => c.name) : [];
         drivers = drvRes.data ? drvRes.data : [];
         baseTags = tagRes.data ? tagRes.data : [];
