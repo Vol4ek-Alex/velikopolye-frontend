@@ -4,17 +4,17 @@ export const template = `
             <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
             <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, контроль документов и логов ремонта</p>
         </div>
-        <div class="flex flex-wrap gap-2">
-            <button id="manageDriversBtn" onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
+        <div class="flex flex-wrap items-center gap-2">
+            <button id="manageDriversBtn" onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs h-9 flex items-center">
                 👤 Водители
             </button>
-            <button id="manageTagsBtn" onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
+            <button id="manageTagsBtn" onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs h-9 flex items-center">
                 🏷️ Теги статусов
             </button>
-            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
+            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs h-9 flex items-center">
                 Категории
             </button>
-            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">
+            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm h-9 flex items-center">
                 + Добавить технику
             </button>
         </div>
@@ -502,11 +502,11 @@ async function handleFormSubmit() {
     document.querySelectorAll('input[name="vTags"]:checked').forEach(cb => selectedTags.push(cb.value));
 
     const payload = {
-        type: document.getElementById('vCategory').value || 'Без категории',
+        type: document.getElementById('vCategory').value,
         model: document.getElementById('vName').value,
-        notes: document.getElementById('vDriver').value || null, // Сохраняем имя водителя в колонку notes
-        plate: document.getElementById('vPlate').value || null,
-        inv_number: document.getElementById('vInv').value || null,
+        notes: document.getElementById('vDriver').value, // ИМЯ ВОДИТЕЛЯ ИДЕТ СЮДА
+        plate: document.getElementById('vPlate').value,
+        inv_number: document.getElementById('vInv').value,
         current_hours: parseInt(document.getElementById('vHours').value) || 0,
         vin_number: document.getElementById('vVin').value || null,
         inspection_date: document.getElementById('vToDate').value || null,
