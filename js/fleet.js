@@ -5,6 +5,9 @@ export const template = `
             <p class="text-xs text-gray-600 font-medium">Учет техники, контроль сроков действия документов и логов ремонта</p>
         </div>
         <div class="flex flex-wrap gap-2">
+            <button id="manageTagsBtn" onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
+                🏷️ Настройка тегов
+            </button>
             <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
                 Категории
             </button>
@@ -16,7 +19,7 @@ export const template = `
 
     <div class="bg-white p-4 rounded-xl border-2 border-gray-400/80 shadow-xs space-y-3 mb-5">
         <div class="flex flex-col sm:flex-row gap-3">
-            <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs text-gray-950 placeholder-gray-500 focus:outline-none focus:border-emerald-600 focus:bg-white font-bold transition" placeholder="Поиск по модели, госномеру, инвентарному или VIN...">
+            <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs text-gray-950 placeholder-gray-500 focus:outline-none focus:border-emerald-600 focus:bg-white font-bold transition" placeholder="Поиск по модели, госномеру, инвентарному, VIN или тегу/водителю...">
             <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="bg-white border-2 border-gray-400 rounded-lg p-2.5 text-xs font-bold text-gray-800 focus:outline-none focus:border-emerald-600">
                 <option value="name_asc">По названию (А-Я)</option>
                 <option value="name_desc">По названию (Я-А)</option>
@@ -24,7 +27,8 @@ export const template = `
             </select>
         </div>
         
-        <div class="flex flex-wrap gap-1.5 pt-2 border-t border-gray-200" id="fleetCategoriesBar">
+        <!-- Компактный бар категорий: 3 позиции -->
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200" id="fleetCategoriesBar">
             <div class="text-xs text-gray-400 font-bold">Загрузка категорий...</div>
         </div>
     </div>
@@ -33,6 +37,7 @@ export const template = `
         <div class="text-center text-gray-500 py-10 text-xs font-bold">Загрузка данных автопарка...</div>
     </div>
 
+    <!-- КАРТОЧКА ТЕХНИКИ -->
     <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-md p-6 border-2 border-gray-400 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 id="vModalTitle" class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-2">Карточка техники</h3>
@@ -82,8 +87,8 @@ export const template = `
                 </div>
 
                 <div>
-                    <label class="block text-gray-700 mb-1 font-bold">Теги состояния (до 2-х)</label>
-                    <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border-2 border-gray-300"></div>
+                    <label class="block text-gray-700 mb-1 font-bold">Теги и Водители (Неограниченно)</label>
+                    <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border-2 border-gray-300 max-h-32 overflow-y-auto"></div>
                 </div>
 
                 <div class="flex gap-2.5 pt-3 border-t border-gray-200">
@@ -95,6 +100,24 @@ export const template = `
         </div>
     </div>
 
+    <!-- МОДАЛКА УПРАВЛЕНИЯ ТЕГАМИ -->
+    <div id="tagsManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
+            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">Управление тегами (водителями)</h3>
+            <div class="space-y-1.5 max-h-44 overflow-y-auto" id="modalTagsList"></div>
+            <div class="pt-2 border-t border-gray-200 space-y-2">
+                <input type="text" id="newTagNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none" placeholder="Имя водителя или статус...">
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Цвет:</label>
+                    <input type="color" id="newTagColorInput" value="#e2e8f0" class="w-8 h-8 rounded border border-gray-300 cursor-pointer">
+                </div>
+                <button onclick="window.addCustomTag()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Создать тег</button>
+            </div>
+            <button onclick="document.getElementById('tagsManagementModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- НАСТРОЙКА КАТЕГОРИЙ -->
     <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">Настройка категорий</h3>
@@ -107,6 +130,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- ЗАДАЧИ -->
     <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-sm p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <div class="space-y-0.5">
@@ -128,7 +152,14 @@ export const template = `
 let vehicles = [];
 let tasks = [];
 let categories = ["Тракторы", "Автомобили", "Комбайны", "Агрегаты", "Без категории"];
-let baseTags = ["Готов", "В ремонте", "На хранении", "Гарантия"];
+
+// Полноценная динамическая база тегов с кастомным цветом
+let baseTags = [
+    { name: "Готов", color: "#d1fae5" },
+    { name: "В ремонте", color: "#fee2e2" },
+    { name: "На хранении", color: "#f1f5f9" },
+    { name: "Гарантия", color: "#dbeafe" }
+];
 
 let searchQuery = "";
 let selectedCategory = "all";
@@ -140,10 +171,12 @@ export async function init() {
     if (savedCats) categories = JSON.parse(savedCats);
     if (!categories.includes("Без категории")) categories.push("Без категории");
 
-    // Восстанавливаем значение поиска в поле ввода, если оно было введено ранее
+    const savedTags = localStorage.getItem('fleet_custom_tags');
+    if (savedTags) baseTags = JSON.parse(savedTags);
+
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
-        searchInput.value = searchQuery; // Чтобы текст не пропадал при переключениях модулей
+        searchInput.value = searchQuery;
         searchInput.oninput = (e) => {
             searchQuery = e.target.value.toLowerCase();
             renderFleet();
@@ -164,15 +197,16 @@ export async function init() {
     window.openVehicleModalForm = (v = null) => openVehicleModal(v);
     window.closeVModal = () => document.getElementById('vFormModal').classList.add('hidden');
     window.openCategoriesModal = () => renderCategoriesModalList();
+    window.openTagsModal = () => renderTagsModalList();
     
     window.handleSortChange = (val) => {
         currentSort = val;
         renderFleet();
     };
 
-    await loadAllData(true); // Первый запуск — рендерим панели полностью
+    await loadAllData(true);
     if (refreshIntervalId) clearInterval(refreshIntervalId);
-    refreshIntervalId = setInterval(() => loadAllData(false), 5000); // При автообновлении НЕ пересоздаем панель категорий
+    refreshIntervalId = setInterval(() => loadAllData(false), 5000);
 }
 
 async function loadAllData(isFirstLoad = false) {
@@ -195,8 +229,6 @@ async function loadAllData(isFirstLoad = false) {
             if (!tErr && tData) tasks = tData;
         } catch(e) { tasks = []; }
 
-        // Важно: рендерим панель категорий только при первой загрузке или ручных изменениях,
-        // чтобы не сбрасывать фокусы и состояния элементов каждые 5 секунд.
         if (isFirstLoad) {
             renderCategoriesBar();
         }
@@ -206,20 +238,33 @@ async function loadAllData(isFirstLoad = false) {
     }
 }
 
+// 3 Позиции: Все, Без категории, Другие (Выпадающий список)
 function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
     if (!bar) return;
 
-    let html = `<button onclick="window.filterCategory('all')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${selectedCategory === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">Все</button>`;
-    
-    categories.forEach((cat) => {
-        const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
-        html += `<button onclick="window.filterCategory('${cat}')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">${cat}</button>`;
-    });
+    const isAllActive = selectedCategory === 'all';
+    const isNoCatActive = selectedCategory.toLowerCase() === 'без категории';
+    const isOtherActive = !isAllActive && !isNoCatActive;
+
+    const otherCats = categories.filter(c => c !== 'Без категории');
+
+    let html = `
+        <button onclick="window.filterCategory('all')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${isAllActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">Все</button>
+        <button onclick="window.filterCategory('Без категории')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${isNoCatActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">Без категории</button>
+        
+        <div class="relative inline-block">
+            <select onchange="window.filterCategory(this.value)" class="px-2 py-1 text-xs font-bold rounded-md transition border-2 bg-gray-50 ${isOtherActive ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-black' : 'border-gray-400 text-gray-900 hover:bg-gray-100'}">
+                <option value="" disabled ${!isOtherActive ? 'selected' : ''}>— Другие категории (${otherCats.length}) —</option>
+                ${otherCats.map(c => `<option value="${c}" ${selectedCategory === c ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+        </div>
+    `;
 
     bar.innerHTML = html;
 
     window.filterCategory = (cat) => {
+        if (!cat) return;
         selectedCategory = cat;
         renderCategoriesBar();
         renderFleet();
@@ -307,12 +352,9 @@ function renderFleet() {
                                         <h4 class="font-bold text-gray-950 text-sm tracking-tight truncate">${v.model}</h4>
                                         <div class="flex flex-wrap gap-1">
                                             ${vehicleTagsArray.map(t => {
-                                                let c = "bg-gray-100 text-gray-800 border-gray-400";
-                                                if (t === 'Готов') c = "bg-emerald-50 text-emerald-900 border-emerald-400";
-                                                if (t === 'В ремонте') c = "bg-red-50 text-red-900 border-red-400";
-                                                if (t === 'На хранении') c = "bg-gray-100 text-gray-800 border-gray-400";
-                                                if (t === 'Гарантия') c = "bg-blue-50 text-blue-900 border-blue-400";
-                                                return `<span class="border-2 ${c} text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider">${t}</span>`;
+                                                const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
+                                                const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
+                                                return `<span style="background-color: ${badgeBg}" class="border-2 border-gray-400 text-gray-900 text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider shadow-3xs">${t}</span>`;
                                             }).join('')}
                                         </div>
                                     </div>
@@ -377,23 +419,16 @@ function openVehicleModal(vehicle = null) {
         catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
     }
 
+    // Рендерим теги БЕЗ ЛИМИТА И ОГРАНИЧЕНИЙ
     const tagsBox = document.getElementById('tagsCheckboxContainer');
     if (tagsBox) {
         tagsBox.innerHTML = baseTags.map(t => `
-            <label class="flex items-center gap-1.5 bg-white px-2.5 py-0.5 rounded border-2 border-gray-400 text-[11px] font-bold text-gray-800 cursor-pointer select-none">
-                <input type="checkbox" name="vTags" value="${t}" onchange="window.handleTagCheckboxLimit(this)" class="rounded text-emerald-600 focus:ring-emerald-500">
-                ${t}
+            <label style="background-color: ${t.color}" class="flex items-center gap-1.5 px-2.5 py-1 rounded border-2 border-gray-400 text-[11px] font-black text-gray-900 cursor-pointer select-none shadow-3xs">
+                <input type="checkbox" name="vTags" value="${t.name}" class="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5">
+                ${t.name}
             </label>
         `).join('');
     }
-
-    window.handleTagCheckboxLimit = (checkbox) => {
-        const checked = document.querySelectorAll('input[name="vTags"]:checked');
-        if (checked.length > 2) {
-            checkbox.checked = false;
-            alert("Можно выбрать не более 2-ух тегов!");
-        }
-    };
 
     document.getElementById('vForm').reset();
     modal.classList.remove('hidden');
@@ -465,6 +500,48 @@ async function handleDeleteVehicle() {
             await loadAllData(true);
         } catch (e) { alert(e.message); }
     }
+}
+
+// ОКНО НАСТРОЙКИ КАСТОМНЫХ ТЕГОВ И ИХ ЦВЕТА
+function renderTagsModalList() {
+    const modal = document.getElementById('tagsManagementModal');
+    const list = document.getElementById('modalTagsList');
+    if (!modal || !list) return;
+
+    modal.classList.remove('hidden');
+    list.innerHTML = baseTags.map((t, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-lg border-2 border-gray-300 text-xs font-bold bg-white shadow-3xs">
+            <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded-full border border-gray-400" style="background-color: ${t.color}"></span>
+                <span class="text-gray-900">${t.name}</span>
+            </div>
+            <button onclick="window.deleteCustomTag(${idx})" class="text-red-600 hover:underline">Удалить</button>
+        </div>
+    `).join('');
+
+    window.addCustomTag = () => {
+        const nameInput = document.getElementById('newTagNameInput');
+        const colorInput = document.getElementById('newTagColorInput');
+        if (nameInput && nameInput.value.trim()) {
+            baseTags.push({
+                name: nameInput.value.trim(),
+                color: colorInput.value
+            });
+            localStorage.setItem('fleet_custom_tags', JSON.stringify(baseTags));
+            nameInput.value = "";
+            renderTagsModalList();
+            renderFleet();
+        }
+    };
+
+    window.deleteCustomTag = (idx) => {
+        if (confirm(`Удалить тег "${baseTags[idx].name}" из общего списка?`)) {
+            baseTags.splice(idx, 1);
+            localStorage.setItem('fleet_custom_tags', JSON.stringify(baseTags));
+            renderTagsModalList();
+            renderFleet();
+        }
+    };
 }
 
 function renderCategoriesModalList() {
