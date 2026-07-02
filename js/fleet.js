@@ -1,24 +1,25 @@
 export const template = `
-    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs">
-        <div class="space-y-0.5">
-            <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
-            <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, контроль документов и логов ремонта</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-            <button id="manageDriversBtn" onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs h-9 flex items-center">
-                👤 Водители
-            </button>
-            <button id="manageTagsBtn" onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs h-9 flex items-center">
-                🏷️ Теги статусов
-            </button>
-            <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs h-9 flex items-center">
-                Категории
-            </button>
-            <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm h-9 flex items-center">
-                + Добавить технику
-            </button>
-        </div>
+    <div class="mb-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs">
+    <div class="space-y-0.5">
+        <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
+        <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, контроль документов и логов ремонта</p>
     </div>
+    
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full xl:w-auto">
+        <button id="manageDriversBtn" onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
+            👤 Водители
+        </button>
+        <button id="manageTagsBtn" onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
+            🏷️ Теги
+        </button>
+        <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
+            Категории
+        </button>
+        <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap">
+            + Техника
+        </button>
+    </div>
+</div>
 
     <div class="bg-white p-4 rounded-xl border-2 border-gray-400/80 shadow-xs space-y-3 mb-5">
         <div class="flex flex-col sm:flex-row gap-3">
