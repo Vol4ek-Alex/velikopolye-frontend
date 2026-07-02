@@ -114,7 +114,7 @@ export const template = `
             <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">👤 Список водителей предприятия</h3>
             <div class="space-y-1.5 max-h-44 overflow-y-auto" id="modalDriversList"></div>
             <div class="pt-2 border-t border-gray-200 space-y-2">
-                <input type="text" id="newDriverNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="ФИО водителя (например, Ладутько И.И.)...">
+                <input type="text" id="newDriverNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="ФИО водителя...">
                 <button onclick="window.addCustomDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Добавить водителя</button>
             </div>
             <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
@@ -126,7 +126,7 @@ export const template = `
             <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">🏷️ Управление тегами статусов</h3>
             <div class="space-y-1.5 max-h-44 overflow-y-auto" id="modalTagsList"></div>
             <div class="pt-2 border-t border-gray-200 space-y-2">
-                <input type="text" id="newTagNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Название статуса (например, В ремонте)...">
+                <input type="text" id="newTagNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Название статуса...">
                 <div class="flex items-center gap-2">
                     <label class="text-[10px] text-gray-500 font-bold uppercase">Цвет метки:</label>
                     <input type="color" id="newTagColorInput" value="#e2e8f0" class="w-8 h-8 rounded border border-gray-300 cursor-pointer">
@@ -169,32 +169,14 @@ export const template = `
 
 let vehicles = [];
 let tasks = [];
-let categories = ["Тракторы", "Автомобили", "Комбайны", "Агрегаты", "Без категории"];
-let drivers = ["Ладутько И.И.", "Иванов А.П.", "Петров С.Н."];
-
-let baseTags = [
-    { name: "Готов", color: "#d1fae5" },
-    { name: "В ремонте", color: "#fee2e2" },
-    { name: "На хранении", color: "#f1f5f9" },
-    { name: "Гарантия", color: "#dbeafe" }
-];
+let categories = [];
+let drivers = [];
+let baseTags = [];
 
 let searchQuery = "";
 let selectedCategory = "all";
 let currentSort = "name_asc";
 let refreshIntervalId = null;
-
-// Универсальная функция для отправки настроек в Supabase
-async function saveSettingsToSupabase(key, data) {
-    if (!window._supabase) return;
-    try {
-        await window._supabase
-            .from('fleet_config')
-            .upsert({ key: key, data: data }, { onConflict: 'key' });
-    } catch (err) {
-        console.error("Ошибка сохранения конфигурации:", err.message);
-    }
-}
 
 export async function init() {
     const searchInput = document.getElementById('vehicleSearchInput');
@@ -236,20 +218,19 @@ export async function init() {
 async function loadAllData(isFirstLoad = false) {
     if (!window._supabase) return;
     try {
-        // Запрашиваем из Supabase технику, активные задачи и глобальные конфиги одновременно
-        const [vRes, tRes, confRes] = await Promise.all([
+        const [vRes, tRes, catRes, drvRes, tagRes] = await Promise.all([
             window._supabase.from('vehicles').select('*'),
             window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false),
-            window._supabase.from('fleet_config').select('*')
+            window._supabase.from('fleet_categories').select('*'),
+            window._supabase.from('fleet_drivers').select('*'),
+            window._supabase.from('fleet_tags').select('*')
         ]);
 
-        if (confRes.data && confRes.data.length > 0) {
-            confRes.data.forEach(item => {
-                if (item.key === 'categories') categories = item.data;
-                if (item.key === 'drivers') drivers = item.data;
-                if (item.key === 'tags') baseTags = item.data;
-            });
-        }
+        // Преобразуем ответы из таблиц в массивы объектов/строк
+        categories = catRes.data ? catRes.data.map(c => c.name) : [];
+        drivers = drvRes.data ? drvRes.data : [];
+        baseTags = tagRes.data ? tagRes.data : [];
+
         if (!categories.includes("Без категории")) categories.push("Без категории");
 
         if (vRes.data) {
@@ -271,7 +252,7 @@ async function loadAllData(isFirstLoad = false) {
         }
         renderFleet();
     } catch (e) {
-        console.error("Ошибка при загрузке данных из Supabase:", e);
+        console.error("Ошибка при загрузке данных:", e);
     }
 }
 
@@ -465,7 +446,7 @@ function openVehicleModal(vehicle = null) {
     const driverSelect = document.getElementById('vDriver');
     if (driverSelect) {
         driverSelect.innerHTML = `<option value="">— Не закреплен —</option>` + 
-            drivers.map(d => `<option value="${d}">${d}</option>`).join('');
+            drivers.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
     }
 
     const tagsBox = document.getElementById('tagsCheckboxContainer');
@@ -560,70 +541,76 @@ function renderTagsModalList() {
     if (!modal || !list) return;
 
     modal.classList.remove('hidden');
-    list.innerHTML = baseTags.map((t, idx) => `
+    list.innerHTML = baseTags.map((t) => `
         <div class="flex items-center justify-between p-2 rounded-lg border-2 border-gray-300 text-xs font-bold bg-white shadow-3xs">
             <div class="flex items-center gap-2">
                 <span class="w-3.5 h-3.5 rounded-full border border-gray-400" style="background-color: ${t.color}"></span>
                 <span class="text-gray-900">${t.name}</span>
             </div>
-            <button onclick="window.deleteCustomTag(${idx})" class="text-red-600 hover:underline">Удалить</button>
+            <button onclick="window.deleteCustomTag(${t.id})" class="text-red-600 hover:underline">Удалить</button>
         </div>
     `).join('');
 
     window.addCustomTag = async () => {
         const nameInput = document.getElementById('newTagNameInput');
         const colorInput = document.getElementById('newTagColorInput');
-        if (nameInput && nameInput.value.trim()) {
-            baseTags.push({
-                name: nameInput.value.trim(),
-                color: colorInput.value
-            });
-            await saveSettingsToSupabase('tags', baseTags);
-            nameInput.value = "";
-            renderTagsModalList();
-            renderFleet();
+        if (nameInput && nameInput.value.trim() && window._supabase) {
+            try {
+                await window._supabase.from('fleet_tags').insert([{
+                    name: nameInput.value.trim(),
+                    color: colorInput.value
+                }]);
+                nameInput.value = "";
+                await loadAllData(false);
+                renderTagsModalList();
+            } catch (e) { console.error(e); }
         }
     };
 
-    window.deleteCustomTag = async (idx) => {
-        if (confirm(`Удалить тег "${baseTags[idx].name}" из списка?`)) {
-            baseTags.splice(idx, 1);
-            await saveSettingsToSupabase('tags', baseTags);
-            renderTagsModalList();
-            renderFleet();
+    window.deleteCustomTag = async (tagId) => {
+        if (confirm("Удалить тег из общего списка?")) {
+            try {
+                await window._supabase.from('fleet_tags').delete().eq('id', tagId);
+                await loadAllData(false);
+                renderTagsModalList();
+            } catch (e) { console.error(e); }
         }
     };
 }
 
-// ОКНО НАСТРОЙКИ ВОДИТЕЛЕЙ (ЖЕСТКИЙ СПИСОК)
+// ОКНО НАСТРОЙКИ ВОДИТЕЛЕЙ
 function renderDriversModalList() {
     const modal = document.getElementById('driversManagementModal');
     const list = document.getElementById('modalDriversList');
     if (!modal || !list) return;
 
     modal.classList.remove('hidden');
-    list.innerHTML = drivers.map((d, idx) => `
+    list.innerHTML = drivers.map((d) => `
         <div class="flex items-center justify-between p-2 rounded-lg border-2 border-gray-300 text-xs font-bold bg-white shadow-3xs">
-            <span class="text-gray-900">👤 ${d}</span>
-            <button onclick="window.deleteCustomDriver(${idx})" class="text-red-600 hover:underline">Удалить</button>
+            <span class="text-gray-900">👤 ${d.name}</span>
+            <button onclick="window.deleteCustomDriver(${d.id})" class="text-red-600 hover:underline">Удалить</button>
         </div>
     `).join('');
 
     window.addCustomDriver = async () => {
         const input = document.getElementById('newDriverNameInput');
-        if (input && input.value.trim()) {
-            drivers.push(input.value.trim());
-            await saveSettingsToSupabase('drivers', drivers);
-            input.value = "";
-            renderDriversModalList();
+        if (input && input.value.trim() && window._supabase) {
+            try {
+                await window._supabase.from('fleet_drivers').insert([{ name: input.value.trim() }]);
+                input.value = "";
+                await loadAllData(false);
+                renderDriversModalList();
+            } catch (e) { console.error(e); }
         }
     };
 
-    window.deleteCustomDriver = async (idx) => {
-        if (confirm(`Удалить водителя "${drivers[idx]}" из общего списка?`)) {
-            drivers.splice(idx, 1);
-            await saveSettingsToSupabase('drivers', drivers);
-            renderDriversModalList();
+    window.deleteCustomDriver = async (driverId) => {
+        if (confirm("Удалить водителя из общего списка?")) {
+            try {
+                await window._supabase.from('fleet_drivers').delete().eq('id', driverId);
+                await loadAllData(false);
+                renderDriversModalList();
+            } catch (e) { console.error(e); }
         }
     };
 }
@@ -635,37 +622,37 @@ function renderCategoriesModalList() {
     if (!modal || !list) return;
 
     modal.classList.remove('hidden');
-    list.innerHTML = categories.map((c, idx) => `
+    list.innerHTML = categories.map((c) => `
         <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg border-2 border-gray-300 text-xs font-bold">
             <span class="text-gray-900">${c}</span>
-            ${c !== 'Без категории' ? `<button onclick="window.deleteCustomCategory(${idx})" class="text-red-600 hover:underline">Удалить</button>` : ''}
+            ${c !== 'Без категории' ? `<button onclick="window.deleteCustomCategory('${c}')" class="text-red-600 hover:underline">Удалить</button>` : ''}
         </div>
     `).join('');
 
     window.addCustomCategory = async () => {
         const input = document.getElementById('newCatInput');
-        if (input && input.value.trim()) {
-            categories.push(input.value.trim());
-            await saveSettingsToSupabase('categories', categories);
-            input.value = "";
-            renderCategoriesModalList();
-            renderCategoriesBar();
-            renderFleet();
+        if (input && input.value.trim() && window._supabase) {
+            try {
+                await window._supabase.from('fleet_categories').insert([{ name: input.value.trim() }]);
+                input.value = "";
+                await loadAllData(true);
+                renderCategoriesModalList();
+                renderCategoriesBar();
+            } catch (e) { console.error(e); }
         }
     };
 
-    window.deleteCustomCategory = async (idx) => {
-        const catName = categories[idx];
+    window.deleteCustomCategory = async (catName) => {
         if (confirm(`Удалить категорию "${catName}"? Все машины из неё будут переведены в "Без категории".`)) {
             if (window._supabase) {
                 try {
                     await window._supabase.from('vehicles').update({ type: 'Без категории' }).eq('type', catName);
-                } catch(err) { console.error("Ошибка переноса ТС:", err); }
+                    await window._supabase.from('fleet_categories').delete().eq('name', catName);
+                    await loadAllData(true);
+                    renderCategoriesModalList();
+                    renderCategoriesBar();
+                } catch(err) { console.error(err); }
             }
-            categories.splice(idx, 1);
-            await saveSettingsToSupabase('categories', categories);
-            renderCategoriesModalList();
-            await loadAllData(true);
         }
     };
 }
