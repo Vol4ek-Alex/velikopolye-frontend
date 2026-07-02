@@ -2,11 +2,14 @@ export const template = `
     <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs">
         <div class="space-y-0.5">
             <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
-            <p class="text-xs text-gray-600 font-medium">Учет техники, контроль сроков действия документов и логов ремонта</p>
+            <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, контроль документов и логов ремонта</p>
         </div>
         <div class="flex flex-wrap gap-2">
+            <button id="manageDriversBtn" onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
+                👤 Водители
+            </button>
             <button id="manageTagsBtn" onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
-                🏷️ Настройка тегов
+                🏷️ Теги статусов
             </button>
             <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition shadow-2xs">
                 Категории
@@ -19,7 +22,7 @@ export const template = `
 
     <div class="bg-white p-4 rounded-xl border-2 border-gray-400/80 shadow-xs space-y-3 mb-5">
         <div class="flex flex-col sm:flex-row gap-3">
-            <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs text-gray-950 placeholder-gray-500 focus:outline-none focus:border-emerald-600 focus:bg-white font-bold transition" placeholder="Поиск по модели, госномеру, инвентарному, VIN или тегу/водителю...">
+            <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs text-gray-950 placeholder-gray-500 focus:outline-none focus:border-emerald-600 focus:bg-white font-bold transition" placeholder="Поиск по модели, госномеру, инвентарному, VIN, водителю или тегу...">
             <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="bg-white border-2 border-gray-400 rounded-lg p-2.5 text-xs font-bold text-gray-800 focus:outline-none focus:border-emerald-600">
                 <option value="name_asc">По названию (А-Я)</option>
                 <option value="name_desc">По названию (Я-А)</option>
@@ -27,7 +30,6 @@ export const template = `
             </select>
         </div>
         
-        <!-- Компактный бар категорий: 3 позиции -->
         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200" id="fleetCategoriesBar">
             <div class="text-xs text-gray-400 font-bold">Загрузка категорий...</div>
         </div>
@@ -37,7 +39,6 @@ export const template = `
         <div class="text-center text-gray-500 py-10 text-xs font-bold">Загрузка данных автопарка...</div>
     </div>
 
-    <!-- КАРТОЧКА ТЕХНИКИ -->
     <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-md p-6 border-2 border-gray-400 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 id="vModalTitle" class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-2">Карточка техники</h3>
@@ -55,7 +56,18 @@ export const template = `
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2.5">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-gray-700 mb-1 font-bold">Закрепленный водитель</label>
+                        <select id="vDriver" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1 font-bold">Наработка (м/ч)</label>
+                        <input type="number" id="vHours" required class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-gray-700 mb-1 font-bold">Госномер</label>
                         <input type="text" id="vPlate" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="1234 AB-7">
@@ -63,10 +75,6 @@ export const template = `
                     <div>
                         <label class="block text-gray-700 mb-1 font-bold">Инвентарный №</label>
                         <input type="text" id="vInv" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="00125">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Наработка (м/ч)</label>
-                        <input type="number" id="vHours" required class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:border-emerald-600" placeholder="0">
                     </div>
                 </div>
 
@@ -87,7 +95,7 @@ export const template = `
                 </div>
 
                 <div>
-                    <label class="block text-gray-700 mb-1 font-bold">Теги и Водители (Неограниченно)</label>
+                    <label class="block text-gray-700 mb-1 font-bold">Теги статусов (Неограниченно)</label>
                     <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border-2 border-gray-300 max-h-32 overflow-y-auto"></div>
                 </div>
 
@@ -100,15 +108,26 @@ export const template = `
         </div>
     </div>
 
-    <!-- МОДАЛКА УПРАВЛЕНИЯ ТЕГАМИ -->
+    <div id="driversManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
+            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">👤 Список водителей предприятия</h3>
+            <div class="space-y-1.5 max-h-44 overflow-y-auto" id="modalDriversList"></div>
+            <div class="pt-2 border-t border-gray-200 space-y-2">
+                <input type="text" id="newDriverNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="ФИО водителя (например, Ладутько И.И.)...">
+                <button onclick="window.addCustomDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Добавить водителя</button>
+            </div>
+            <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
+        </div>
+    </div>
+
     <div id="tagsManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
-            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">Управление тегами (водителями)</h3>
+            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">🏷️ Управление тегами статусов</h3>
             <div class="space-y-1.5 max-h-44 overflow-y-auto" id="modalTagsList"></div>
             <div class="pt-2 border-t border-gray-200 space-y-2">
-                <input type="text" id="newTagNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none" placeholder="Имя водителя или статус...">
+                <input type="text" id="newTagNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Название статуса (например, В ремонте)...">
                 <div class="flex items-center gap-2">
-                    <label class="text-[10px] text-gray-500 font-bold uppercase">Цвет:</label>
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Цвет метки:</label>
                     <input type="color" id="newTagColorInput" value="#e2e8f0" class="w-8 h-8 rounded border border-gray-300 cursor-pointer">
                 </div>
                 <button onclick="window.addCustomTag()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Создать тег</button>
@@ -117,7 +136,6 @@ export const template = `
         </div>
     </div>
 
-    <!-- НАСТРОЙКА КАТЕГОРИЙ -->
     <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">Настройка категорий</h3>
@@ -130,7 +148,6 @@ export const template = `
         </div>
     </div>
 
-    <!-- ЗАДАЧИ -->
     <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-sm p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <div class="space-y-0.5">
@@ -152,8 +169,8 @@ export const template = `
 let vehicles = [];
 let tasks = [];
 let categories = ["Тракторы", "Автомобили", "Комбайны", "Агрегаты", "Без категории"];
+let drivers = ["Ладутько И.И.", "Иванов А.П.", "Петров С.Н."];
 
-// Полноценная динамическая база тегов с кастомным цветом
 let baseTags = [
     { name: "Готов", color: "#d1fae5" },
     { name: "В ремонте", color: "#fee2e2" },
@@ -173,6 +190,9 @@ export async function init() {
 
     const savedTags = localStorage.getItem('fleet_custom_tags');
     if (savedTags) baseTags = JSON.parse(savedTags);
+
+    const savedDrivers = localStorage.getItem('fleet_custom_drivers');
+    if (savedDrivers) drivers = JSON.parse(savedDrivers);
 
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
@@ -198,6 +218,7 @@ export async function init() {
     window.closeVModal = () => document.getElementById('vFormModal').classList.add('hidden');
     window.openCategoriesModal = () => renderCategoriesModalList();
     window.openTagsModal = () => renderTagsModalList();
+    window.openDriversModal = () => renderDriversModalList();
     
     window.handleSortChange = (val) => {
         currentSort = val;
@@ -238,7 +259,6 @@ async function loadAllData(isFirstLoad = false) {
     }
 }
 
-// 3 Позиции: Все, Без категории, Другие (Выпадающий список)
 function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
     if (!bar) return;
@@ -287,8 +307,9 @@ function renderFleet() {
         const invStr = v.inv_number ? v.inv_number.toLowerCase() : '';
         const vinStr = v.vin_number ? v.vin_number.toLowerCase() : '';
         const tagsStr = v.tags ? v.tags.toLowerCase() : '';
+        const driverStr = v.notes ? v.notes.toLowerCase() : ''; // Поле notes хранит имя водителя
 
-        const queryMatch = modelStr.includes(searchQuery) || plateStr.includes(searchQuery) || invStr.includes(searchQuery) || vinStr.includes(searchQuery) || tagsStr.includes(searchQuery);
+        const queryMatch = modelStr.includes(searchQuery) || plateStr.includes(searchQuery) || invStr.includes(searchQuery) || vinStr.includes(searchQuery) || tagsStr.includes(searchQuery) || driverStr.includes(searchQuery);
         if (!queryMatch) return false;
         
         if (selectedCategory !== 'all') {
@@ -350,7 +371,13 @@ function renderFleet() {
                                 <div class="space-y-3.5">
                                     <div class="space-y-1 pr-28">
                                         <h4 class="font-bold text-gray-950 text-sm tracking-tight truncate">${v.model}</h4>
-                                        <div class="flex flex-wrap gap-1">
+                                        
+                                        <div class="text-[11px] text-gray-600 font-bold flex items-center gap-1.5 mt-0.5">
+                                            <span>👤 Водитель:</span>
+                                            <span class="text-gray-950 font-black">${v.notes || 'Не закреплен'}</span>
+                                        </div>
+
+                                        <div class="flex flex-wrap gap-1 mt-1.5">
                                             ${vehicleTagsArray.map(t => {
                                                 const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
                                                 const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
@@ -419,7 +446,12 @@ function openVehicleModal(vehicle = null) {
         catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
     }
 
-    // Рендерим теги БЕЗ ЛИМИТА И ОГРАНИЧЕНИЙ
+    const driverSelect = document.getElementById('vDriver');
+    if (driverSelect) {
+        driverSelect.innerHTML = `<option value="">— Не закреплен —</option>` + 
+            drivers.map(d => `<option value="${d}">${d}</option>`).join('');
+    }
+
     const tagsBox = document.getElementById('tagsCheckboxContainer');
     if (tagsBox) {
         tagsBox.innerHTML = baseTags.map(t => `
@@ -438,6 +470,7 @@ function openVehicleModal(vehicle = null) {
         document.getElementById('vId').value = vehicle.id;
         document.getElementById('vCategory').value = vehicle.type || 'Без категории';
         document.getElementById('vName').value = vehicle.model || '';
+        document.getElementById('vDriver').value = vehicle.notes || ''; //notes хранит ФИО водителя
         document.getElementById('vPlate').value = vehicle.plate || '';
         document.getElementById('vInv').value = vehicle.inv_number || '';
         document.getElementById('vHours').value = vehicle.current_hours || 0;
@@ -457,6 +490,7 @@ function openVehicleModal(vehicle = null) {
         title.innerText = "Добавление новой техники";
         document.getElementById('vId').value = '';
         document.getElementById('vCategory').value = 'Без категории';
+        document.getElementById('vDriver').value = '';
         if (delBtn) delBtn.classList.add('hidden');
     }
 }
@@ -470,6 +504,7 @@ async function handleFormSubmit() {
     const payload = {
         type: document.getElementById('vCategory').value || 'Без категории',
         model: document.getElementById('vName').value,
+        notes: document.getElementById('vDriver').value || null, // Сохраняем имя водителя в колонку notes
         plate: document.getElementById('vPlate').value || null,
         inv_number: document.getElementById('vInv').value || null,
         current_hours: parseInt(document.getElementById('vHours').value) || 0,
@@ -502,7 +537,7 @@ async function handleDeleteVehicle() {
     }
 }
 
-// ОКНО НАСТРОЙКИ КАСТОМНЫХ ТЕГОВ И ИХ ЦВЕТА
+// ОКНО НАСТРОЙКИ СТАТУСНЫХ ТЕГОВ
 function renderTagsModalList() {
     const modal = document.getElementById('tagsManagementModal');
     const list = document.getElementById('modalTagsList');
@@ -535,7 +570,7 @@ function renderTagsModalList() {
     };
 
     window.deleteCustomTag = (idx) => {
-        if (confirm(`Удалить тег "${baseTags[idx].name}" из общего списка?`)) {
+        if (confirm(`Удалить тег "${baseTags[idx].name}" из списка?`)) {
             baseTags.splice(idx, 1);
             localStorage.setItem('fleet_custom_tags', JSON.stringify(baseTags));
             renderTagsModalList();
@@ -544,6 +579,40 @@ function renderTagsModalList() {
     };
 }
 
+// ОКНО НАСТРОЙКИ ВОДИТЕЛЕЙ (ЖЕСТКИЙ СПИСОК)
+function renderDriversModalList() {
+    const modal = document.getElementById('driversManagementModal');
+    const list = document.getElementById('modalDriversList');
+    if (!modal || !list) return;
+
+    modal.classList.remove('hidden');
+    list.innerHTML = drivers.map((d, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-lg border-2 border-gray-300 text-xs font-bold bg-white shadow-3xs">
+            <span class="text-gray-900">👤 ${d}</span>
+            <button onclick="window.deleteCustomDriver(${idx})" class="text-red-600 hover:underline">Удалить</button>
+        </div>
+    `).join('');
+
+    window.addCustomDriver = () => {
+        const input = document.getElementById('newDriverNameInput');
+        if (input && input.value.trim()) {
+            drivers.push(input.value.trim());
+            localStorage.setItem('fleet_custom_drivers', JSON.stringify(drivers));
+            input.value = "";
+            renderDriversModalList();
+        }
+    };
+
+    window.deleteCustomDriver = (idx) => {
+        if (confirm(`Удалить водителя "${drivers[idx]}" из общего списка?`)) {
+            drivers.splice(idx, 1);
+            localStorage.setItem('fleet_custom_drivers', JSON.stringify(drivers));
+            renderDriversModalList();
+        }
+    };
+}
+
+// ОКНО НАСТРОЙКИ КАТЕГОРИЙ
 function renderCategoriesModalList() {
     const modal = document.getElementById('categoriesModal');
     const list = document.getElementById('modalCategoriesList');
