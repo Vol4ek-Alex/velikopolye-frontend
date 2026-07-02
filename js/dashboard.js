@@ -126,7 +126,7 @@ export const template = `
 
     <div class="bg-white border-2 border-gray-400/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
         <div class="space-y-0.5">
-            <p class="text-xs font-bold text-gray-950">Необходимо внесить комплексные изменения или записать лог ремонта?</p>
+            <p class="text-xs font-bold text-gray-950">Необходимо внести комплексные изменения или записать лог ремонта?</p>
             <p class="text-[11px] text-gray-600 font-medium">Перейдите в соответствующий раздел для редактирования карточек</p>
         </div>
         <button onclick="window.switchModule('fleet')" class="bg-gray-950 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-xs">
@@ -138,7 +138,6 @@ export const template = `
 let refreshIntervalId = null;
 
 export async function init() {
-    // Регистрация интерактивных методов в глобальную область видимости window
     window.dashCompleteTask = dashCompleteTask;
     window.dashAddRepairTask = dashAddRepairTask;
     window.dashOpenModal = dashOpenModal;
@@ -167,7 +166,6 @@ async function loadDashboardData() {
         const vehiclesList = vehiclesRes.data || [];
         const activeTasks = tasksRes.data || [];
 
-        // Сохраняем в кеш для модалки
         window.dashCachedVehicles = vehiclesList;
 
         renderStats(vehiclesList);
@@ -187,7 +185,7 @@ function renderStats(list) {
 
 function populateVehicleDropdown(vehicles) {
     const select = document.getElementById('taskVehicleSelect');
-    if (!select || select.options.length > 1) return; // Чтобы не перезаписывать при тиках таймера
+    if (!select || select.options.length > 1) return;
     
     vehicles.forEach(v => {
         const opt = document.createElement('option');
@@ -197,7 +195,6 @@ function populateVehicleDropdown(vehicles) {
     });
 }
 
-// ДОБАВЛЕНИЕ ЗАДАЧИ
 async function dashAddRepairTask() {
     const select = document.getElementById('taskVehicleSelect');
     const input = document.getElementById('taskTextInput');
@@ -231,7 +228,6 @@ async function dashAddRepairTask() {
     }
 }
 
-// ОТМЕТКА ВЫПОЛНЕНИЯ ЗАДАЧИ ПРЯМО ТУТ
 async function dashCompleteTask(taskId) {
     try {
         const { error } = await window._supabase
@@ -246,16 +242,18 @@ async function dashCompleteTask(taskId) {
     }
 }
 
-// МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ГАРАНТИИ ПРЯМО С ДАШБОРДА
+// ИСПРАВЛЕНО: Приведение аргумента к числу (Number), чтобы поиск по кешу срабатывал корректно
 function dashOpenModal(vehicleId) {
-    const v = (window.dashCachedVehicles || []).find(item => item.id === vehicleId);
-    if (!v) return;
+    const targetId = Number(vehicleId);
+    const v = (window.dashCachedVehicles || []).find(item => item.id === targetId);
+    if (!v) {
+        console.error("Техника с ID " + targetId + " не найдена в кеше дашборда.");
+        return;
+    }
 
     document.getElementById('modalVehicleId').value = v.id;
     document.getElementById('modalVehicleTitle').innerText = `⚙️ Настройки: ${v.model}`;
     document.getElementById('modalVehicleHours').value = v.current_hours || 0;
-    
-    // Кастомная периодичность ТО (если поля нет в бд, по умолчанию 125)
     document.getElementById('modalVehicleStep').value = v.to_step_hours || 125;
 
     const tagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
@@ -268,7 +266,6 @@ function dashCloseModal() {
     document.getElementById('dashEditModal').classList.add('hidden');
 }
 
-// СОХРАНЕНИЕ ИЗМЕНЕНИЙ ИЗ МОДАЛКИ
 async function dashSaveModalData() {
     const id = document.getElementById('modalVehicleId').value;
     const hours = parseInt(document.getElementById('modalVehicleHours').value) || 0;
@@ -278,7 +275,6 @@ async function dashSaveModalData() {
     const v = (window.dashCachedVehicles || []).find(item => item.id == id);
     if (!v) return;
 
-    // Пересчет тегов
     let tagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
     if (isWarranty && !tagsArray.includes('Гарантия')) {
         tagsArray.push('Гарантия');
@@ -299,18 +295,16 @@ async function dashSaveModalData() {
         if (error) throw error;
         dashCloseModal();
         await loadDashboardData();
-    } catch (err) {
+    } catch (err) catch (err) {
         alert("Ошибка сохранения: " + err.message);
     }
 }
 
-// БЫСТРАЯ КНОПКА "ВЫПОЛНЕНО ТО" ПРЯМО ИЗ МОДАЛКИ (Сдвигает наработку до следующего целевого шага)
 async function dashSubmitFastTO() {
     const id = document.getElementById('modalVehicleId').value;
     const hours = parseInt(document.getElementById('modalVehicleHours').value) || 0;
     const step = parseInt(document.getElementById('modalVehicleStep').value) || 125;
 
-    // Считаем на сколько нужно увеличить или округлить наработку к следующему шагу
     const nextTO = Math.ceil((hours + 1) / step) * step;
     
     if (!confirm(`Подтверждаете выполнение ТО на отметке ${nextTO} м/ч? Текущая наработка будет автоматически скорректирована.`)) return;
@@ -373,9 +367,9 @@ function renderSeparatedAlerts(list, activeTasks) {
         if (v.inspection_date) {
             const diff = Math.ceil((new Date(v.inspection_date) - today) / (1000 * 60 * 60 * 24));
             if (diff <= 0) {
-                docAlerts.push({ isCritical: true, severity: 3, text: `🛑 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Просрочен Гостехосмотр!</span>` });
+                docAlerts.push({ daysLeft: diff, text: `🛑 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Просрочен Гостехосмотр!</span>` });
             } else if (diff <= 30) {
-                docAlerts.push({ isCritical: false, severity: 2, text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Техосмотр истекает через <b>${diff} дн.</b>` });
+                docAlerts.push({ daysLeft: diff, text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Техосмотр истекает через <b>${diff} дн.</b>` });
             }
         }
 
@@ -383,9 +377,9 @@ function renderSeparatedAlerts(list, activeTasks) {
         if (v.insurance_date) {
             const diffIns = Math.ceil((new Date(v.insurance_date) - today) / (1000 * 60 * 60 * 24));
             if (diffIns <= 0) {
-                docAlerts.push({ isCritical: true, severity: 3, text: `🛑 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Закончилась страховка!</span>` });
+                docAlerts.push({ daysLeft: diffIns, text: `🛑 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Закончилась страховка!</span>` });
             } else if (diffIns <= 30) {
-                docAlerts.push({ isCritical: false, severity: 2, text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Страховка истекает через <b>${diffIns} дн.</b>` });
+                docAlerts.push({ daysLeft: diffIns, text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Страховка истекает через <b>${diffIns} дн.</b>` });
             }
         }
 
@@ -404,20 +398,20 @@ function renderSeparatedAlerts(list, activeTasks) {
             }
 
             if (hoursLeft <= 30) {
-                warrantyAlerts.push({ id: v.id, severity: 3, status: 'danger', text: `🚨 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Срочно ТО-${nextTO} ${toType}!</span> Осталось <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ id: v.id, hoursLeft: hoursLeft, status: 'danger', text: `🚨 <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br><span class="text-red-700 font-black">Срочно ТО-${nextTO} ${toType}!</span> Осталось <b>${hoursLeft} м/ч</b>.` });
             } else if (hoursLeft <= 60) {
-                warrantyAlerts.push({ id: v.id, severity: 2, status: 'warning', text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Приближается ТО-${nextTO} ${toType}. Осталось <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ id: v.id, hoursLeft: hoursLeft, status: 'warning', text: `⚠️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Приближается ТО-${nextTO} ${toType}. Осталось <b>${hoursLeft} м/ч</b>.` });
             } else {
-                warrantyAlerts.push({ id: v.id, severity: 1, status: 'info', text: `⚙️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Наработка ${hours} м/ч. До ТО-${nextTO} еще <b>${hoursLeft} м/ч</b>.` });
+                warrantyAlerts.push({ id: v.id, hoursLeft: hoursLeft, status: 'info', text: `⚙️ <b>${v.model}</b><span class="font-mono text-gray-700">${plateStr}</span>:<br>Наработка ${hours} м/ч. До ТО-${nextTO} еще <b>${hoursLeft} м/ч</b>.` });
             }
         }
     });
 
-    // СОРТИРОВКА ПО ВАЖНОСТИ (Сначала критические - severity от 3 до 1)
-    warrantyAlerts.sort((a, b) => b.severity - a.severity);
-    docAlerts.sort((a, b) => b.severity - a.severity);
+    // СОРТИРОВКА: Меньше моточасов осталось/меньше дней осталось — НАВЕРХУ
+    warrantyAlerts.sort((a, b) => a.hoursLeft - b.hoursLeft);
+    docAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
 
-    // 2. РЕНДЕР ГАРАНТИИ С КНОПКОЙ БЫСТРОГО РЕДАКТИРОВАНИЯ ПРЯМО ТУТ
+    // 2. РЕНДЕР ГАРАНТИИ
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
@@ -431,7 +425,7 @@ function renderSeparatedAlerts(list, activeTasks) {
                 return `
                     <div class="p-2.5 border rounded-lg text-[11px] ${c} flex items-center justify-between gap-2 shadow-2xs">
                         <div class="flex-1">${a.text}</div>
-                        <button onclick="window.dashOpenModal('${a.id}')" class="bg-white/70 hover:bg-white text-gray-800 border p-1.5 rounded-lg transition" title="Редактировать параметры">
+                        <button onclick="window.dashOpenModal(${a.id})" class="bg-white/70 hover:bg-white text-gray-800 border p-1.5 rounded-lg transition" title="Редактировать параметры">
                             ✏️
                         </button>
                     </div>
@@ -447,7 +441,7 @@ function renderSeparatedAlerts(list, activeTasks) {
             containerDocs.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-900 p-3 rounded-lg text-center text-[11px] font-bold">Все документы в полном порядке!</div>`;
         } else {
             containerDocs.innerHTML = docAlerts.map(a => {
-                const c = a.isCritical ? "bg-red-50 border-red-300 text-red-950 font-bold" : "bg-amber-50 border-amber-300 text-amber-950 font-medium";
+                const c = a.daysLeft <= 0 ? "bg-red-50 border-red-300 text-red-950 font-bold" : "bg-amber-50 border-amber-300 text-amber-950 font-medium";
                 return `<div class="p-2.5 border rounded-lg text-[11px] ${c} shadow-2xs">${a.text}</div>`;
             }).join('');
         }
