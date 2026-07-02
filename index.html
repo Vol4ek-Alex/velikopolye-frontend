@@ -76,19 +76,19 @@
             <nav id="menuContainer" class="space-y-1"></nav>
         </div>
 
-        <div class="space-y-3 border-t border-gray-100 pt-4">
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between shadow-3xs gap-2">
-                <div class="flex items-center gap-2 truncate">
-                    <span class="text-lg flex-shrink-0">👤</span>
-                    <div class="truncate">
-                        <p class="text-xs font-black text-gray-900 truncate leading-tight">Александр А. В.</p>
-                        <p id="userBoxRole" class="text-[9px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Загрузка...</p>
-                    </div>
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between shadow-3xs gap-2">
+            <div class="flex items-center gap-2 truncate">
+                <span class="text-lg flex-shrink-0">👤</span>
+                <div class="truncate">
+                <!-- Здесь имя теперь будет меняться динамически -->
+                    <p id="userBoxName" class="text-xs font-black text-gray-900 truncate leading-tight">Загрузка...</p>
+                    <p id="userBoxRole" class="text-[9px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Загрузка...</p>
                 </div>
-                <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 rounded-lg transition shadow-3xs">
-                    🚪
-                </button>
             </div>
+            <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 rounded-lg transition shadow-3xs">
+            🚪
+            </button>
+        </div>
 
             <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-xl transition text-center">
                 📱 Установить на телефон
@@ -174,48 +174,66 @@
             }
             deferredPrompt = null;
         };
-
-        const SITE_PIN = "7777"; 
+        // База данных пользователей: должность, ФИО и индивидуальный ПИН-код
+        const USER_PROFILES = {
+            "Директор": { name: "Рунцевич Д.С.", pin: "1111" },
+            "Инженер по ЭМТП": { name: "Волчек А.А.", pin: "2174" },
+            "Техник": { name: "Ладутько И.И.", pin: "2222" }
+        };
 
         window.checkSiteAccess = () => {
-            const input = document.getElementById('sitePinInput');
-            const error = document.getElementById('authErrorMsg');
-            const roleSelect = document.getElementById('authRoleSelect');
-            
-            if (input && input.value === SITE_PIN) {
-                if (roleSelect) localStorage.setItem('user_role', roleSelect.value);
-                localStorage.setItem('site_access_granted', 'true');
-                document.getElementById('siteAuthOverlay').classList.add('hidden');
-                updateSidebarUser();
-            } else {
-                if (error) error.classList.remove('hidden');
-                if (input) { input.value = ''; input.focus(); }
-            }
+        const input = document.getElementById('sitePinInput');
+        const error = document.getElementById('authErrorMsg');
+        const roleSelect = document.getElementById('authRoleSelect');
+    
+        if (!input || !roleSelect) return;
+
+        const selectedRole = roleSelect.value;
+        const profile = USER_PROFILES[selectedRole];
+
+    // Проверяем ПИН-код именно для выбранной должности
+        if (profile && input.value === profile.pin) {
+            localStorage.setItem('user_role', selectedRole);
+            localStorage.setItem('user_name', profile.name); // Сохраняем ФИО
+            localStorage.setItem('site_access_granted', 'true');
+        
+            document.getElementById('siteAuthOverlay').classList.add('hidden');
+            updateSidebarUser();
+        } else {
+        if (error) error.classList.remove('hidden');
+        if (input) { input.value = ''; input.focus(); }
+        }
         };
 
-        function updateSidebarUser() {
-            const role = localStorage.getItem('user_role') || 'Сотрудник';
-            const roleEl = document.getElementById('userBoxRole');
-            if (roleEl) roleEl.innerText = role;
-        }
+    function updateSidebarUser() {
+        const role = localStorage.getItem('user_role') || 'Сотрудник';
+        const name = localStorage.getItem('user_name') || 'Неизвестный';
+    
+        const roleEl = document.getElementById('userBoxRole');
+        const nameEl = document.getElementById('userBoxName');
+    
+        if (roleEl) roleEl.innerText = role;
+        if (nameEl) nameEl.innerText = name;
+    }
 
-        window.logoutSystemUser = () => {
-            if (confirm("Выйти из текущей учетной записи?")) {
-                localStorage.removeItem('site_access_granted');
-                localStorage.removeItem('user_role');
-                verifySession();
-            }
-        };
-
-        function verifySession() {
-            const overlay = document.getElementById('siteAuthOverlay');
-            if (localStorage.getItem('site_access_granted') === 'true') {
-                if (overlay) overlay.classList.add('hidden');
-                updateSidebarUser();
-            } else {
-                if (overlay) overlay.classList.remove('hidden');
-            }
+    window.logoutSystemUser = () => {
+        if (confirm("Выйти из текущей учетной записи?")) {
+        localStorage.removeItem('site_access_granted');
+        localStorage.removeItem('user_role');
+        localStorage.removeItem('user_name'); // Очищаем имя при выходе
+        verifySession();
         }
+    };
+
+    function verifySession() {
+        const overlay = document.getElementById('siteAuthOverlay');
+        if (localStorage.getItem('site_access_granted') === 'true') {
+            if (overlay) overlay.classList.add('hidden');
+            updateSidebarUser();
+        } else {
+            if (overlay) overlay.classList.remove('hidden');
+        }
+    }
 
         document.addEventListener('DOMContentLoaded', () => {
             verifySession();
