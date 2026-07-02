@@ -6,7 +6,7 @@ export const template = `
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 relative z-10">
         <div class="md:col-span-1 bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-950 rounded-2xl p-5 shadow-sm text-white flex flex-col justify-between min-h-[115px]">
             <div class="flex items-center justify-between">
                 <p class="text-[10px] font-black uppercase tracking-wider text-gray-400">Общий автопарк</p>
@@ -42,7 +42,7 @@ export const template = `
         </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-3 mb-6">
+    <div class="grid gap-6 lg:grid-cols-3 mb-6 relative z-10">
         
         <div class="space-y-2.5 flex flex-col">
             <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
@@ -69,13 +69,13 @@ export const template = `
                 <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
                     🛠️ Гарантийный контроль (ТО)
                 </h3>
-                <button onclick="window.dashToggleFilterDropdown()" class="text-[11px] bg-gray-100 hover:bg-gray-200 border border-gray-300 font-bold px-2 py-0.5 rounded-md transition shadow-3xs">
+                <button onclick="window.dashToggleFilterDropdown(event)" class="text-[11px] bg-gray-100 hover:bg-gray-200 border border-gray-300 font-bold px-2 py-0.5 rounded-md transition shadow-3xs">
                     ⚙️ Выбрать технику
                 </button>
             </div>
 
             <div id="dashFilterDropdown" class="absolute right-0 top-7 w-64 bg-white border-2 border-gray-950 rounded-xl shadow-xl p-3 z-50 space-y-2 hidden max-h-[350px] overflow-y-auto">
-                <p class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b pb-1">Вывод на контроль:</p>
+                <p class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b pb-1">Отображать на главной:</p>
                 <div id="dashFilterCheckboxes" class="space-y-1.5 text-xs">
                     </div>
             </div>
@@ -108,11 +108,11 @@ export const template = `
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Текущий спидометр (м/ч)</label>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Спидометр (м/ч)</label>
                         <input type="number" id="modalVehicleHours" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-2.5 font-mono focus:outline-none focus:border-emerald-500">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Нулевая точка (база отсчета)</label>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Нулевая точка (база)</label>
                         <input type="number" id="modalVehicleZeroHours" placeholder="0" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-2.5 font-mono focus:outline-none focus:border-emerald-500">
                     </div>
                 </div>
@@ -120,13 +120,6 @@ export const template = `
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Периодичность ТО (шаг в м/ч)</label>
                     <input type="number" id="modalVehicleStep" placeholder="По умолчанию 125" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-2.5 font-mono focus:outline-none focus:border-emerald-500">
-                </div>
-
-                <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-1">
-                    <label class="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-gray-800">
-                        <input type="checkbox" id="modalVehicleWarrantyCheckbox" class="w-4 h-4 rounded text-emerald-600 border-gray-300 focus:ring-emerald-500">
-                        <span>Состоит на Гарантийном Контроле</span>
-                    </label>
                 </div>
             </div>
 
@@ -169,6 +162,16 @@ export const template = `
             </div>
         </div>
     </div>
+
+    <div class="bg-white border-2 border-gray-400/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between relative z-10">
+        <div class="space-y-0.5">
+            <p class="text-xs font-bold text-gray-950">Необходимо внести комплексные изменения или записать лог ремонта?</p>
+            <p class="text-[11px] text-gray-600 font-medium">Перейдите в соответствующий раздел для редактирования карточек</p>
+        </div>
+        <button onclick="window.switchModule('fleet')" class="bg-gray-950 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-xs">
+            Перейти в Автопарк ➔
+        </button>
+    </div>
 `;
 
 let refreshIntervalId = null;
@@ -181,15 +184,15 @@ export async function init() {
     window.dashSaveModalData = dashSaveModalData;
     window.dashSubmitFastTO = dashSubmitFastTO;
     window.dashToggleFilterDropdown = dashToggleFilterDropdown;
-    window.dashUpdateWarrantyTagViaCheckbox = dashUpdateWarrantyTagViaCheckbox;
+    window.dashToggleLocalVisibility = dashToggleLocalVisibility;
     window.dashOpenDocModal = dashOpenDocModal;
     window.dashCloseDocModal = dashCloseDocModal;
     window.dashSaveDocModalData = dashSaveDocModalData;
 
-    // Скрываем дропдаун при клике в любое другое место
+    // Закрытие дропдауна кликом мимо кнопки
     document.addEventListener('click', function(e) {
         const drop = document.getElementById('dashFilterDropdown');
-        if (drop && !drop.contains(e.target) && !e.target.innerText.includes('Выбрать технику')) {
+        if (drop && !drop.contains(e.target) && !e.target.closest('button')) {
             drop.classList.add('hidden');
         }
     });
@@ -245,52 +248,57 @@ function populateVehicleDropdown(vehicles) {
     });
 }
 
-function dashToggleFilterDropdown() {
+function dashToggleFilterDropdown(e) {
+    e.stopPropagation();
     const drop = document.getElementById('dashFilterDropdown');
     if (drop) drop.classList.toggle('hidden');
 }
 
-// Генерация списка чекбоксов для мгновенного включения/выключения гарантии
+// Отображает в выпадающем меню чекбоксы ТОЛЬКО для техники с тегом Гарантия
 function renderFilterCheckboxes(vehicles) {
     const container = document.getElementById('dashFilterCheckboxes');
     if (!container) return;
     
-    container.innerHTML = vehicles.map(v => {
-        const tagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
-        const isChecked = tagsArray.includes('Гарантия') ? 'checked' : '';
+    // Берем из localStorage сохраненные скрытые ID, чтобы состояние не терялось
+    const hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
+    
+    const warrantyVehicles = vehicles.filter(v => {
+        const tags = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
+        return tags.includes('Гарантия');
+    });
+
+    if (warrantyVehicles.length === 0) {
+        container.innerHTML = `<p class="text-gray-400 text-[11px] py-1 text-center font-medium">Нет гарантийной техники</p>`;
+        return;
+    }
+
+    container.innerHTML = warrantyVehicles.map(v => {
+        const isVisible = !hiddenVehicles.includes(v.id);
+        const isChecked = isVisible ? 'checked' : '';
         const nameStr = `${v.model} ${v.plate ? '('+v.plate+')' : '(б/н)'}`;
         
         return `
             <label class="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-gray-50 rounded px-1 text-gray-900 font-medium">
-                <input type="checkbox" ${isChecked} onchange="window.dashUpdateWarrantyTagViaCheckbox(${v.id}, this.checked)" class="w-3.5 h-3.5 rounded text-emerald-600 border-gray-300 focus:ring-emerald-500">
+                <input type="checkbox" ${isChecked} onchange="window.dashToggleLocalVisibility(${v.id}, this.checked)" class="w-3.5 h-3.5 rounded text-emerald-600 border-gray-300 focus:ring-emerald-500">
                 <span class="truncate">${nameStr}</span>
             </label>
         `;
     }).join('');
 }
 
-// Быстрое переключение тега Гарантия из выпадающего меню флажков
-async function dashUpdateWarrantyTagViaCheckbox(vehicleId, isChecked) {
-    const v = (window.dashCachedVehicles || []).find(item => item.id === vehicleId);
-    if (!v) return;
-
-    let tagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
-    if (isChecked && !tagsArray.includes('Гарантия')) {
-        tagsArray.push('Гарантия');
-    } else if (!isChecked && tagsArray.includes('Гарантия')) {
-        tagsArray = tagsArray.filter(t => t !== 'Гарантия');
+// Переключение видимости карточки техники на главной странице без записи в БД
+function dashToggleLocalVisibility(vehicleId, isChecked) {
+    let hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
+    if (isChecked) {
+        hiddenVehicles = hiddenVehicles.filter(id => id !== vehicleId);
+    } else {
+        if (!hiddenVehicles.includes(vehicleId)) hiddenVehicles.push(vehicleId);
     }
-
-    try {
-        const { error } = await window._supabase
-            .from('vehicles')
-            .update({ tags: tagsArray.join(', ') })
-            .eq('id', vehicleId);
-
-        if (error) throw error;
-        await loadDashboardData();
-    } catch (err) {
-        alert("Ошибка изменения флага контроля: " + err.message);
+    localStorage.setItem('dash_hidden_warranty', JSON.stringify(hiddenVehicles));
+    
+    // Перерисовываем списки на экране моментально
+    if (window.dashCachedVehicles) {
+        renderSeparatedAlerts(window.dashCachedVehicles, []);
     }
 }
 
@@ -309,11 +317,19 @@ async function dashAddRepairTask() {
         vehicleName = parsed.name;
     }
 
+    // Считываем автора из localStorage (кто залогинился в index.html)
+    const userRole = localStorage.getItem('user_role') || 'Сотрудник';
+    const userName = localStorage.getItem('user_name') || '';
+    const authorSignature = ` [${userRole} ${userName}]`.trim();
+
+    // Склеиваем текст заметки с подписью автора
+    const finalTaskText = `${input.value.trim()} ${authorSignature}`;
+
     try {
         const { error } = await window._supabase.from('vehicle_tasks').insert([{
             vehicle_id: vehicleId,
             vehicle_name: vehicleName,
-            text: input.value.trim(),
+            text: finalTaskText,
             is_completed: false
         }]);
 
@@ -323,7 +339,7 @@ async function dashAddRepairTask() {
         if (select) select.value = '';
         await loadDashboardData();
     } catch (err) {
-        alert("Ошибка добавления: " + err.message);
+        alert("Ошибка добавления заметки: " + err.message);
     }
 }
 
@@ -337,7 +353,7 @@ async function dashCompleteTask(taskId) {
         if (error) throw error;
         await loadDashboardData();
     } catch (err) {
-        alert("Ошибка закрытия задачи: " + err.message);
+        alert("Ошибка закрытия: " + err.message);
     }
 }
 
@@ -347,13 +363,10 @@ function dashOpenModal(vehicleId) {
     if (!v) return;
 
     document.getElementById('modalVehicleId').value = v.id;
-    document.getElementById('modalVehicleTitle').innerText = `⚙️ Настройки: ${v.model}`;
+    document.getElementById('modalVehicleTitle').innerText = `⚙️ Параметры ТО: ${v.model}`;
     document.getElementById('modalVehicleHours').value = v.current_hours || 0;
-    document.getElementById('modalVehicleZeroHours').value = v.zero_hours || 0; // Новая точка базы отсчета
+    document.getElementById('modalVehicleZeroHours').value = v.zero_hours || 0;
     document.getElementById('modalVehicleStep').value = v.to_step_hours || 125;
-
-    const tagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
-    document.getElementById('modalVehicleWarrantyCheckbox').checked = tagsArray.includes('Гарантия');
 
     document.getElementById('dashEditModal').classList.remove('hidden');
 }
@@ -367,17 +380,6 @@ async function dashSaveModalData() {
     const hours = parseInt(document.getElementById('modalVehicleHours').value) || 0;
     const zeroHours = parseInt(document.getElementById('modalVehicleZeroHours').value) || 0;
     const step = parseInt(document.getElementById('modalVehicleStep').value) || 125;
-    const isWarranty = document.getElementById('modalVehicleWarrantyCheckbox').checked;
-
-    const v = (window.dashCachedVehicles || []).find(item => item.id == id);
-    if (!v) return;
-
-    let tagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
-    if (isWarranty && !tagsArray.includes('Гарантия')) {
-        tagsArray.push('Гарантия');
-    } else if (!isWarranty && tagsArray.includes('Гарантия')) {
-        tagsArray = tagsArray.filter(t => t !== 'Гарантия');
-    }
 
     try {
         const { error } = await window._supabase
@@ -385,8 +387,7 @@ async function dashSaveModalData() {
             .update({
                 current_hours: hours,
                 zero_hours: zeroHours,
-                to_step_hours: step,
-                tags: tagsArray.join(', ')
+                to_step_hours: step
             })
             .eq('id', id);
 
@@ -394,7 +395,7 @@ async function dashSaveModalData() {
         dashCloseModal();
         await loadDashboardData();
     } catch (err) {
-        alert("Ошибка сохранения: " + err.message);
+        alert("Ошибка сохранения параметров ТО: " + err.message);
     }
 }
 
@@ -404,12 +405,11 @@ async function dashSubmitFastTO() {
     const zeroHours = parseInt(document.getElementById('modalVehicleZeroHours').value) || 0;
     const step = parseInt(document.getElementById('modalVehicleStep').value) || 125;
 
-    // Рассчитываем чистую наработку от нулевой точки
     const effectiveHours = hours - zeroHours;
     const nextEffectiveTO = Math.ceil((effectiveHours + 1) / step) * step;
     const nextAbsoluteTO = nextEffectiveTO + zeroHours;
     
-    if (!confirm(`Подтверждаете выполнение ТО на отметке спидометра ${nextAbsoluteTO} м/ч (чистый шаг от базы: ${nextEffectiveTO} м/ч)?`)) return;
+    if (!confirm(`Подтверждаете выполнение ТО на отметке спидометра ${nextAbsoluteTO} м/ч?`)) return;
 
     try {
         const { error } = await window._supabase
@@ -425,7 +425,6 @@ async function dashSubmitFastTO() {
     }
 }
 
-// ОКНО ОПЕРАТИВНОГО ИЗМЕНЕНИЯ СТРАХОВОК/ТЕХОСМОТРОВ
 function dashOpenDocModal(vehicleId) {
     const v = (window.dashCachedVehicles || []).find(item => item.id === Number(vehicleId));
     if (!v) return;
@@ -469,32 +468,33 @@ function renderSeparatedAlerts(list, activeTasks) {
     const plateMap = {};
     list.forEach(v => { plateMap[v.id] = v.plate ? `[${v.plate}]` : '[б/н]'; });
 
-    // 1. СТРУКТУРИРОВАННЫЕ ЗАДАЧИ И СВОБОДНЫЕ ПОМЕТКИ
+    // Читаем скрытые локально машины
+    const hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
+
+    // 1. АКТИВНЫЕ ЗАДАЧИ И ЗАМЕТКИ
     const containerTasks = document.getElementById('containerTasks');
-    if (containerTasks) {
-        if (activeTasks.length === 0) {
-            containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет активных задач и заметок</div>`;
-        } else {
-            containerTasks.innerHTML = activeTasks.map(task => {
-                const plateStr = plateMap[task.vehicle_id] || '';
-                const isSystemTask = task.vehicle_id !== null;
-                
-                return `
-                    <div class="p-2.5 bg-amber-50 border-2 border-amber-400 text-gray-950 rounded-lg text-[11px] shadow-2xs flex items-start justify-between gap-2">
-                        <div class="flex-1">
-                            <span class="text-[10px] uppercase font-black tracking-wider ${isSystemTask ? 'text-amber-900' : 'text-blue-800 bg-blue-100 px-1.5 py-0.5 rounded'}">
-                                ${isSystemTask ? '🛠️ ' + task.vehicle_name : '📌 Общая заметка'}
-                            </span>
-                            <span class="text-gray-600 font-mono font-medium text-[10px]">${plateStr}</span>
-                            <p class="text-gray-950 font-bold mt-1 leading-tight">${task.text}</p>
-                        </div>
-                        <button onclick="window.dashCompleteTask('${task.id}')" class="bg-amber-600 hover:bg-emerald-700 text-white text-[10px] font-black px-2 py-1 rounded transition whitespace-nowrap">
-                            ✓ Закрыть
-                        </button>
+    if (containerTasks && activeTasks.length > 0) {
+        containerTasks.innerHTML = activeTasks.map(task => {
+            const plateStr = plateMap[task.vehicle_id] || '';
+            const isSystemTask = task.vehicle_id !== null;
+            
+            return `
+                <div class="p-2.5 bg-amber-50 border-2 border-amber-400 text-gray-950 rounded-lg text-[11px] shadow-2xs flex items-start justify-between gap-2">
+                    <div class="flex-1">
+                        <span class="text-[10px] uppercase font-black tracking-wider ${isSystemTask ? 'text-amber-900' : 'text-blue-800 bg-blue-100 px-1.5 py-0.5 rounded'}">
+                            ${isSystemTask ? '🛠️ ' + task.vehicle_name : '📌 Общая заметка'}
+                        </span>
+                        <span class="text-gray-600 font-mono font-medium text-[10px]">${plateStr}</span>
+                        <p class="text-gray-950 font-bold mt-1 leading-tight">${task.text}</p>
                     </div>
-                `;
-            }).join('');
-        }
+                    <button onclick="window.dashCompleteTask('${task.id}')" class="bg-amber-600 hover:bg-emerald-700 text-white text-[10px] font-black px-2 py-1 rounded transition whitespace-nowrap">
+                        ✓ Закрыть
+                    </button>
+                </div>
+            `;
+        }).join('');
+    } else if (containerTasks && containerTasks.innerHTML.includes('Загрузка...')) {
+        containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет активных задач и заметок</div>`;
     }
 
     const warrantyAlerts = [];
@@ -525,15 +525,13 @@ function renderSeparatedAlerts(list, activeTasks) {
             }
         }
 
-        // Проверка Гарантии с учетом базовой (нулевой) точки наработки zero_hours
+        // Проверка Гарантии с учетом zero_hours (если машина не скрыта чекбоксом на главной)
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
-        if (vehicleTagsArray.includes('Гарантия')) {
+        if (vehicleTagsArray.includes('Гарантия') && !hiddenVehicles.includes(v.id)) {
             const currentHours = v.current_hours || 0;
-            
-            // Чистая эффективная наработка с момента ввода/сброса спидометра
             const effectiveHours = Math.max(0, currentHours - zeroHours);
             const nextEffectiveTO = Math.ceil((effectiveHours + 1) / customStep) * customStep;
-            const nextAbsoluteTO = nextEffectiveTO + zeroHours; // Целевая точка на спидометре
+            const nextAbsoluteTO = nextEffectiveTO + zeroHours; 
             
             const hoursLeft = nextAbsoluteTO - currentHours;
 
@@ -554,15 +552,14 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     });
 
-    // СОРТИРОВКА: Меньше моточасов осталось/меньше дней осталось — НАВЕРХУ
     warrantyAlerts.sort((a, b) => a.hoursLeft - b.hoursLeft);
     docAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
 
-    // 2. РЕНДЕР ГАРАНТИИ
+    // РЕНДЕР ГАРАНТИИ
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
-            containerWarranty.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет гарантийной техники на контроле</div>`;
+            containerWarranty.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-200 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет гарантийной техники на контроле (или вся скрыта)</div>`;
         } else {
             containerWarranty.innerHTML = warrantyAlerts.map(a => {
                 let c = "bg-blue-50 border-blue-300 text-blue-950 font-medium";
@@ -572,7 +569,7 @@ function renderSeparatedAlerts(list, activeTasks) {
                 return `
                     <div class="p-2.5 border rounded-lg text-[11px] ${c} flex items-center justify-between gap-2 shadow-2xs">
                         <div class="flex-1">${a.text}</div>
-                        <button onclick="window.dashOpenModal(${a.id})" class="bg-white/70 hover:bg-white text-gray-800 border p-1.5 rounded-lg transition shrink-0" title="Редактировать параметры ТО">
+                        <button onclick="window.dashOpenModal(${a.id})" class="bg-white/70 hover:bg-white text-gray-800 border p-1.5 rounded-lg transition shrink-0">
                             ✏️
                         </button>
                     </div>
@@ -581,7 +578,7 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     }
 
-    // 3. РЕНДЕР ДОКУМЕНТОВ С ВОЗМОЖНОСТЬЮ РЕДАКТИРОВАНИЯ
+    // РЕНДЕР ДОКУМЕНТОВ
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
         if (docAlerts.length === 0) {
@@ -592,7 +589,7 @@ function renderSeparatedAlerts(list, activeTasks) {
                 return `
                     <div class="p-2.5 border rounded-lg text-[11px] ${c} shadow-2xs flex items-center justify-between gap-2">
                         <div class="flex-1">${a.text}</div>
-                        <button onclick="window.dashOpenDocModal(${a.id})" class="bg-white/70 hover:bg-white text-gray-800 border p-1.5 rounded-lg transition shrink-0" title="Редактировать сроки документов">
+                        <button onclick="window.dashOpenDocModal(${a.id})" class="bg-white/70 hover:bg-white text-gray-800 border p-1.5 rounded-lg transition shrink-0">
                             ✏️
                         </button>
                     </div>
