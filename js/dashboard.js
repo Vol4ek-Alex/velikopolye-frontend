@@ -489,13 +489,13 @@ function renderSeparatedAlerts(list, activeTasks) {
 
             let status = 'info';
             let statusText = `⚙️ Наработка ${hours} м/ч. До ${toType} (${nextTO}) ещё <b>${hoursLeft} м/ч</b>.`;
-            if (hoursLeft <= 10) {
-                status = 'danger';
+            if (hoursLeft <= 50) {
+                status = 'danger'; // Станет красным, если осталось 50 м/ч или меньше
                 statusText = `🚨 <span class="text-red-700 font-black">Срочно ${toType} (${nextTO})!</span> Осталось <b>${hoursLeft} м/ч</b>.`;
-            } else if (hoursLeft <= 35) {
-                status = 'warning';
+            } else if (hoursLeft <= 100) {
+                status = 'warning'; // Станет жёлтым, если осталось от 51 до 100 м/ч
                 statusText = `⚠️ Срок ${toType} (${nextTO}). Осталось <b>${hoursLeft} м/ч</b>.`;
-            }
+}
 
             warrantyAlerts.push({
                 id: v.id,
