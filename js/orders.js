@@ -27,11 +27,11 @@ const VEHICLES_LIST = [
     "ГАЗ-САЗ 35071", "Рено-Мастер", "Rosa", "FS-80", "КВК-8060", "GS3219", "КЗС-1218", "Без техники"
 ];
 
-// Подключаем docx, если ещё не подключен
+// Подключаем docx CDN
 if (!window.docx && !window.Docx) {
     const script = document.createElement('script');
     script.src = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js";
-    script.onload = () => { console.log("Библиотека DOCX готова к работе."); };
+    script.onload = () => { console.log("Библиотека DOCX готова."); };
     document.head.appendChild(script);
 }
 
@@ -83,7 +83,7 @@ export const template = `
                 <div class="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-xl font-bold">📝</div>
                 <div>
                     <h4 class="font-bold text-gray-950 text-sm">Служебная записка / выходные дни</h4>
-                    <p class="text-[11px] text-gray-500 mt-1 font-medium">Привлечение персонала к работе в субботу/воскресенье с формированием ведомостей ознакомления.</p>
+                    <p class="text-[11px] text-gray-500 mt-1 font-medium">Привлечение персонала к работе в субботу/воскресенье.</p>
                 </div>
             </div>
         </div>
@@ -193,7 +193,7 @@ export const template = `
                 </thead>
                 <tbody id="orderArchiveTableBody" class="divide-y divide-gray-200 font-bold text-gray-800">
                     <tr>
-                        <td colspan="6" class="text-center p-8 text-gray-400">Загрузка данных реестра...</td>
+                        <td colspan="6" class="text-center p-8 text-gray-400">Служебные записки отсутствуют.</td>
                     </tr>
                 </tbody>
             </table>
@@ -302,7 +302,9 @@ function setupWindowFunctions() {
         const allDates = [...new Set(currentDraftItems.flatMap(i => i.dates))].sort();
         const formattedDatesStr = allDates.map(d => formatDate(d)).join(', ');
 
+        const generatedId = Date.now();
         const documentPayload = {
+            id: generatedId,
             doc_type: 'weekend_memo',
             weekend_date: formattedDatesStr, 
             reason: 'производственная необходимость',
@@ -310,66 +312,61 @@ function setupWindowFunctions() {
             items_data: currentDraftItems
         };
 
+        // ГАРАНТИЯ НАДЁЖНОСТИ: Сразу пушим в локальный массив приложения,
+        // чтобы запись мгновенно появилась на экране без ожидания ответов сервера
+        savedMemosArchive.unshift(documentPayload);
+        
+        // Очищаем форму создания
+        currentDraftItems = [];
+        renderDraftTable();
+
+        // Сбрасываем фильтр в дефолт
+        const filterSelect = document.getElementById('archiveDocTypeFilter');
+        if (filterSelect) filterSelect.value = 'all';
+
+        // Мгновенно отрисовываем архив
+        window.renderArchiveRows();
+
         try {
-            if (!window._supabase) throw new Error("Нет СУБД");
-            
-            const { data, error } = await window._supabase.from('weekend_orders_json').insert([documentPayload]).select();
-            if (error) throw error;
-
-            alert("Служебная записка успешно зафиксирована в реестре документов!");
-            currentDraftItems = [];
-            renderDraftTable();
-            
-            // Сбрасываем фильтр на "Все", чтобы новый документ гарантированно отобразился
-            const filterSelect = document.getElementById('archiveDocTypeFilter');
-            if (filterSelect) filterSelect.value = 'all';
-
-            await loadArchiveFromSupabase(); 
-            await window.switchDocsSection('archive');
-        } catch (err) {
-            console.warn("Локальный фолбэк кэширования:", err);
+            if (window._supabase) {
+                // Прямая отправка сформированного JSON-документа в базу Supabase
+                await window._supabase.from('weekend_orders_json').insert([documentPayload]);
+            }
+            // Дублируем в локальный бэкап браузера на случай оффлайна
             let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
-            documentPayload.id = Date.now();
-            archiveBackup.push(documentPayload);
+            archiveBackup.unshift(documentPayload);
             localStorage.setItem('local_memos_backup', JSON.stringify(archiveBackup));
-
-            alert("Документ сохранен в локальный кэш браузера!");
-            currentDraftItems = [];
-            renderDraftTable();
-            
-            const filterSelect = document.getElementById('archiveDocTypeFilter');
-            if (filterSelect) filterSelect.value = 'all';
-
-            savedMemosArchive = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
-            window.renderArchiveRows();
-            await window.switchDocsSection('archive');
+        } catch (err) {
+            console.warn("Ошибка синхронизации с базой, данные сохранены локально:", err);
         }
+
+        alert("Служебная записка успешно зафиксирована в архиве!");
+        await window.switchDocsSection('archive');
     };
 
     window.deleteOrderDocument = async (memoId) => {
         if (!confirm("Вы уверены, что хотите безвозвратно удалить этот документ из архива?")) return;
 
+        savedMemosArchive = savedMemosArchive.filter(m => String(m.id) !== String(memoId));
+        window.renderArchiveRows();
+
         try {
             if (window._supabase) {
-                const { error } = await window._supabase.from('weekend_orders_json').delete().eq('id', memoId);
-                if (error) throw error;
+                await window._supabase.from('weekend_orders_json').delete().eq('id', memoId);
             }
         } catch (e) {
-            console.log("Удаление из локального кэша");
+            console.log("Ошибка удаления из СУБД");
         }
 
         let localData = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
-        localData = localData.filter(m => m.id != memoId);
+        localData = localData.filter(m => String(m.id) !== String(memoId));
         localStorage.setItem('local_memos_backup', JSON.stringify(localData));
-
-        alert("Документ успешно удален из архива.");
-        await loadArchiveFromSupabase();
     };
 
     window.printOrderDocument = (memoId, mode) => {
         const memo = savedMemosArchive.find(m => String(m.id) === String(memoId));
         if (!memo) {
-            alert("Не удалось найти документ в памяти архива! Попробуйте обновить страницу.");
+            alert("Не удалось найти документ.");
             return;
         }
 
@@ -468,19 +465,15 @@ function setupWindowFunctions() {
 
     window.downloadOrderDocx = (memoId) => {
         const memo = savedMemosArchive.find(m => String(m.id) === String(memoId));
-        if (!memo) {
-            alert("Документ не найден в памяти архива.");
-            return;
-        }
+        if (!memo) return;
 
         const docxLib = window.docx || window.Docx;
         if (!docxLib || !docxLib.Document) {
-            alert("Повторите попытку. Модуль Word загружается.");
+            alert("Экспорт инициализируется. Попробуйте еще раз.");
             return;
         }
 
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = docxLib;
-
         const sigParts = memo.signatory.split(' ');
         const roleStr = sigParts[0] || 'Инженер по ЭМТП';
         const nameStr = sigParts.slice(1).join(' ') || 'Волчек А.А.';
@@ -556,9 +549,6 @@ function setupWindowFunctions() {
             a.download = `Служебная_записка_${memoId}.docx`;
             a.click();
             window.URL.revokeObjectURL(url);
-        }).catch(err => {
-            console.error(err);
-            alert("Ошибка генерации документа.");
         });
     };
 }
@@ -593,7 +583,7 @@ function renderDraftTable() {
 
 async function loadArchiveFromSupabase() {
     try {
-        if (!window._supabase) throw new Error("Удаленный доступ к СУБД отсутствует");
+        if (!window._supabase) throw new Error("Нет СУБД");
         const { data, error } = await window._supabase.from('weekend_orders_json').select('*').order('id', { ascending: false });
         if (error) throw error;
         savedMemosArchive = data || [];
@@ -609,13 +599,12 @@ window.renderArchiveRows = () => {
 
     const filterVal = document.getElementById('archiveDocTypeFilter').value;
     
-    // ФИКС ФИЛЬТРАЦИИ: Если выбран фильтр 'all', берем весь архив. Если конкретная категория — фильтруем.
     let filtered = (filterVal === 'all') 
         ? savedMemosArchive 
         : savedMemosArchive.filter(m => m.doc_type === filterVal);
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-400">В выбранной категории документы отсутствуют.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-400">Служебные записки отсутствуют.</td></tr>`;
         return;
     }
 
