@@ -27,11 +27,11 @@ const VEHICLES_LIST = [
     "ГАЗ-САЗ 35071", "Рено-Мастер", "Rosa", "FS-80", "КВК-8060", "GS3219", "КЗС-1218", "Без техники"
 ];
 
-// Надежное подключение библиотеки docx
+// Надежное динамическое подключение библиотеки docx
 if (!window.docx) {
     const script = document.createElement('script');
     script.src = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js";
-    script.onload = () => { console.log("Библиотека DOCX инициализирована."); };
+    script.onload = () => { console.log("Библиотека DOCX успешно подключена."); };
     document.head.appendChild(script);
 }
 
@@ -288,7 +288,10 @@ function setupWindowFunctions() {
         };
 
         try {
-            const { error } = await window._supabase.from('weekend_orders_json').insert([documentPayload]);
+            if (!window._supabase) throw new Error("Нет СУБД");
+            
+            // ВАЖНО: Добавлен .select() возвращающий созданный ID от сервера БД наружу
+            const { data, error } = await window._supabase.from('weekend_orders_json').insert([documentPayload]).select();
             if (error) throw error;
 
             alert("Служебная записка успешно зафиксирована в реестре документов!");
@@ -296,20 +299,19 @@ function setupWindowFunctions() {
             renderDraftTable();
             await window.switchDocsSection('archive');
         } catch (err) {
-            console.warn("Локальный фолбэк:", err);
+            console.warn("Локальный фолбэк кэширования:", err);
             let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
             documentPayload.id = Date.now();
             archiveBackup.push(documentPayload);
             localStorage.setItem('local_memos_backup', JSON.stringify(archiveBackup));
 
-            alert("Документ зафиксирован в локальном архиве АРМ.");
+            alert("Документ сохранен в локальный кэш браузера!");
             currentDraftItems = [];
             renderDraftTable();
             await window.switchDocsSection('archive');
         }
     };
 
-    // --- ФУНКЦИЯ УДАЛЕНИЯ ДОКУМЕНТА ---
     window.deleteOrderDocument = async (memoId) => {
         if (!confirm("Вы уверены, что хотите безвозвратно удалить этот документ из архива?")) return;
 
@@ -330,11 +332,10 @@ function setupWindowFunctions() {
         await loadArchiveFromSupabase();
     };
 
-    // --- ПЕЧАТЬ ИЗ БРАУЗЕРА ---
     window.printOrderDocument = (memoId, mode) => {
-        const memo = savedMemosArchive.find(m => m.id == memoId);
+        const memo = savedMemosArchive.find(m => String(m.id) === String(memoId));
         if (!memo) {
-            alert("Не удалось найти документ в памяти архива!");
+            alert("Не удалось найти документ в памяти архива! Попробуйте обновить вкладку.");
             return;
         }
 
@@ -365,7 +366,7 @@ function setupWindowFunctions() {
             htmlContent = `
                 <div style="font-family: 'Times New Roman', serif; color: black; font-size: 14px; line-height: 1.4; max-width: 700px; margin: 0 auto; padding: 20px;">
                     <div style="margin-left: auto; width: 280px; margin-bottom: 40px; line-height: 1.3;">
-                        Директору филиала СХК<br>«Великополье»<br>Рунцевичу Д.С.<br>
+                        Директору филиала СХК<br>«Великополье»<br>Рунцевичу Д.С.<br><br>
                         ${memo.signatory.split(' ')[0]}<br><b>${memo.signatory.split(' ').slice(1).join(' ')}</b>
                     </div>
                     <h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 25px; font-family: 'Times New Roman', serif;">СЛУЖЕБНАЯ ЗАПИСКА</h1>
@@ -440,42 +441,54 @@ function setupWindowFunctions() {
         }
     };
 
-    // --- СКАЧИВАНИЕ В WORD (.DOCX) ---
     window.downloadOrderDocx = (memoId) => {
-        const memo = savedMemosArchive.find(m => m.id == memoId);
-        if (!memo) return;
+        const memo = savedMemosArchive.find(m => String(m.id) === String(memoId));
+        if (!memo) {
+            alert("Документ не найден в локальной памяти архива.");
+            return;
+        }
 
         if (!window.docx || !window.docx.Document) {
-            setTimeout(() => { window.downloadOrderDocx(memoId); }, 300);
+            alert("Библиотека экспорта в Word ещё загружается. Подождите пару секунд и нажмите снова.");
             return;
         }
 
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
 
+        // Строгое разделение роли и ФИО составителя
+        const sigParts = memo.signatory.split(' ');
+        const roleStr = sigParts[0] || 'Инженер по ЭМТП';
+        const nameStr = sigParts.slice(1).join(' ') || 'Волчек А.А.';
+
         const children = [
             new Paragraph({
                 alignment: AlignmentType.RIGHT,
-                spacing: { after: 300 },
+                spacing: { after: 200 },
                 children: [
-                    new TextRun({ text: "Директору филиала СХК\n«Великополье»\nРунцевичу Д.С.\n" + memo.signatory, lineSpacing: 240, font: "Times New Roman" })
+                    new TextRun({ text: "Директору филиала СХК\n«Великополье»\nРунцевичу Д.С.\n\n" + roleStr + "\n", font: "Times New Roman", size: 28 }),
+                    new TextRun({ text: nameStr, bold: true, font: "Times New Roman", size: 28 })
                 ]
             }),
             new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 150, after: 200 },
+                spacing: { before: 300, after: 300 },
                 children: [
-                    new TextRun({ text: "СЛУЖЕБНАЯ ЗАПИСКА", bold: true, size: 28, font: "Times New Roman" })
+                    new TextRun({ text: "СЛУЖЕБНАЯ ЗАПИСКА", bold: true, size: 32, font: "Times New Roman" })
                 ]
             }),
             new Paragraph({
-                indent: { firstLine: 400 },
-                spacing: { after: 150 },
+                indent: { firstLine: 500 },
+                spacing: { after: 200 },
+                alignment: AlignmentType.JUSTIFY,
                 children: [
-                    new TextRun({ text: `В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни (${memo.weekend_date}) следующих работников филиала:`, font: "Times New Roman" })
+                    new TextRun({ text: `В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни `, font: "Times New Roman", size: 28 }),
+                    new TextRun({ text: `(${memo.weekend_date})`, bold: true, font: "Times New Roman", size: 28 }),
+                    new TextRun({ text: ` следующих работников филиала:`, font: "Times New Roman", size: 28 })
                 ]
             })
         ];
 
+        // Группировка списка людей по их категориям (профессиям)
         const grouped = {};
         memo.items_data.forEach(item => {
             if (!grouped[item.category]) grouped[item.category] = [];
@@ -484,26 +497,33 @@ function setupWindowFunctions() {
 
         let currentNum = 1;
         for (const cat in grouped) {
-            children.push(new Paragraph({ children: [new TextRun({ text: `${cat}:`, bold: true, font: "Times New Roman" })], spacing: { before: 100 } }));
+            children.push(new Paragraph({ 
+                spacing: { before: 150, after: 50 },
+                children: [new TextRun({ text: `${cat}:`, bold: true, font: "Times New Roman", size: 28 })] 
+            }));
+            
             grouped[cat].forEach(row => {
                 const datesRowStr = row.dates.map(d => formatDate(d)).join(' и ');
                 const techStr = (row.tech && row.tech !== 'Без техники') ? ` – ${row.tech}` : '';
+                
                 children.push(new Paragraph({
-                    indent: { left: 200 },
+                    indent: { left: 400 },
+                    spacing: { after: 40 },
                     children: [
-                        new TextRun({ text: `${currentNum}. ${row.fio}`, bold: true, font: "Times New Roman" }),
-                        new TextRun({ text: ` (${datesRowStr})${techStr} - (${row.work});`, font: "Times New Roman" })
+                        new TextRun({ text: `${currentNum}. ${row.fio}`, bold: true, font: "Times New Roman", size: 28 }),
+                        new TextRun({ text: ` (${datesRowStr})${techStr} - (${row.work});`, font: "Times New Roman", size: 28 })
                     ]
                 }));
                 currentNum++;
             });
         }
 
+        // Подвал документа с подписью составителя
         children.push(new Paragraph({
-            spacing: { before: 400 },
+            spacing: { before: 600 },
             children: [
-                new TextRun({ text: memo.signatory.split(' ')[0], font: "Times New Roman" }),
-                new TextRun({ text: "\t\t\t\t\t\t" + memo.signatory.split(' ').slice(1).join(' '), bold: true, font: "Times New Roman" })
+                new TextRun({ text: roleStr, font: "Times New Roman", size: 28 }),
+                new TextRun({ text: "\t\t\t\t\t\t" + nameStr, bold: true, font: "Times New Roman", size: 28 })
             ]
         }));
 
@@ -512,9 +532,12 @@ function setupWindowFunctions() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `Служебная_записка_${memo.id || Date.now()}.docx`;
+            a.download = `Служебная_записка_${memoId}.docx`;
             a.click();
             window.URL.revokeObjectURL(url);
+        }).catch(err => {
+            console.error("Ошибка упаковщика docx:", err);
+            alert("Ошибка сборщика DOCX. Проверьте структуру заполненных данных.");
         });
     };
 }
@@ -586,10 +609,10 @@ window.renderArchiveRows = () => {
                 <td class="p-3"><span class="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-black">${memo.items_data ? memo.items_data.length : 0} чел.</span></td>
                 <td class="p-3 text-gray-500 text-[11px] font-medium">${memo.signatory}</td>
                 <td class="p-3 text-right space-x-1 whitespace-nowrap">
-                    <button onclick="window.printOrderDocument(${memo.id}, 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] font-bold transition">👁 Текст</button>
-                    <button onclick="window.printOrderDocument(${memo.id}, 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] font-bold transition">📊 Ознакомление</button>
-                    <button onclick="window.downloadOrderDocx(${memo.id})" class="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-700 px-2 py-1 rounded-md text-[11px] font-bold transition">💾 Word</button>
-                    <button onclick="window.deleteOrderDocument(${memo.id})" class="bg-red-50 hover:bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded-md text-[11px] font-bold transition">❌</button>
+                    <button onclick="window.printOrderDocument('${memo.id}', 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] font-bold transition">👁 Текст</button>
+                    <button onclick="window.printOrderDocument('${memo.id}', 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] font-bold transition">📊 Ознакомление</button>
+                    <button onclick="window.downloadOrderDocx('${memo.id}')" class="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-700 px-2 py-1 rounded-md text-[11px] font-bold transition">💾 Word</button>
+                    <button onclick="window.deleteOrderDocument('${memo.id}')" class="bg-red-50 hover:bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded-md text-[11px] font-bold transition">❌</button>
                 </td>
             </tr>
         `;
