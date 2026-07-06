@@ -1,15 +1,17 @@
 // js/orders.js
 
-// Импортируем шаблон и логику командировок из отдельного скрипта
 import { tripTemplate, initBusinessTrip } from './docs/businessTrip.js';
+import { batteryTemplate, initBatteryAct } from './docs/batteryAct.js';
 
 const ALL_DOC_CARDS = [
-    { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов, направлений и командировочных удостоверений.', icon: '💼', category: 'personal' },
+    { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов и служебных записок.', icon: '💼', category: 'personal' },
     { id: 'weekend_memo', title: 'Выходные дни', desc: 'Привлечение персонала к работе в субботу и воскресенье.', icon: '📝', category: 'personal' },
     { id: 'vacation', title: 'График отпусков', desc: 'Заявления на ежегодный отпуск и перенос дат отдыха.', icon: '🌴', category: 'personal' },
-    { id: 'inventory_act', title: 'Акт инвентаризации', desc: 'Списание, проверка и учет товарно-материальных ценностей.', icon: '📊', category: 'sklad' }
+    { id: 'battery_act', title: 'Списание АКБ', desc: 'Акт на списание аккумуляторных батарей с расчетом лома свинца.', icon: '🔋', category: 'acts' },
+    { id: 'inventory_act', title: 'Акт инвентаризации', desc: 'Списание, проверка и учет ТМЦ.', icon: '📊', category: 'sklad' }
 ];
 
+let currentCategory = 'all';
 let currentSubModule = "menu";
 
 export const template = `
@@ -36,6 +38,13 @@ export const template = `
     </div>
 
     <div id="docHubMainContainer" class="space-y-6">
+        <div class="flex flex-wrap gap-2 border-b border-gray-300 pb-2">
+            <button onclick="window.filterDocByCategory('all')" id="catTab_all" class="px-4 py-1.5 text-xs font-black border-b-2 border-blue-600 text-blue-600">Все документы</button>
+            <button onclick="window.filterDocByCategory('personal')" id="catTab_personal" class="px-4 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent">🧑‍💻 Кадры</button>
+            <button onclick="window.filterDocByCategory('acts')" id="catTab_acts" class="px-4 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent">📝 Акты</button>
+            <button onclick="window.filterDocByCategory('sklad')" id="catTab_sklad" class="px-4 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent">📊 Склад</button>
+        </div>
+
         <div id="docSearchPanel" class="bg-white p-4 rounded-xl border-2 border-gray-400/60 shadow-2xs flex gap-3 items-center">
             <div class="relative flex-1">
                 <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">🔍</span>
@@ -67,6 +76,7 @@ export const template = `
     </div>
 
     ` + tripTemplate + `
+    ` + batteryTemplate + `
 </div>
 
 <div id="tripPrintBlock"></div>
@@ -74,18 +84,28 @@ export const template = `
 
 export function init() {
     setupSubModuleNavigation();
-    initBusinessTrip(); // Запускаем логику командировок из внешнего файла
+    initBusinessTrip();
+    initBatteryAct();
     renderDocCards(ALL_DOC_CARDS);
-    
-    // Ставим дефолтные даты
-    const today = new Date().toISOString().split('T')[0];
-    if (document.getElementById('tripDocDate')) document.getElementById('tripDocDate').value = today;
-    if (document.getElementById('tripTargetDate')) document.getElementById('tripTargetDate').value = today;
-    if (document.getElementById('tripDestinationInput')) document.getElementById('tripDestinationInput').value = "город Дзержинск";
-    if (document.getElementById('tripPurposeInput')) document.getElementById('tripPurposeInput').value = "получения запчастей";
-
     window.switchDocSubModule('menu');
 }
+
+window.filterDocByCategory = (cat) => {
+    currentCategory = cat;
+    ['all', 'personal', 'acts', 'sklad'].forEach(c => {
+        const btn = document.getElementById('catTab_' + c);
+        if (btn) {
+            btn.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+            btn.classList.add('text-gray-500', 'border-transparent');
+        }
+    });
+    const activeBtn = document.getElementById('catTab_' + cat);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-gray-500', 'border-transparent');
+        activeBtn.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+    }
+    window.filterDocCards();
+};
 
 function renderDocCards(cardsList) {
     const container = document.getElementById('docHubMainMenu');
@@ -97,7 +117,7 @@ function renderDocCards(cardsList) {
     }
 
     container.innerHTML = cardsList.map(card => {
-        const isReady = card.id === 'business_trip';
+        const isReady = card.id === 'business_trip' || card.id === 'battery_act';
         const clickAction = isReady ? "window.switchDocSubModule('" + card.id + "')" : "alert('Данный тип документа находится в разработке')";
         const opacityClass = isReady ? "border-gray-400 hover:border-blue-600" : "opacity-50 border-gray-300 bg-gray-50 cursor-not-allowed";
 
@@ -116,7 +136,11 @@ function renderDocCards(cardsList) {
 
 window.filterDocCards = () => {
     const query = document.getElementById('docCardsSearchInput')?.value.toLowerCase().trim() || "";
-    const filtered = ALL_DOC_CARDS.filter(card => card.title.toLowerCase().includes(query) || card.desc.toLowerCase().includes(query));
+    const filtered = ALL_DOC_CARDS.filter(card => {
+        const matchesSearch = card.title.toLowerCase().includes(query) || card.desc.toLowerCase().includes(query);
+        const matchesCategory = currentCategory === 'all' || card.category === currentCategory;
+        return matchesSearch && matchesCategory;
+    });
     renderDocCards(filtered);
 };
 
@@ -125,7 +149,10 @@ function setupSubModuleNavigation() {
         currentSubModule = targetModule;
         const mainContainer = document.getElementById('docHubMainContainer');
         const backBtn = document.getElementById('docBackToMenuBtn');
-        const subContainers = { business_trip: document.getElementById('subModule_business_trip') };
+        const subContainers = { 
+            business_trip: document.getElementById('subModule_business_trip'),
+            battery_act: document.getElementById('subModule_battery_act')
+        };
 
         if (mainContainer) mainContainer.classList.add('hidden');
         if (backBtn) backBtn.classList.add('hidden');
@@ -133,16 +160,22 @@ function setupSubModuleNavigation() {
 
         if (targetModule === 'menu') {
             if (mainContainer) mainContainer.classList.remove('hidden');
-            if (document.getElementById('docCardsSearchInput')) {
-                document.getElementById('docCardsSearchInput').value = "";
-                renderDocCards(ALL_DOC_CARDS);
-            }
+            if (document.getElementById('docCardsSearchInput')) document.getElementById('docCardsSearchInput').value = "";
+            window.filterDocByCategory(currentCategory);
             window.loadTripStorageHistory();
         } else {
             if (backBtn) backBtn.classList.remove('hidden');
             if (subContainers[targetModule]) subContainers[targetModule].classList.remove('hidden');
             if (targetModule === 'business_trip' && typeof window.updateTripPreview === 'function') {
+                const today = new Date().toISOString().split('T')[0];
+                if (document.getElementById('tripDocDate')) document.getElementById('tripDocDate').value = today;
+                if (document.getElementById('tripTargetDate')) document.getElementById('tripTargetDate').value = today;
                 window.updateTripPreview();
+            }
+            if (targetModule === 'battery_act' && typeof window.updateBatteryPreview === 'function') {
+                const today = new Date().toISOString().split('T')[0];
+                if (document.getElementById('batteryDocDate')) document.getElementById('batteryDocDate').value = today;
+                window.updateBatteryPreview();
             }
         }
     };
@@ -153,12 +186,7 @@ function setupSubModuleNavigation() {
         try {
             const { data, error } = await supabase.storage.from('documents-history').createSignedUrl(filePath, 60, { download: true });
             if (error) throw error;
-            const a = document.createElement('a');
-            a.href = data.signedUrl;
-            a.download = filePath; 
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const a = document.createElement('a'); a.href = data.signedUrl; a.download = filePath; document.body.appendChild(a); a.click(); document.body.removeChild(a);
         } catch (err) { alert('Не удалось скачать файл: ' + err.message); }
     };
 
@@ -180,10 +208,7 @@ function setupSubModuleNavigation() {
         tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400 font-medium">Загрузка архива...</td></tr>';
 
         const supabase = window._supabase || window.supabase;
-        if (!supabase) {
-            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500 font-bold">Supabase недоступен.</td></tr>';
-            return;
-        }
+        if (!supabase) { tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500 font-bold">Supabase недоступен.</td></tr>'; return; }
 
         try {
             const { data: files, error } = await supabase.storage.from('documents-history').list('', { sortBy: { column: 'name', order: 'desc' } });
@@ -196,9 +221,14 @@ function setupSubModuleNavigation() {
             }
 
             tBody.innerHTML = filteredFiles.map(f => {
-                const isWord = f.name.endsWith('.doc');
-                const catLabel = isWord ? '💙 Командировка (Word)' : '💼 Командировка';
-                const catColor = isWord ? 'bg-blue-600 text-white font-black' : 'bg-blue-100 text-blue-800';
+                let catLabel = '📁 Документ';
+                let catColor = 'bg-gray-100 text-gray-800';
+
+                if (f.name.startsWith('trip_')) {
+                    catLabel = '💼 Командировка (Word)'; catColor = 'bg-blue-600 text-white font-black';
+                } else if (f.name.startsWith('battery_')) {
+                    catLabel = '🔋 Списание АКБ (Word)'; catColor = 'bg-amber-600 text-white font-black';
+                }
 
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
                     '<td class="p-2.5 font-mono text-gray-900 font-semibold">' + f.name + '</td>' +
