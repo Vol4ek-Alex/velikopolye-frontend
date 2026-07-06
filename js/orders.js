@@ -22,7 +22,7 @@ const TRIP_DESTINATIONS = [
     "город Фаниполь"
 ];
 
-// Полный реестр всех карточек (на вырост)
+// Полный реестр всех карточек документов (с делением по категориям)
 const ALL_DOC_CARDS = [
     { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов, направлений и командировочных удостоверений.', icon: '💼', category: 'personal' },
     { id: 'weekend_memo', title: 'Выходные дни', desc: 'Привлечение персонала к работе в субботу и воскресенье.', icon: '📝', category: 'personal' },
@@ -33,7 +33,7 @@ const ALL_DOC_CARDS = [
 let currentSubModule = "menu";
 let currentTripTab = "form"; // "form" или "history"
 
-// Предварительная сборка элементов для разметки, чтобы не ломать шаблонные строки
+// Предварительная сборка элементов для HTML-селектов, чтобы избежать конфликтов синтаксиса в шаблоне
 const driverOptionsHtml = DRIVERS_DATABASE.map(d => '<option value="' + d + '">' + d + '</option>').join('');
 const destinationsHtml = TRIP_DESTINATIONS.map(dest => '<option value="' + dest + '">').join('');
 const purposesHtml = TRIP_PURPOSES.map(p => '<option value="' + p + '">').join('');
@@ -108,7 +108,7 @@ export const template = `
                     <label class="block text-[10px] font-bold text-gray-700 mb-1">Водитель автомобиля</label>
                     <select id="tripDriverSelect" onchange="window.handleTripDriverSelect()" class="w-full bg-white border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
                         ${driverOptionsHtml}
-                        <option value="CUSTOM">-- Ввести вручную --</option>
+                        <option value="CUSTOM">-- Ввести вручную (Новый сотрудник) --</option>
                     </select>
                     <input type="text" id="tripDriverCustomInput" oninput="window.updateTripPreview()" class="hidden mt-2 w-full bg-gray-50 border-2 border-blue-400 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Введите ФИО">
                 </div>
@@ -146,8 +146,9 @@ export const template = `
                     <thead>
                         <tr class="bg-gray-100 border-b border-gray-300 text-gray-700">
                             <th class="p-2.5 font-bold">Имя файла в хранилище</th>
-                            <th class="p-2.5 font-bold">Тип</th>
-                            <th class="p-2.5 font-bold text-right">Действие</th>
+                            <th class="p-2.5 font-bold">Категория</th>
+                            <th class="p-2.5 font-bold text-center">Просмотр</th>
+                            <th class="p-2.5 font-bold text-right">Управление</th>
                         </tr>
                     </thead>
                     <tbody id="tripStorageTableBody">
@@ -175,7 +176,7 @@ export function init() {
     window.switchDocSubModule('menu');
 }
 
-// Функция генерации плиток-карточек документов
+// Генерация сетки плиток-карток документов
 function renderDocCards(cardsList) {
     const container = document.getElementById('docHubMainMenu');
     if (!container) return;
@@ -186,7 +187,6 @@ function renderDocCards(cardsList) {
     }
 
     container.innerHTML = cardsList.map(card => {
-        // Если модуль еще не готов (не командировки), делаем его полупрозрачным с плашкой "В разработке"
         const isReady = card.id === 'business_trip';
         const clickAction = isReady ? "window.switchDocSubModule('" + card.id + "')" : "alert('Данный тип документа находится в разработке')";
         const opacityClass = isReady ? "border-gray-400 hover:border-blue-600" : "opacity-50 border-gray-300 bg-gray-50 cursor-not-allowed";
@@ -204,7 +204,7 @@ function renderDocCards(cardsList) {
     }).join('');
 }
 
-// Поиск по картам на лету
+// Поиск по карточкам документов
 window.filterDocCards = () => {
     const query = document.getElementById('docCardsSearchInput')?.value.toLowerCase().trim() || "";
     const filtered = ALL_DOC_CARDS.filter(card => 
@@ -233,7 +233,6 @@ function setupSubModuleNavigation() {
         if (targetModule === 'menu') {
             if (mainMenu) mainMenu.classList.remove('hidden');
             if (searchPanel) searchPanel.classList.remove('hidden');
-            // Сбрасываем строку поиска
             const sInput = document.getElementById('docCardsSearchInput');
             if (sInput) { sInput.value = ""; renderDocCards(ALL_DOC_CARDS); }
         } else {
@@ -327,11 +326,11 @@ function setupSubModuleNavigation() {
         if (previewBlock) previewBlock.innerHTML = window.generateTripHtmlContent();
     };
 
-    // Функция ПЕЧАТИ + ЗАГОТОВКА ПОД ЗАГРУЗКУ В SUPABASE STORAGE
+    // Функция ПЕЧАТИ + РЕАЛЬНОЕ СОХРАНЕНИЕ В SUPABASE STORAGE
     window.printAndSaveTrip = async () => {
         const htmlContent = window.generateTripHtmlContent();
         
-        // 1. Сначала выводим на печать
+        // 1. Выводим на системную печать браузера
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
             printBlock.innerHTML = htmlContent;
@@ -339,7 +338,14 @@ function setupSubModuleNavigation() {
             printBlock.innerHTML = '';
         }
 
-        // 2. Формируем красивое имя файла для архива в Storage
+        // 2. Инициализируем клиент Supabase
+        const supabase = window._supabase || window.supabase;
+        if (!supabase) {
+            alert('Ошибка: Клиент Supabase не найден в системе глобальных окон.');
+            return;
+        }
+
+        // 3. Формируем чистое имя файла и виртуальный путь (папку категории)
         const docDate = document.getElementById('tripDocDate')?.value || 'unknown-date';
         const selectVal = document.getElementById('tripDriverSelect')?.value;
         const customVal = document.getElementById('tripDriverCustomInput')?.value.trim();
@@ -347,49 +353,149 @@ function setupSubModuleNavigation() {
         const driverTranslit = (driverRaw || 'worker').replace(/\s+/g, '_').replace(/\./g, '');
         
         const fileName = docDate + '_' + driverTranslit + '.html';
+        const storageFolder = 'business_trips/'; 
+        const fullPath = storageFolder + fileName;
 
-        console.log('Отправка файла ' + fileName + ' в бакет Supabase Storage...');
-        
-        /* ЗДЕСЬ БУДЕТ ВАШ ВЫЗОВ К СЕРВЕРУ ИЛИ НАПРЯМУЮ К SUPABASE:
-        
-        const fileBlob = new Blob([htmlContent], { type: 'text/html' });
-        const { data, error } = await supabase.storage
-            .from('documents-history')
-            .upload('business_trips/' + fileName, fileBlob);
-        */
-        
-        alert('Документ отправлен на печать и сформирован для архива Storage: ' + fileName);
+        try {
+            const fileBlob = new Blob([htmlContent], { type: 'text/html' });
+            
+            const { data, error } = await supabase.storage
+                .from('documents-history')
+                .upload(fullPath, fileBlob, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+
+            if (error) throw error;
+
+            alert('Документ успешно распечатан и сохранен в облачный архив!');
+            if (currentTripTab === 'history') window.loadTripStorageHistory();
+
+        } catch (err) {
+            console.error('Ошибка архивации:', err);
+            alert('Печать выполнена, но не удалось сохранить в Storage: ' + err.message);
+        }
     };
 
-    // Функция загрузки списка файлов из хранилища (Заглушка имитации ответа от Supabase Storage)
+    // Функция ИНИЦИАЛИЗАЦИИ СКАЧИВАНИЯ файла по прямой signed-ссылке
+    window.downloadStorageFile = async (filePath) => {
+        const supabase = window._supabase || window.supabase;
+        if (!supabase) return alert('Supabase клиент недоступен');
+
+        try {
+            const { data, error } = await supabase.storage
+                .from('documents-history')
+                .createSignedUrl(filePath, 60, { download: true });
+
+            if (error) throw error;
+
+            const a = document.createElement('a');
+            a.href = data.signedUrl;
+            a.download = filePath.split('/').pop(); 
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+        } catch (err) {
+            console.error('Ошибка скачивания:', err);
+            alert('Не удалось скачать файл: ' + err.message);
+        }
+    };
+
+    // Функция УДАЛЕНИЯ файла из Storage
+    window.deleteStorageFile = async (filePath) => {
+        if (!confirm('Вы уверены, что хотите безвозвратно удалить этот документ из архива?')) return;
+
+        const supabase = window._supabase || window.supabase;
+        if (!supabase) return alert('Supabase клиент недоступен');
+
+        try {
+            const { data, error } = await supabase.storage
+                .from('documents-history')
+                .remove([filePath]);
+
+            if (error) throw error;
+
+            alert('Файл успешно удален из хранилища.');
+            window.loadTripStorageHistory();
+
+        } catch (err) {
+            console.error('Ошибка удаления:', err);
+            alert('Не удалось удалить файл: ' + err.message);
+        }
+    };
+
+    // Функция загрузки списка файлов с распределением категорий
     window.loadTripStorageHistory = async () => {
         const tBody = document.getElementById('tripStorageTableBody');
         if (!tBody) return;
 
-        tBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-400 font-medium">Загрузка файлов из Supabase Storage...</td></tr>';
+        tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400 font-medium">Загрузка файлов из Supabase Storage...</td></tr>';
 
-        /*
-        В реальном коде это делается так:
-        const { data: files, error } = await supabase.storage.from('documents-history').list('business_trips');
-        */
+        const supabase = window._supabase || window.supabase;
+        if (!supabase) {
+            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500 font-bold">Supabase недоступен. Проверьте инициализацию в index.html.</td></tr>';
+            return;
+        }
 
-        // Имитируем задержку сети и отдаем список сохраненных файлов из S3
-        setTimeout(() => {
-            const mockStorageFiles = [
-                { name: "2026-07-06_Синицкий_ВА.html", type: "HTML (Бланк)" },
-                { name: "2026-07-05_Квятковский_АА.html", type: "HTML (Бланк)" },
-                { name: "2026-07-01_Судник_МВ.html", type: "HTML (Бланк)" }
+        try {
+            const categoriesToLoad = [
+                { folder: 'business_trips', label: '💼 Командировка', color: 'bg-blue-100 text-blue-800' },
+                { folder: 'vacations', label: '🌴 Отпуск', color: 'bg-green-100 text-green-800' },
+                { folder: 'weekend_memos', label: '📝 Выходной день', color: 'bg-purple-100 text-purple-800' }
             ];
 
-            tBody.innerHTML = mockStorageFiles.map(file => {
-                return '<tr class="border-b border-gray-100 hover:bg-gray-50 transition">' +
-                    '<td class="p-2.5 font-mono text-gray-900 text-[11px]">📁 business_trips/' + file.name + '</td>' +
-                    '<td class="p-2.5 text-gray-500 font-medium">' + file.type + '</td>' +
+            let allCombinedFiles = [];
+
+            for (const cat of categoriesToLoad) {
+                const { data: files, error } = await supabase.storage
+                    .from('documents-history')
+                    .list(cat.folder, { sortBy: { column: 'name', order: 'desc' } });
+
+                if (!error && files) {
+                    const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+                    
+                    filtered.forEach(f => {
+                        allCombinedFiles.push({
+                            name: f.name,
+                            fullPath: cat.folder + '/' + f.name,
+                            categoryLabel: cat.label,
+                            categoryColor: cat.color,
+                            sortKey: f.name 
+                        });
+                    });
+                }
+            }
+
+            if (allCombinedFiles.length === 0) {
+                tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400 font-medium">Архив документов пуст.</td></tr>';
+                return;
+            }
+
+            // Сортировка по дате (новые сверху)
+            allCombinedFiles.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+
+            // Рендер строк таблицы
+            tBody.innerHTML = allCombinedFiles.map(file => {
+                return '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
+                    '<td class="p-2.5 font-mono text-gray-900 font-semibold">' + file.name + '</td>' +
+                    '<td class="p-2.5">' +
+                        '<span class="px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-wider ' + file.categoryColor + '">' + 
+                            file.categoryLabel + 
+                        '</span>' +
+                    '</td>' +
+                    '<td class="p-2.5 text-center">' +
+                        '<button onclick="window.downloadStorageFile(\'' + file.fullPath + '\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-md transition text-[11px]">Открыть / Скачать</button>' +
+                    '</td>' +
                     '<td class="p-2.5 text-right">' +
-                        '<button onclick="alert(\'Скачивание/Просмотр файла: \' + \'' + file.name + '\')" class="bg-gray-100 hover:bg-blue-50 text-blue-600 font-bold px-2.5 py-1 rounded-md border border-gray-300 hover:border-blue-300 transition text-[11px]">Открыть</button>' +
+                        '<button onclick="window.deleteStorageFile(\'' + file.fullPath + '\')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md border border-red-200 transition text-[11px]">❌ Удалить</button>' +
                     '</td>' +
                 '</tr>';
             }).join('');
-        }, 400);
+
+        } catch (err) {
+            console.error('Ошибка рендеринга истории:', err);
+            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Ошибка получения архива: ' + err.message + '</td></tr>';
+        }
     };
 }
