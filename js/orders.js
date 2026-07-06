@@ -40,7 +40,7 @@ export const template = `
     <div id="docHubMainContainer" class="space-y-6">
         <div class="flex flex-wrap gap-2 border-b border-gray-300 pb-2">
             <button onclick="window.filterDocByCategory('all')" id="catTab_all" class="px-4 py-1.5 text-xs font-black border-b-2 border-blue-600 text-blue-600">Все документы</button>
-            <button onclick="window.filterDocByCategory('personal')" id="catTab_personal" class="px-4 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent">🧑‍💻 Кадры</button>
+            <button onclick="window.filterDocByCategory('personal')" id="catTab_personal" class="px-4 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent">🧑‍💻 Служебные записки</button>
             <button onclick="window.filterDocByCategory('acts')" id="catTab_acts" class="px-4 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent">📝 Акты</button>
             <button onclick="window.filterDocByCategory('sklad')" id="catTab_sklad" class="px-4 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent">📊 Склад</button>
         </div>
