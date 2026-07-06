@@ -358,8 +358,21 @@ function setupSubModuleNavigation() {
         const fileName = 'trip_' + docDate + '_' + driverSafe + '.doc';
 
         try {
-            const htmlWithMeta = '<meta charset="utf-8">' + htmlContent;
-            const fileBlob = new Blob([htmlWithMeta], { type: 'application/msword' });
+            // Создаем полноценную структуру, которую Word гарантированно распознает как веб-документ
+            const wordContent = 
+                'xmlns:o="urn:schemas-microsoft-com:office:office"\n' +
+                'xmlns:w="urn:schemas-microsoft-com:office:word"\n' +
+                'xmlns="http://www.w3.org/TR/REC-html40">\n' +
+                '<head>\n' +
+                '\n' +
+                '<meta charset="utf-8">\n' +
+                '</head>\n' +
+                '<body>\n' + 
+                htmlContent + 
+                '\n</body>\n</html>';
+
+            // Превращаем строку в бинарный Blob со специальным типом для Word
+            const fileBlob = new Blob([wordContent], { type: 'application/msword;charset=utf-8' });
             
             const { data, error } = await supabase.storage
                 .from('documents-history')
