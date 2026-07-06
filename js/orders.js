@@ -33,8 +33,8 @@ const ALL_DOC_CARDS = [
 let currentSubModule = "menu";
 let currentTripTab = "form"; 
 
-// Предварительная сборка элементов для HTML-селектов, чтобы избежать конфликтов синтаксиса в шаблоне
-const driverOptionsHtml = DRIVERS_DATABASE.map(d => '<option value="' + d + '">' + d + '</option>').join('');
+// Предварительная сборка элементов для HTML-селектов
+const driverOptionsHtml = DRIVERS_DATABASE.map(d => '<option value="' + d + '">' + d + '</option>').join('') + '<option value="CUSTOM">-- Ввести вручную (Новый сотрудник) --</option>';
 const destinationsHtml = TRIP_DESTINATIONS.map(dest => '<option value="' + dest + '">').join('');
 const purposesHtml = TRIP_PURPOSES.map(p => '<option value="' + p + '">').join('');
 
@@ -107,8 +107,7 @@ export const template = `
                 <div>
                     <label class="block text-[10px] font-bold text-gray-700 mb-1">Водитель автомобиля</label>
                     <select id="tripDriverSelect" onchange="window.handleTripDriverSelect()" class="w-full bg-white border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                        \${driverOptionsHtml}
-                        <option value="CUSTOM">-- Ввести вручную (Новый сотрудник) --</option>
+                        ` + driverOptionsHtml + `
                     </select>
                     <input type="text" id="tripDriverCustomInput" oninput="window.updateTripPreview()" class="hidden mt-2 w-full bg-gray-50 border-2 border-blue-400 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Введите ФИО">
                 </div>
@@ -116,13 +115,13 @@ export const template = `
                 <div>
                     <label class="block text-[10px] font-bold text-gray-700 mb-1">Куда (Пункт назначения)</label>
                     <input type="text" id="tripDestinationInput" list="destinationsList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                    <datalist id="destinationsList">\${destinationsHtml}</datalist>
+                    <datalist id="destinationsList">` + destinationsHtml + `</datalist>
                 </div>
 
                 <div>
                     <label class="block text-[10px] font-bold text-gray-700 mb-1">Для чего (Цель)</label>
                     <input type="text" id="tripPurposeInput" list="purposesList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                    <datalist id="purposesList">\${purposesHtml}</datalist>
+                    <datalist id="purposesList">` + purposesHtml + `</datalist>
                 </div>
 
                 <button onclick="window.printAndSaveTrip()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold transition shadow-xs text-xs flex items-center justify-center gap-2">
