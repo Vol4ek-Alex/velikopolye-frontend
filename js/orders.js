@@ -119,7 +119,7 @@ function renderDocCards(cardsList) {
     }
 
     container.innerHTML = cardsList.map(card => {
-        const isReady = card.id === 'business_trip' || card.id === 'battery_act';
+        const isReady = card.id === 'business_trip' || card.id === 'battery_act' || card.id === 'absence_act';
         const clickAction = isReady ? "window.switchDocSubModule('" + card.id + "')" : "alert('Данный тип документа находится в разработке')";
         const opacityClass = isReady ? "border-gray-400 hover:border-blue-600" : "opacity-50 border-gray-300 bg-gray-50 cursor-not-allowed";
 
