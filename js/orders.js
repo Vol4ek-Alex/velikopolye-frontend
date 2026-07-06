@@ -31,7 +31,6 @@ const ALL_DOC_CARDS = [
 ];
 
 let currentSubModule = "menu";
-let currentTripTab = "form"; 
 
 // Предварительная сборка элементов для HTML-селектов
 const driverOptionsHtml = DRIVERS_DATABASE.map(d => '<option value="' + d + '">' + d + '</option>').join('') + '<option value="CUSTOM">-- Ввести вручную (Новый сотрудник) --</option>';
@@ -64,34 +63,51 @@ export const template = `
     <div class="bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs flex justify-between items-center">
         <div>
             <h2 class="text-xl font-bold text-gray-950 tracking-tight">📁 Центр документооборота</h2>
-            <p class="text-xs text-gray-600 font-medium">Управление внутренней документацией, служебными записками и архив в Supabase Storage</p>
+            <p class="text-xs text-gray-600 font-medium">Управление внутренней документацией, служебными записками и общий архив документов</p>
         </div>
         <button id="docBackToMenuBtn" onclick="window.switchDocSubModule('menu')" class="hidden bg-gray-100 hover:bg-gray-200 border border-gray-400 font-bold text-xs text-gray-900 px-3 py-1.5 rounded-lg transition">
             ⬅ Назад в каталог
         </button>
     </div>
 
-    <div id="docSearchPanel" class="bg-white p-4 rounded-xl border-2 border-gray-400/60 shadow-2xs flex gap-3 items-center">
-        <div class="relative flex-1">
-            <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">🔍</span>
-            <input type="text" id="docCardsSearchInput" oninput="window.filterDocCards()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:border-blue-600 focus:bg-white transition" placeholder="Поиск среди документов (например: командировки, отпуск)...">
+    <div id="docHubMainContainer" class="space-y-6">
+        <div id="docSearchPanel" class="bg-white p-4 rounded-xl border-2 border-gray-400/60 shadow-2xs flex gap-3 items-center">
+            <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">🔍</span>
+                <input type="text" id="docCardsSearchInput" oninput="window.filterDocCards()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:border-blue-600 focus:bg-white transition" placeholder="Поиск среди документов (например: командировки, отпуск)...">
+            </div>
+        </div>
+
+        <div id="docHubMainMenu" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 fade-in-sub">
+            </div>
+
+        <div class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs fade-in-sub">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xs font-black text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                    🗄️ Общий архив сгенерированных документов (Supabase Storage)
+                </h3>
+                <button onclick="window.loadTripStorageHistory()" class="text-[11px] font-bold text-blue-600 hover:underline">🔄 Обновить архив</button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="bg-gray-100 border-b border-gray-300 text-gray-700">
+                            <th class="p-2.5 font-bold">Имя файла в хранилище</th>
+                            <th class="p-2.5 font-bold">Категория</th>
+                            <th class="p-2.5 font-bold text-center">Просмотр</th>
+                            <th class="p-2.5 font-bold text-right">Управление</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tripStorageTableBody">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div id="docHubMainMenu" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 fade-in-sub">
-        </div>
-
     <div id="subModule_business_trip" class="hidden space-y-4 fade-in-sub">
-        <div class="flex border-b border-gray-300 gap-2">
-            <button id="tripTabBtn_form" onclick="window.switchTripTab('form')" class="px-4 py-2 text-xs font-black border-b-2 border-blue-600 text-blue-600">
-                📝 Новый документ
-            </button>
-            <button id="tripTabBtn_history" onclick="window.switchTripTab('history')" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent">
-                🗄️ История в Storage
-            </button>
-        </div>
-
-        <div id="tripContent_form" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs space-y-4">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -131,28 +147,6 @@ export const template = `
 
             <div class="lg:col-span-2 bg-gray-100 p-4 rounded-xl border-2 border-gray-300 flex flex-col justify-between">
                 <div id="tripLivePreview" class="bg-white p-8 border border-gray-300 shadow-xs rounded-lg font-serif text-black leading-relaxed" style="font-family: 'Times New Roman', serif; min-height: 400px;"></div>
-            </div>
-        </div>
-
-        <div id="tripContent_history" class="hidden bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xs font-black text-gray-500 uppercase tracking-wider">🗄️ Архив сгенерированных файлов (Supa Storage)</h3>
-                <button onclick="window.loadTripStorageHistory()" class="text-[11px] font-bold text-blue-600 hover:underline">🔄 Обновить список</button>
-            </div>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                    <thead>
-                        <tr class="bg-gray-100 border-b border-gray-300 text-gray-700">
-                            <th class="p-2.5 font-bold">Имя файла в хранилище</th>
-                            <th class="p-2.5 font-bold">Категория</th>
-                            <th class="p-2.5 font-bold text-center">Просмотр</th>
-                            <th class="p-2.5 font-bold text-right">Управление</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tripStorageTableBody">
-                        </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -214,55 +208,28 @@ window.filterDocCards = () => {
 function setupSubModuleNavigation() {
     window.switchDocSubModule = (targetModule) => {
         currentSubModule = targetModule;
-        const mainMenu = document.getElementById('docHubMainMenu');
+        const mainContainer = document.getElementById('docHubMainContainer');
         const backBtn = document.getElementById('docBackToMenuBtn');
-        const searchPanel = document.getElementById('docSearchPanel');
         
         const subContainers = {
             business_trip: document.getElementById('subModule_business_trip')
         };
 
-        if (mainMenu) mainMenu.classList.add('hidden');
+        if (mainContainer) mainContainer.classList.add('hidden');
         if (backBtn) backBtn.classList.add('hidden');
-        if (searchPanel) searchPanel.classList.add('hidden');
         Object.values(subContainers).forEach(el => { if (el) el.classList.add('hidden'); });
 
         if (targetModule === 'menu') {
-            if (mainMenu) mainMenu.classList.remove('hidden');
-            if (searchPanel) searchPanel.classList.remove('hidden');
+            if (mainContainer) mainContainer.classList.remove('hidden');
             const sInput = document.getElementById('docCardsSearchInput');
             if (sInput) { sInput.value = ""; renderDocCards(ALL_DOC_CARDS); }
+            window.loadTripStorageHistory(); // Сразу обновляем общую историю при возврате на главный экран
         } else {
             if (backBtn) backBtn.classList.remove('hidden');
             if (subContainers[targetModule]) subContainers[targetModule].classList.remove('hidden');
             if (targetModule === 'business_trip') {
-                window.switchTripTab('form');
                 window.updateTripPreview();
             }
-        }
-    };
-
-    window.switchTripTab = (tab) => {
-        currentTripTab = tab;
-        const formBlock = document.getElementById('tripContent_form');
-        const historyBlock = document.getElementById('tripContent_history');
-        const btnForm = document.getElementById('tripTabBtn_form');
-        const btnHistory = document.getElementById('tripTabBtn_history');
-
-        formBlock?.classList.add('hidden');
-        historyBlock?.classList.add('hidden');
-        btnForm?.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
-        btnHistory?.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
-        btnForm?.classList.add('text-gray-500');
-        btnHistory?.classList.add('text-gray-500');
-
-        if (tab === 'form') {
-            formBlock?.classList.remove('hidden');
-            btnForm?.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
-        } else {
-            historyBlock?.classList.remove('hidden');
-            btnHistory?.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
-            window.loadTripStorageHistory();
         }
     };
 
@@ -358,7 +325,6 @@ function setupSubModuleNavigation() {
         const fileName = 'trip_' + docDate + '_' + driverSafe + '.doc';
 
         try {
-            // Создаем полноценную структуру, которую Word гарантированно распознает как веб-документ
             const wordContent = 
                 'xmlns:o="urn:schemas-microsoft-com:office:office"\n' +
                 'xmlns:w="urn:schemas-microsoft-com:office:word"\n' +
@@ -371,7 +337,6 @@ function setupSubModuleNavigation() {
                 htmlContent + 
                 '\n</body>\n</html>';
 
-            // Превращаем строку в бинарный Blob со специальным типом для Word
             const fileBlob = new Blob([wordContent], { type: 'application/msword;charset=utf-8' });
             
             const { data, error } = await supabase.storage
@@ -383,8 +348,8 @@ function setupSubModuleNavigation() {
 
             if (error) throw error;
 
-            alert('Документ успешно распечатан и сохранен в архив как WORD (.doc)!');
-            if (currentTripTab === 'history') window.loadTripStorageHistory();
+            alert('Документ успешно распечатан и сохранен в общий архив как WORD (.doc)!');
+            if (currentSubModule === 'menu') window.loadTripStorageHistory();
 
         } catch (err) {
             console.error('Ошибка архивации:', err);
@@ -509,4 +474,7 @@ function setupSubModuleNavigation() {
             tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Ошибка получения архива.</td></tr>';
         }
     };
+    
+    // Автоматический вызов загрузки истории при инициализации на главном экране
+    setTimeout(() => { window.loadTripStorageHistory(); }, 100);
 }
