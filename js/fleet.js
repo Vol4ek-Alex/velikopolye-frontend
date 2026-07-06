@@ -222,7 +222,7 @@ export async function init() {
 async function loadAllData(isFirstLoad = false) {
     if (!window._supabase) return;
     try {
-        // Запрашиваем все связанные таблицы параллельно (быстрее и эффективнее)
+        // Запрашиваем все связанные таблицы параллельно
         const [resVehicles, resTasks, resDrivers, resCategories, resTags] = await Promise.all([
             window._supabase.from('vehicles').select('*'),
             window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false),
@@ -234,37 +234,52 @@ async function loadAllData(isFirstLoad = false) {
         if (!resVehicles.error && resVehicles.data) vehicles = resVehicles.data;
         if (!resTasks.error && resTasks.data) tasks = resTasks.data;
         
+        // Переменная для отслеживания изменений в составе категорий
+        let categoriesChanged = false;
+        
         // Маппинг данных из новых таблиц
         if (!resDrivers.error && resDrivers.data) {
             drivers = resDrivers.data.map(d => d.name);
         }
+        
         if (!resCategories.error && resCategories.data) {
-            categories = resCategories.data.map(c => c.name);
+            const newCategories = resCategories.data.map(c => c.name);
+            if (!newCategories.includes("Без категории")) newCategories.push("Без категории");
+            
+            // Если состав категорий изменился по сравнению с прошлым разом — ставим флаг
+            if (JSON.stringify(categories) !== JSON.stringify(newCategories)) {
+                categories = newCategories;
+                categoriesChanged = true;
+            }
         }
-        // Гарантируем наличие дефолтной категории
-        if (!categories.includes("Без категории")) categories.push("Без категории");
 
         if (!resTags.error && resTags.data) {
             baseTags = resTags.data.map(t => ({ id: t.id, name: t.name, color: t.color || '#e2e8f0' }));
         }
 
-        // Если в процессе работы у ТС в БД прописана категория, которой нет в списке fleet_categories, добавляем её
+        // Если в процессе работы у ТС в БД прописана категория, которой нет в списке, добавляем её
         vehicles.forEach(v => {
             const typeName = v.type || "Без категории";
             if (!categories.map(c => c.toLowerCase()).includes(typeName.toLowerCase())) {
                 categories.push(typeName);
+                categoriesChanged = true;
             }
         });
 
-        if (isFirstLoad) {
+        // ПРАВИЛЬНОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА:
+        // Рендерим бар категорий ТОЛЬКО при первой загрузке или если категории РЕАЛЬНО изменились в БД
+        if (isFirstLoad || categoriesChanged) {
             renderCategoriesBar();
-        } else {
-            // Мягко обновляем бары и открытые модалки, чтобы не сбивать фокус пользователя
-            renderCategoriesBar();
+        }
+
+        // Мягко обновляем открытые модалки, чтобы не сбивать фокус пользователя
+        if (!isFirstLoad) {
             if (!document.getElementById('driversManagementModal').classList.contains('hidden')) updateDriversDOMList();
             if (!document.getElementById('tagsManagementModal').classList.contains('hidden')) updateTagsDOMList();
             if (!document.getElementById('categoriesModal').classList.contains('hidden')) updateCategoriesDOMList();
         }
+        
+        // Карточки техники можно обновлять каждые 5 сек — это не мешает селектам вверху
         renderFleet();
     } catch (e) {
         console.error("Ошибка синхронизации данных автопарка:", e);
