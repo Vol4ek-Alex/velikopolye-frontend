@@ -505,7 +505,7 @@ function setupSubModuleNavigation() {
                         '<button onclick="window.downloadStorageFile(\'' + file.name + '\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-md transition text-[11px]">Открыть / Скачать</button>' +
                     '</td>' +
                     '<td class="p-2.5 text-right">' +
-                        '<button onclick="window.deleteStorageFile(\'' + file.name + '\')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md border border-red-200 transition text-[11px]">❌ 删除</button>' +
+                        '<button onclick="window.deleteStorageFile(\'' + file.name + '\')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md border border-red-200 transition text-[11px]">❌ Удалить</button>' +
                     '</td>' +
                 '</tr>';
             }).join('');
