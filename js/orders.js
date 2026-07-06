@@ -363,11 +363,14 @@ function setupSubModuleNavigation() {
 
         const driverSafe = translit(driverRaw || 'worker');
         
-        // Имя теперь имеет префикс trip_ для сортировки и понимания категории
-        const fileName = 'trip_' + docDate + '_' + driverSafe + '.html';
+        // 1. Меняем расширение на .doc
+        const fileName = 'trip_' + docDate + '_' + driverSafe + '.doc';
 
         try {
-            const fileBlob = new Blob([htmlContent], { type: 'text/html' });
+            // 2. Указываем MIME-тип Ворда (application/msword) и кодировку UTF-8, 
+            // чтобы в Word не ломался русский язык (не было "крякозябр")
+            const htmlWithMeta = '<meta charset="utf-8">' + htmlContent;
+            const fileBlob = new Blob([htmlWithMeta], { type: 'application/msword' });
             
             const { data, error } = await supabase.storage
                 .from('documents-history')
@@ -378,14 +381,13 @@ function setupSubModuleNavigation() {
 
             if (error) throw error;
 
-            alert('Документ успешно распечатан и сохранен в облачный архив!');
+            alert('Документ успешно распечатан и сохранен в архив как WORD (.doc)!');
             if (currentTripTab === 'history') window.loadTripStorageHistory();
 
         } catch (err) {
             console.error('Ошибка архивации:', err);
             alert('Печать выполнена, но не удалось сохранить в Storage: ' + err.message);
         }
-    };
 
     // Функция ИНИЦИАЛИЗАЦИИ СКАЧИВАНИЯ файла по прямой signed-ссылке
     window.downloadStorageFile = async (filePath) => {
@@ -465,13 +467,16 @@ function setupSubModuleNavigation() {
             }
 
             // Мапим файлы и на лету определяем категорию по префиксу имени файла
+            // Мапим файлы и на лету определяем категорию
             const processedFiles = filteredFiles.map(f => {
                 let catLabel = '📁 Документ';
                 let catColor = 'bg-gray-100 text-gray-800';
 
                 if (f.name.startsWith('trip_')) {
-                    catLabel = '💼 Командировка';
-                    catColor = 'bg-blue-100 text-blue-800';
+                    // Проверяем, вордовский ли это файл
+                    const isWord = f.name.endsWith('.doc');
+                    catLabel = isWord ? '💙 Командировка (Word)' : '💼 Командировка';
+                    catColor = isWord ? 'bg-blue-600 text-white font-black' : 'bg-blue-100 text-blue-800';
                 } else if (f.name.startsWith('vacation_')) {
                     catLabel = '🌴 Отпуск';
                     catColor = 'bg-green-100 text-green-800';
