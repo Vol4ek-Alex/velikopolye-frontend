@@ -90,7 +90,7 @@ export function initBusinessTrip() {
         }
         window.updateTripPreview();
     };
-
+    
     function formatTripDate(dateStr) {
         if (!dateStr) return '';
         const parts = dateStr.split('-');
@@ -192,5 +192,13 @@ export function initBusinessTrip() {
             console.error('Ошибка архивации:', err);
             alert('Печать выполнена, но не удалось сохранить в Storage: ' + err.message);
         }
+    };
+
+    window.resetTripFormFields = () => {
+        const today = new Date().toISOString().split('T')[0];
+        if (document.getElementById('tripDocDate')) document.getElementById('tripDocDate').value = today;
+        if (document.getElementById('tripTargetDate')) document.getElementById('tripTargetDate').value = today;
+        if (document.getElementById('tripDestinationInput')) document.getElementById('tripDestinationInput').value = "город Дзержинск";
+        if (document.getElementById('tripPurposeInput')) document.getElementById('tripPurposeInput').value = "получения запчастей";
     };
 }
