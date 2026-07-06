@@ -31,7 +31,7 @@ const ALL_DOC_CARDS = [
 ];
 
 let currentSubModule = "menu";
-let currentTripTab = "form"; // "form" или "history"
+let currentTripTab = "form"; 
 
 // Предварительная сборка элементов для HTML-селектов, чтобы избежать конфликтов синтаксиса в шаблоне
 const driverOptionsHtml = DRIVERS_DATABASE.map(d => '<option value="' + d + '">' + d + '</option>').join('');
@@ -107,7 +107,7 @@ export const template = `
                 <div>
                     <label class="block text-[10px] font-bold text-gray-700 mb-1">Водитель автомобиля</label>
                     <select id="tripDriverSelect" onchange="window.handleTripDriverSelect()" class="w-full bg-white border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                        ${driverOptionsHtml}
+                        \${driverOptionsHtml}
                         <option value="CUSTOM">-- Ввести вручную (Новый сотрудник) --</option>
                     </select>
                     <input type="text" id="tripDriverCustomInput" oninput="window.updateTripPreview()" class="hidden mt-2 w-full bg-gray-50 border-2 border-blue-400 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Введите ФИО">
@@ -116,13 +116,13 @@ export const template = `
                 <div>
                     <label class="block text-[10px] font-bold text-gray-700 mb-1">Куда (Пункт назначения)</label>
                     <input type="text" id="tripDestinationInput" list="destinationsList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                    <datalist id="destinationsList">${destinationsHtml}</datalist>
+                    <datalist id="destinationsList">\${destinationsHtml}</datalist>
                 </div>
 
                 <div>
                     <label class="block text-[10px] font-bold text-gray-700 mb-1">Для чего (Цель)</label>
                     <input type="text" id="tripPurposeInput" list="purposesList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                    <datalist id="purposesList">${purposesHtml}</datalist>
+                    <datalist id="purposesList">\${purposesHtml}</datalist>
                 </div>
 
                 <button onclick="window.printAndSaveTrip()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold transition shadow-xs text-xs flex items-center justify-center gap-2">
@@ -176,7 +176,6 @@ export function init() {
     window.switchDocSubModule('menu');
 }
 
-// Генерация сетки плиток-карток документов
 function renderDocCards(cardsList) {
     const container = document.getElementById('docHubMainMenu');
     if (!container) return;
@@ -204,7 +203,6 @@ function renderDocCards(cardsList) {
     }).join('');
 }
 
-// Поиск по карточкам документов
 window.filterDocCards = () => {
     const query = document.getElementById('docCardsSearchInput')?.value.toLowerCase().trim() || "";
     const filtered = ALL_DOC_CARDS.filter(card => 
@@ -326,11 +324,9 @@ function setupSubModuleNavigation() {
         if (previewBlock) previewBlock.innerHTML = window.generateTripHtmlContent();
     };
 
-    // Функция ПЕЧАТИ + РЕАЛЬНОЕ СОХРАНЕНИЕ В КОРЕНЬ БАКЕТА SUPABASE STORAGE
     window.printAndSaveTrip = async () => {
         const htmlContent = window.generateTripHtmlContent();
         
-        // 1. Выводим на системную печать браузера
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
             printBlock.innerHTML = htmlContent;
@@ -338,14 +334,12 @@ function setupSubModuleNavigation() {
             printBlock.innerHTML = '';
         }
 
-        // 2. Инициализируем клиент Supabase
         const supabase = window._supabase || window.supabase;
         if (!supabase) {
-            alert('Ошибка: Клиент Supabase не найден в системе глобальных окон.');
+            alert('Ошибка: Клиент Supabase не найден.');
             return;
         }
 
-        // 3. Формируем чистое имя файла латиницей (без вложенных папок, прямо в корень)
         const docDate = document.getElementById('tripDocDate')?.value || 'unknown-date';
         const selectVal = document.getElementById('tripDriverSelect')?.value;
         const customVal = document.getElementById('tripDriverCustomInput')?.value.trim();
@@ -362,13 +356,9 @@ function setupSubModuleNavigation() {
         };
 
         const driverSafe = translit(driverRaw || 'worker');
-        
-        // 1. Меняем расширение на .doc
         const fileName = 'trip_' + docDate + '_' + driverSafe + '.doc';
 
         try {
-            // 2. Указываем MIME-тип Ворда (application/msword) и кодировку UTF-8, 
-            // чтобы в Word не ломался русский язык (не было "крякозябр")
             const htmlWithMeta = '<meta charset="utf-8">' + htmlContent;
             const fileBlob = new Blob([htmlWithMeta], { type: 'application/msword' });
             
@@ -388,8 +378,8 @@ function setupSubModuleNavigation() {
             console.error('Ошибка архивации:', err);
             alert('Печать выполнена, но не удалось сохранить в Storage: ' + err.message);
         }
+    };
 
-    // Функция ИНИЦИАЛИЗАЦИИ СКАЧИВАНИЯ файла по прямой signed-ссылке
     window.downloadStorageFile = async (filePath) => {
         const supabase = window._supabase || window.supabase;
         if (!supabase) return alert('Supabase клиент недоступен');
@@ -414,7 +404,6 @@ function setupSubModuleNavigation() {
         }
     };
 
-    // Функция УДАЛЕНИЯ файла из Storage
     window.deleteStorageFile = async (filePath) => {
         if (!confirm('Вы уверены, что хотите безвозвратно удалить этот документ из архива?')) return;
 
@@ -437,7 +426,6 @@ function setupSubModuleNavigation() {
         }
     };
 
-    // Функция загрузки списка файлов напрямую из корня бакета с умным парсингом префиксов (trip_, vacation_)
     window.loadTripStorageHistory = async () => {
         const tBody = document.getElementById('tripStorageTableBody');
         if (!tBody) return;
@@ -446,19 +434,17 @@ function setupSubModuleNavigation() {
 
         const supabase = window._supabase || window.supabase;
         if (!supabase) {
-            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500 font-bold">Supabase недоступен. Проверьте инициализацию в index.html.</td></tr>';
+            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500 font-bold">Supabase недоступен.</td></tr>';
             return;
         }
 
         try {
-            // Запрашиваем плоский список файлов прямо из корня бакета
             const { data: files, error } = await supabase.storage
                 .from('documents-history')
                 .list('', { sortBy: { column: 'name', order: 'desc' } });
 
             if (error) throw error;
 
-            // Исключаем системные заглушки
             const filteredFiles = files ? files.filter(f => f.name !== '.emptyFolderPlaceholder') : [];
 
             if (filteredFiles.length === 0) {
@@ -466,14 +452,11 @@ function setupSubModuleNavigation() {
                 return;
             }
 
-            // Мапим файлы и на лету определяем категорию по префиксу имени файла
-            // Мапим файлы и на лету определяем категорию
             const processedFiles = filteredFiles.map(f => {
                 let catLabel = '📁 Документ';
                 let catColor = 'bg-gray-100 text-gray-800';
 
                 if (f.name.startsWith('trip_')) {
-                    // Проверяем, вордовский ли это файл
                     const isWord = f.name.endsWith('.doc');
                     catLabel = isWord ? '💙 Командировка (Word)' : '💼 Командировка';
                     catColor = isWord ? 'bg-blue-600 text-white font-black' : 'bg-blue-100 text-blue-800';
@@ -492,7 +475,6 @@ function setupSubModuleNavigation() {
                 };
             });
 
-            // Рендер строк таблицы
             tBody.innerHTML = processedFiles.map(file => {
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
                     '<td class="p-2.5 font-mono text-gray-900 font-semibold">' + file.name + '</td>' +
@@ -512,7 +494,7 @@ function setupSubModuleNavigation() {
 
         } catch (err) {
             console.error('Ошибка рендеринга истории:', err);
-            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Ошибка получения архива. Проверьте имя бакета в Supabase.</td></tr>';
+            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Ошибка получения архива.</td></tr>';
         }
     };
 }
