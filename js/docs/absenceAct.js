@@ -61,7 +61,6 @@ export function initAbsenceAct() {
         let current = new Date(startStr);
         const end = new Date(endStr);
         
-        // Предотвращаем бесконечный цикл при некорректном вводе
         if (current > end) return dates;
         
         while (current <= end) {
@@ -97,7 +96,7 @@ export function initAbsenceAct() {
         const pageBreakScreen = '<hr class="my-6 border-t-2 border-dashed border-gray-400 no-print">';
         const separator = isForWord ? pageBreakWord : pageBreakScreen;
 
-        // 1. ГЕНЕРИРУЕМ МАССИВ АКТОВ (ПО ОДНОМУ НА КАЖДЫЙ ДЕНЬ)
+        // 1. ГЕНЕРИРУЕМ МАССИВ АКТОВ (БЕЗ ПОДЧЕРКИВАНИЙ)
         const actsArrayHtml = dateList.map(dateStr => {
             const formattedCurrentDate = formatRusDate(dateStr);
             return `
@@ -112,9 +111,9 @@ export function initAbsenceAct() {
                     Об отсутствии на рабочем месте
                 </div>
                 <div style="margin-bottom: 35px; text-align: left;">
-                    <u>Составил: Волчек</u> А.А. - инженер Э.М.Т.П.<br>
+                    Составил: Волчек А.А. - инженер Э.М.Т.П.<br>
                     в присутствии: Маковича М.П. – заместителя директора - главного инженера<br>
-                    <span style="padding-left: 82px;"><u>Миколенко</u> Ю.С. – заведующего гаражом</span><br>
+                    <span style="padding-left: 82px;">Миколенко Ю.С. – заведующего гаражом</span><br>
                     <span style="padding-left: 82px;">Ладутько И.И. – техника</span>
                 </div>
                 <p style="text-indent: 40px; margin-bottom: 50px;">
@@ -129,14 +128,13 @@ export function initAbsenceAct() {
             </div>`;
         });
 
-        // 2. ГЕНЕРИРУЕМ ОДНУ ОБЩУЮ ДОКЛАДНУЮ ЗАПИСКУ ЗА ВЕСЬ ПЕРИОД
-        // Дата докладной ставится по последнему дню прогула (дню обнаружения/оформления пакета)
+        // 2. ГЕНЕРИРУЕМ ДОКЛАДНУЮ ЗАПИСКУ (БЕЗ ПОДЧЕРКИВАНИЙ)
         const reportDate = formattedEnd; 
 
         const reportHtml = `
         <div class="bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5;">
             <div style="text-align: right; margin-left: auto; width: 280px; margin-bottom: 40px; font-size: 14px; line-height: 1.3;">
-                <u>Зам. директору-<br>гл. инженеру</u><br>
+                Зам. директору-<br>гл. инженеру<br>
                 филиала СХК<br>«Великополье»<br>
                 Маковичу М.П.<br>
                 Инженера по ЭМТП<br>
@@ -149,15 +147,14 @@ export function initAbsenceAct() {
                 Докладная записка
             </div>
             <p style="text-indent: 40px; margin-bottom: 60px;">
-                Довожу до Вашего сведения, что тракторист-машинист <u>Пустельников</u> ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
+                Довожу до Вашего сведения, что тракторист-машинист Пустельников ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
             </p>
             <div style="display: flex; justify-content: space-between; margin-top: 50px;">
                 <div>Инженер по ЭМТП</div>
-                <div>Волчек А.А.</div>
+                <div>Volchek А.А.</div>
             </div>
         </div>`;
 
-        // Собираем всё воедино: сначала все акты через разделитель, затем докладная
         const allActsCombined = actsArrayHtml.join(separator);
         const finalContent = allActsCombined + separator + reportHtml;
 
