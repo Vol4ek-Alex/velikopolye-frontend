@@ -244,7 +244,6 @@ function setupSubModuleNavigation() {
                     catLabel = '🛑 Прогул (Word)'; 
                     catColor = 'bg-red-600 text-white font-black';
                 }
-                }
 
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
                     '<td class="p-2.5 font-mono text-gray-900 font-semibold">' + f.name + '</td>' +
