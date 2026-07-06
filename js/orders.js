@@ -187,13 +187,12 @@ export const template = `
                         <th class="p-3">Категория</th>
                         <th class="p-3">Даты выхода</th>
                         <th class="p-3">Задействовано</th>
-                        <th class="p-3">Составил</th>
                         <th class="p-3 text-right">Действия с документом</th>
                     </tr>
                 </thead>
                 <tbody id="orderArchiveTableBody" class="divide-y divide-gray-200 font-bold text-gray-800">
                     <tr>
-                        <td colspan="6" class="text-center p-8 text-gray-400">Служебные записки отсутствуют.</td>
+                        <td colspan="5" class="text-center p-8 text-gray-400">Служебные записки отсутствуют.</td>
                     </tr>
                 </tbody>
             </table>
@@ -297,24 +296,20 @@ function setupWindowFunctions() {
             return;
         }
 
-        const userRole = localStorage.getItem('user_role') || 'Инженер по ЭМТП';
-        const userName = localStorage.getItem('user_name') || 'Волчек А.А.';
         const allDates = [...new Set(currentDraftItems.flatMap(i => i.dates))].sort();
         const formattedDatesStr = allDates.map(d => formatDate(d)).join(', ');
-
         const generatedId = Date.now();
         
-        // Создаем чистый объект, подходящий под столбцы БД
+        // СТРОГОЕ СООТВЕТСТВИЕ СТРУКТУРЕ ВАШЕЙ ТАБЛИЦЫ В СУБД
         const documentPayload = {
             id: generatedId,
             doc_type: 'weekend_memo',
             weekend_date: formattedDatesStr, 
             reason: 'производственная необходимость',
-            signatory: `${userRole} | ${userName}`, // Безопасное сохранение подписи одной строкой
-            items_data: currentDraftItems
+            items_data: currentDraftItems // Все внутренние данные, включая списки, уходят сюда
         };
 
-        // Сохраняем локально, чтобы документ был доступен сразу
+        // Локальное резервное копирование
         let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
         archiveBackup.unshift(documentPayload);
         localStorage.setItem('local_memos_backup', JSON.stringify(archiveBackup));
@@ -332,21 +327,14 @@ function setupWindowFunctions() {
         window.renderArchiveRows();
         await window.switchDocsSection('archive');
 
-        // Отправка в Supabase с фильтрацией полей (только стандартные столбцы таблицы)
+        // Отправка в Supabase — теперь поля строго совпадают с Вашим скриншотом!
         try {
             if (window._supabase) {
-                const { error } = await window._supabase.from('weekend_orders_json').insert([{
-                    id: documentPayload.id,
-                    doc_type: documentPayload.doc_type,
-                    weekend_date: documentPayload.weekend_date,
-                    reason: documentPayload.reason,
-                    signatory: documentPayload.signatory,
-                    items_data: documentPayload.items_data
-                }]);
+                const { error } = await window._supabase.from('weekend_orders_json').insert([documentPayload]);
                 if (error) {
-                    console.error("Ошибка вставки в Supabase (Проверьте структуру таблицы weekend_orders_json):", error);
+                    console.error("Ошибка вставки в Supabase:", error);
                 } else {
-                    console.log("Успешная синхронизация данных с сервером Supabase.");
+                    console.log("Успешная синхронизация с Supabase.");
                 }
             }
         } catch (err) {
@@ -383,19 +371,8 @@ function setupWindowFunctions() {
         const printBlock = document.getElementById('cleanPrintBlock');
         let htmlContent = '';
 
-        // Корректно парсим должность и ФИО составителя
-        let roleStr = 'Инженер по ЭМТП';
-        let nameStr = 'Волчек А.А.';
-        if (memo.signatory && memo.signatory.includes('|')) {
-            const parts = memo.signatory.split('|');
-            roleStr = parts[0].trim();
-            nameStr = parts[1].trim();
-        } else if (memo.signatory) {
-            roleStr = memo.signatory;
-        }
-
         if (mode === 'text') {
-            // СТРОГАЯ СТРУКТУРА: Группировка по датам, а внутри по категориям
+            // Группировка по датам, а внутри по должностям
             const datesGrouped = {};
             memo.items_data.forEach(item => {
                 item.dates.forEach(d => {
@@ -406,25 +383,24 @@ function setupWindowFunctions() {
                 });
             });
 
-            // Сортируем даты по возрастанию
             const sortedDates = Object.keys(datesGrouped).sort();
 
             let itemsHtml = '';
             sortedDates.forEach(dStr => {
                 itemsHtml += `
-                <p style="margin-top: 15px; margin-bottom: 10px; text-align: justify; text-indent: 30px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                <p style="margin-top: 15px; margin-bottom: 5px; text-align: justify; text-indent: 30px; font-family: 'Times New Roman', serif; font-size: 14px;">
                     В связи с производственной необходимостью, прошу Вас привлечь к работе в выходной день <b>(${dStr})</b> следующих работников филиала:
                 </p>`;
                 
                 let num = 1;
                 const categoriesInDate = datesGrouped[dStr];
                 for (const cat in categoriesInDate) {
-                    itemsHtml += `<p style="margin-left: 30px; margin-top: 5px; margin-bottom: 2px; font-weight: bold; font-family: 'Times New Roman', serif; font-size: 14px;">${cat}:</p>`;
+                    itemsHtml += `<p style="margin-left: 30px; margin-top: 4px; margin-bottom: 2px; font-weight: bold; font-family: 'Times New Roman', serif; font-size: 14px;">${cat}:</p>`;
                     
                     categoriesInDate[cat].forEach(row => {
                         const techStr = (row.tech && row.tech !== 'Без техники') ? ` – ${row.tech}` : '';
-                        itemsHtml += `<p style="margin-left: 50px; margin-top: 1px; margin-bottom: 1px; font-family: 'Times New Roman', serif; font-size: 14px;">
-                            ${num}. <b>${row.fio}</b>${techStr} - (${row.work});
+                        itemsHtml += `<p style="margin-left: 30px; margin-top: 1px; margin-bottom: 1px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                            ${num}.<br>${row.fio}${techStr} - (${row.work});
                         </p>`;
                         num++;
                     });
@@ -433,7 +409,8 @@ function setupWindowFunctions() {
 
             htmlContent = `
                 <div style="font-family: 'Times New Roman', serif; color: black; font-size: 14px; line-height: 1.4; max-width: 700px; margin: 0 auto; padding: 20px;">
-                    <div style="margin-left: auto; width: 280px; margin-bottom: 40px; line-height: 1.3;">
+                    <div style="margin-left: auto; width: 280px; margin-bottom: 40px; line-height: 1.3; text-align: left;">
+                        Инженера по ЭМТП<br>Волчка А.А.<br><br>
                         Директору филиала СХК<br>«Великополье»<br>Рунцевичу Д.С.<br>
                     </div>
                     <h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 25px; font-family: 'Times New Roman', serif;">СЛУЖЕБНАЯ ЗАПИСКА</h1>
@@ -441,8 +418,8 @@ function setupWindowFunctions() {
                     ${itemsHtml}
                     
                     <div style="margin-top: 60px; display: flex; justify-content: space-between; font-weight: bold; font-family: 'Times New Roman', serif; font-size: 14px;">
-                        <div style="text-align: left; width: 50%; font-weight: bold;">${roleStr}</div>
-                        <div style="text-align: right; width: 50%; font-weight: bold;">${nameStr}</div>
+                        <div style="text-align: left; width: 50%;">Инженер по ЭМТП</div>
+                        <div style="text-align: right; width: 50%;">Волчек А.А.</div>
                     </div>
                 </div>
             `;
@@ -512,33 +489,25 @@ function setupWindowFunctions() {
         }
 
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = docxLib;
-        
-        let roleStr = 'Инженер по ЭМТП';
-        let nameStr = 'Волчек А.А.';
-        if (memo.signatory && memo.signatory.includes('|')) {
-            const parts = memo.signatory.split('|');
-            roleStr = parts[0].trim();
-            nameStr = parts[1].trim();
-        }
 
         const children = [
             new Paragraph({
                 alignment: AlignmentType.RIGHT,
                 spacing: { after: 200 },
                 children: [
-                    new TextRun({ text: "Директору филиала СХК\n«Великополье»\nРунцевичу Д.С.\n\n", font: "Times New Roman", size: 28 })
+                    new TextRun({ text: "Инженера по ЭМТП\nВолчка А.А.\n\nДиректору филиала СХК\n«Великополье»\nРунцевичу Д.С.\n\n", font: "Times New Roman", size: 28 })
                 ]
             }),
             new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 300, after: 300 },
+                spacing: { before: 200, after: 300 },
                 children: [
                     new TextRun({ text: "СЛУЖЕБНАЯ ЗАПИСКА", bold: true, size: 32, font: "Times New Roman" })
                 ]
             })
         ];
 
-        // ГРУППИРОВКА ПО ДАТАМ И КАТЕГОРИЯМ ДЛЯ WORD
+        // ГРУППИРОВКА В WORD
         const datesGrouped = {};
         memo.items_data.forEach(item => {
             item.dates.forEach(d => {
@@ -554,7 +523,7 @@ function setupWindowFunctions() {
         sortedDates.forEach(dStr => {
             children.push(new Paragraph({
                 indent: { firstLine: 500 },
-                spacing: { before: 200, after: 100 },
+                spacing: { before: 150, after: 80 },
                 alignment: AlignmentType.JUSTIFY,
                 children: [
                     new TextRun({ text: `В связи с производственной необходимостью, прошу Вас привлечь к работе в выходной день `, font: "Times New Roman", size: 28 }),
@@ -577,10 +546,11 @@ function setupWindowFunctions() {
                 categoriesInDate[cat].forEach(row => {
                     const techStr = (row.tech && row.tech !== 'Без техники') ? ` – ${row.tech}` : '';
                     children.push(new Paragraph({
-                        indent: { left: 600 },
+                        indent: { left: 300 },
                         spacing: { after: 40 },
                         children: [
-                            new TextRun({ text: `${num}. ${row.fio}`, bold: true, font: "Times New Roman", size: 28 }),
+                            new TextRun({ text: `${num}.\n`, font: "Times New Roman", size: 28 }),
+                            new TextRun({ text: `${row.fio}`, bold: true, font: "Times New Roman", size: 28 }),
                             new TextRun({ text: `${techStr} - (${row.work});`, font: "Times New Roman", size: 28 })
                         ]
                     }));
@@ -589,12 +559,12 @@ function setupWindowFunctions() {
             }
         });
 
-        // СТРОГАЯ СТРУКТУРА ПОДПИСИ (Слева должность, Справа имя)
+        // Подпись внизу страницы
         children.push(new Paragraph({
             spacing: { before: 800 },
             children: [
-                new TextRun({ text: roleStr, bold: true, font: "Times New Roman", size: 28 }),
-                new TextRun({ text: "\t\t\t\t\t\t\t" + nameStr, bold: true, font: "Times New Roman", size: 28 })
+                new TextRun({ text: "Инженер по ЭМТП", font: "Times New Roman", size: 28 }),
+                new TextRun({ text: "\t\t\t\t\t\t\tВолчек А.А.", bold: true, font: "Times New Roman", size: 28 })
             ]
         }));
 
@@ -606,7 +576,7 @@ function setupWindowFunctions() {
             a.download = `Служебная_записка_${memoId}.docx`;
             a.click();
             window.URL.revokeObjectURL(url);
-        }).catch(err => console.error("Ошибка скачивания файла:", err));
+        }).catch(err => console.error(err));
     };
 }
 
@@ -667,33 +637,21 @@ window.renderArchiveRows = () => {
     if (!tbody) return;
 
     const filterVal = document.getElementById('archiveDocTypeFilter').value;
-    
-    let filtered = (filterVal === 'all') 
-        ? savedMemosArchive 
-        : savedMemosArchive.filter(m => m.doc_type === filterVal);
+    let filtered = (filterVal === 'all') ? savedMemosArchive : savedMemosArchive.filter(m => m.doc_type === filterVal);
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-400">Служебные записки отсутствуют.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-gray-400">Служебные записки отсутствуют.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = filtered.map(memo => {
         const docCategoryName = memo.doc_type === 'weekend_memo' ? '📄 Служебная записка' : '📁 Документ';
-        
-        let displayAuthor = 'Инженер по ЭМТП Волчек А.А.';
-        if (memo.signatory && memo.signatory.includes('|')) {
-            displayAuthor = memo.signatory.replace('|', '');
-        } else if (memo.signatory) {
-            displayAuthor = memo.signatory;
-        }
-
         return `
             <tr class="hover:bg-gray-50 transition text-xs font-bold text-gray-800">
                 <td class="p-3 text-gray-400 font-mono">#${memo.id || 'L'}</td>
                 <td class="p-3 text-gray-600">${docCategoryName}</td>
                 <td class="p-3 text-gray-950">${memo.weekend_date}</td>
                 <td class="p-3"><span class="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-black">${memo.items_data ? memo.items_data.length : 0} чел.</span></td>
-                <td class="p-3 text-gray-500 text-[11px] font-medium">${displayAuthor}</td>
                 <td class="p-3 text-right space-x-1 whitespace-nowrap">
                     <button onclick="window.printOrderDocument('${memo.id}', 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] font-bold transition">👁 Текст</button>
                     <button onclick="window.printOrderDocument('${memo.id}', 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] font-bold transition">📊 Ознакомление</button>
