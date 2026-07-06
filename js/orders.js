@@ -312,36 +312,39 @@ function setupWindowFunctions() {
             items_data: currentDraftItems
         };
 
-        // ГАРАНТИЯ НАДЁЖНОСТИ: Сразу пушим в локальный массив приложения,
-        // чтобы запись мгновенно появилась на экране без ожидания ответов сервера
-        savedMemosArchive.unshift(documentPayload);
+        // 1. Сначала сохраняем в локальный бэкап браузера (ГАРАНТИЯ от исчезновения)
+        let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
+        archiveBackup.unshift(documentPayload);
+        localStorage.setItem('local_memos_backup', JSON.stringify(archiveBackup));
+
+        // 2. Добавляем в текущую оперативную память отображения
+        if (!savedMemosArchive.some(m => m.id === generatedId)) {
+            savedMemosArchive.unshift(documentPayload);
+        }
         
-        // Очищаем форму создания
+        // Очищаем черновик формы
         currentDraftItems = [];
         renderDraftTable();
 
-        // Сбрасываем фильтр в дефолт
+        // Сбрасываем фильтр, чтобы точно отобразить всё
         const filterSelect = document.getElementById('archiveDocTypeFilter');
         if (filterSelect) filterSelect.value = 'all';
 
-        // Мгновенно отрисовываем архив
+        // Мгновенно рендерим таблицу (пользователь видит запись сразу!)
         window.renderArchiveRows();
 
+        // Переключаемся на вкладку архива
+        await window.switchDocsSection('archive');
+
+        // 3. Асинхронно в фоне отправляем в Supabase без блокировки UI
         try {
             if (window._supabase) {
-                // Прямая отправка сформированного JSON-документа в базу Supabase
                 await window._supabase.from('weekend_orders_json').insert([documentPayload]);
+                console.log("Документ успешно синхронизирован с Supabase.");
             }
-            // Дублируем в локальный бэкап браузера на случай оффлайна
-            let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
-            archiveBackup.unshift(documentPayload);
-            localStorage.setItem('local_memos_backup', JSON.stringify(archiveBackup));
         } catch (err) {
-            console.warn("Ошибка синхронизации с базой, данные сохранены локально:", err);
+            console.warn("Ошибка связи с сервером, документ остался в локальной памяти:", err);
         }
-
-        alert("Служебная записка успешно зафиксирована в архиве!");
-        await window.switchDocsSection('archive');
     };
 
     window.deleteOrderDocument = async (memoId) => {
@@ -582,13 +585,29 @@ function renderDraftTable() {
 }
 
 async function loadArchiveFromSupabase() {
+    // Получаем то, что сохранено локально в браузере
+    const localBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
+    
     try {
         if (!window._supabase) throw new Error("Нет СУБД");
         const { data, error } = await window._supabase.from('weekend_orders_json').select('*').order('id', { ascending: false });
         if (error) throw error;
-        savedMemosArchive = data || [];
+        
+        // УМНОЕ ОБЪЕДИНЕНИЕ: Берем данные из сервера, но если в локальном бэкапе есть записи,
+        // которых сервер еще не знает (они новые), мы принудительно добавляем их в начало списка.
+        const serverData = data || [];
+        const combined = [...localBackup];
+        
+        serverData.forEach(sDoc => {
+            if (!combined.some(cDoc => String(cDoc.id) === String(sDoc.id))) {
+                combined.push(sDoc);
+            }
+        });
+        
+        savedMemosArchive = combined.sort((a, b) => b.id - a.id);
     } catch (e) {
-        savedMemosArchive = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
+        // Если сервер недоступен или выдал ошибку — берем локальный бэкап
+        savedMemosArchive = localBackup.sort((a, b) => b.id - a.id);
     }
     window.renderArchiveRows();
 }
