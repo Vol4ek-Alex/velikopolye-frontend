@@ -235,9 +235,11 @@ function setupSubModuleNavigation() {
                 let catColor = 'bg-gray-100 text-gray-800';
 
                 if (f.name.startsWith('trip_')) {
-                    catLabel = '💼 Командировка (Word)'; catColor = 'bg-blue-600 text-white font-black';
+                    catLabel = '💼 Командировка (Word)'; 
+                    catColor = 'bg-blue-600 text-white font-black';
                 } else if (f.name.startsWith('battery_')) {
-                    catLabel = '🔋 Списание АКБ (Word)'; catColor = 'bg-amber-600 text-white font-black';
+                    catLabel = '🔋 Списание АКБ (Word)'; 
+                    catColor = 'bg-amber-600 text-white font-black';
                 } else if (f.name.startsWith('absence_')) { // ДОБАВЛЯЕМ ЭТО УСЛОВИЕ
                     catLabel = '🛑 Прогул (Word)'; 
                     catColor = 'bg-red-600 text-white font-black';
