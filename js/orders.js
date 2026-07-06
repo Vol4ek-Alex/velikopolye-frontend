@@ -298,46 +298,65 @@ function setupWindowFunctions() {
 
         const allDates = [...new Set(currentDraftItems.flatMap(i => i.dates))].sort();
         const formattedDatesStr = allDates.map(d => formatDate(d)).join(', ');
-        const generatedId = Date.now();
         
-        // СТРОГОЕ СООТВЕТСТВИЕ 4 КОЛОНКАМ ТАБЛИЦЫ БД (id, doc_type, weekend_date, items_data)
+        // СТРОГОЕ СООТВЕТСТВИЕ КОЛОНКАМ НА СКРИНШОТЕ. 
+        // Поле 'id' НЕ отправляем, так как в базе стоит автоинкремент (nextval).
+        // Поле 'items_data' переводим в JSON-строку для гарантированной записи в тип json/jsonb.
         const documentPayload = {
-            id: generatedId,
             doc_type: 'weekend_memo',
             weekend_date: formattedDatesStr, 
-            items_data: currentDraftItems
+            items_data: JSON.stringify(currentDraftItems) 
         };
 
-        // Локальное резервное копирование
-        let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
-        archiveBackup.unshift(documentPayload);
-        localStorage.setItem('local_memos_backup', JSON.stringify(archiveBackup));
-
-        if (!savedMemosArchive.some(m => m.id === generatedId)) {
-            savedMemosArchive.unshift(documentPayload);
-        }
-        
-        currentDraftItems = [];
-        renderDraftTable();
-
-        const filterSelect = document.getElementById('archiveDocTypeFilter');
-        if (filterSelect) filterSelect.value = 'all';
-
-        window.renderArchiveRows();
-        await window.switchDocsSection('archive');
-
-        // Отправка в Supabase — теперь без лишних колонок (точно по структуре)
+        // Отправка в Supabase
         try {
             if (window._supabase) {
-                const { error } = await window._supabase.from('weekend_orders_json').insert([documentPayload]);
+                const { data, error } = await window._supabase
+                    .from('weekend_orders_json')
+                    .insert([documentPayload])
+                    .select(); // Просим базу вернуть созданную строку с её реальным ID
+
                 if (error) {
-                    console.error("Ошибка вставки в Supabase:", error);
-                } else {
-                    console.log("Успешная синхронизация с Supabase.");
+                    console.error("⛔ Ошибка Supabase при вставке строки:", error.message, error.details);
+                    alert("Ошибка СУБД: " + error.message);
+                    return;
                 }
+
+                console.log("✅ Успешно сохранено в Supabase:", data);
+
+                // Получаем созданный базой документ (включая сгенерированный сервером ID)
+                const savedDoc = data[0];
+                
+                // Для локального архива парсим items_data обратно в объект, чтобы интерфейс не ломался
+                const localDoc = {
+                    id: savedDoc.id,
+                    doc_type: savedDoc.doc_type,
+                    weekend_date: savedDoc.weekend_date,
+                    items_data: typeof savedDoc.items_data === 'string' ? JSON.parse(savedDoc.items_data) : savedDoc.items_data
+                };
+
+                // Обновляем локальные массивы и отображение
+                let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
+                archiveBackup.unshift(localDoc);
+                localStorage.setItem('local_memos_backup', JSON.stringify(archiveBackup));
+
+                savedMemosArchive.unshift(localDoc);
+                
+                currentDraftItems = [];
+                renderDraftTable();
+
+                const filterSelect = document.getElementById('archiveDocTypeFilter');
+                if (filterSelect) filterSelect.value = 'all';
+
+                window.renderArchiveRows();
+                await window.switchDocsSection('archive');
+
+            } else {
+                console.warn("⚠️ Клиент Supabase (_supabase) не инициализирован.");
+                alert("Критическая ошибка: отсутствует подключение к Supabase.");
             }
         } catch (err) {
-            console.warn("Сетевая ошибка при связи с Supabase:", err);
+            console.error("💥 Сетевая ошибка при работе с базой данных:", err);
         }
     };
 
