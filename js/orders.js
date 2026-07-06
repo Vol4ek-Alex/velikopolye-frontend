@@ -187,7 +187,7 @@ export const template = `
                         <th class="p-3">Категория</th>
                         <th class="p-3">Даты выхода</th>
                         <th class="p-3">Задействовано</th>
-                        <th class="p-3">Составил / Подпись</th>
+                        <th class="p-3">Составил</th>
                         <th class="p-3 text-right">Действия с документом</th>
                     </tr>
                 </thead>
@@ -297,8 +297,8 @@ function setupWindowFunctions() {
             return;
         }
 
-        const authorRole = localStorage.getItem('user_role') || 'Инженер по ЭМТП';
-        const authorName = localStorage.getItem('user_name') || 'Волчек А.А.';
+        const userRole = localStorage.getItem('user_role') || 'Инженер по ЭМТП';
+        const userName = localStorage.getItem('user_name') || 'Волчек А.А.';
         const allDates = [...new Set(currentDraftItems.flatMap(i => i.dates))].sort();
         const formattedDatesStr = allDates.map(d => formatDate(d)).join(', ');
 
@@ -308,42 +308,41 @@ function setupWindowFunctions() {
             doc_type: 'weekend_memo',
             weekend_date: formattedDatesStr, 
             reason: 'производственная необходимость',
-            signatory: `${authorRole} ${authorName}`,
+            author_role: userRole,
+            author_name: userName,
             items_data: currentDraftItems
         };
 
-        // 1. Сначала сохраняем в локальный бэкап браузера (ГАРАНТИЯ от исчезновения)
+        // Сохраняем в локальный бэкап
         let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
         archiveBackup.unshift(documentPayload);
         localStorage.setItem('local_memos_backup', JSON.stringify(archiveBackup));
 
-        // 2. Добавляем в текущую оперативную память отображения
         if (!savedMemosArchive.some(m => m.id === generatedId)) {
             savedMemosArchive.unshift(documentPayload);
         }
         
-        // Очищаем черновик формы
         currentDraftItems = [];
         renderDraftTable();
 
-        // Сбрасываем фильтр, чтобы точно отобразить всё
         const filterSelect = document.getElementById('archiveDocTypeFilter');
         if (filterSelect) filterSelect.value = 'all';
 
-        // Мгновенно рендерим таблицу (пользователь видит запись сразу!)
         window.renderArchiveRows();
-
-        // Переключаемся на вкладку архива
         await window.switchDocsSection('archive');
 
-        // 3. Асинхронно в фоне отправляем в Supabase без блокировки UI
+        // Отправка в Supabase с выводом ошибки в консоль
         try {
             if (window._supabase) {
-                await window._supabase.from('weekend_orders_json').insert([documentPayload]);
-                console.log("Документ успешно синхронизирован с Supabase.");
+                const { data, error } = await window._supabase.from('weekend_orders_json').insert([documentPayload]);
+                if (error) {
+                    console.error("Ошибка вставки в Supabase (Проверьте структуру таблицы weekend_orders_json):", error);
+                } else {
+                    console.log("Успешная синхронизация с Supabase.");
+                }
             }
         } catch (err) {
-            console.warn("Ошибка связи с сервером, документ остался в локальной памяти:", err);
+            console.warn("Сетевая ошибка при связи с Supabase:", err);
         }
     };
 
@@ -376,21 +375,33 @@ function setupWindowFunctions() {
         const printBlock = document.getElementById('cleanPrintBlock');
         let htmlContent = '';
 
+        const roleStr = memo.author_role || 'Инженер по ЭМТП';
+        const nameStr = memo.author_name || 'Волчек А.А.';
+
         if (mode === 'text') {
-            const grouped = {};
+            // ГРУППИРОВКА ПО ДАТАМ для текстовой записки
+            const datesGrouped = {};
             memo.items_data.forEach(item => {
-                if (!grouped[item.category]) grouped[item.category] = [];
-                grouped[item.category].push(item);
+                item.dates.forEach(d => {
+                    const fDate = formatDate(d);
+                    if (!datesGrouped[fDate]) datesGrouped[fDate] = [];
+                    datesGrouped[fDate].push(item);
+                });
             });
 
-            let currentNum = 1;
             let itemsHtml = '';
-            for (const cat in grouped) {
-                itemsHtml += `<p style="margin-top: 10px; margin-bottom: 2px; font-weight: bold; font-family: 'Times New Roman', serif; font-size: 14px;">${cat}:</p>`;
-                grouped[cat].forEach(row => {
+            for (const dStr in datesGrouped) {
+                itemsHtml += `<p style="margin-top: 15px; margin-bottom: 5px; font-weight: bold; font-family: 'Times New Roman', serif; font-size: 14px; text-indent: 30px;">
+                    Прошу привлечь к работе в выходной день ${dStr}:
+                </p>`;
+                
+                let num = 1;
+                datesGrouped[dStr].forEach(row => {
                     const techStr = (row.tech && row.tech !== 'Без техники') ? ` – <b>${row.tech}</b>` : '';
-                    itemsHtml += `<p style="margin-left: 25px; margin-top: 1px; margin-bottom: 1px; font-family: 'Times New Roman', serif; font-size: 14px;"><b>${currentNum}. ${row.fio}</b>${techStr} - (${row.work});</p>`;
-                    currentNum++;
+                    itemsHtml += `<p style="margin-left: 40px; margin-top: 2px; margin-bottom: 2px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                        ${num}. <b>${row.fio}</b> (${row.category})${techStr} - ${row.work};
+                    </p>`;
+                    num++;
                 });
             }
 
@@ -398,21 +409,20 @@ function setupWindowFunctions() {
                 <div style="font-family: 'Times New Roman', serif; color: black; font-size: 14px; line-height: 1.4; max-width: 700px; margin: 0 auto; padding: 20px;">
                     <div style="margin-left: auto; width: 280px; margin-bottom: 40px; line-height: 1.3;">
                         Директору филиала СХК<br>«Великополье»<br>Рунцевичу Д.С.<br><br>
-                        ${memo.signatory.split(' ')[0]}<br><b>${memo.signatory.split(' ').slice(1).join(' ')}</b>
                     </div>
                     <h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 25px; font-family: 'Times New Roman', serif;">СЛУЖЕБНАЯ ЗАПИСКА</h1>
-                    <p style="text-indent: 30px; text-align: justify; margin-bottom: 15px;">
-                        В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни 
-                        <b>(${memo.weekend_date})</b> следующих работников филиала:
+                    <p style="text-indent: 30px; text-align: justify; margin-bottom: 10px;">
+                        В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни следующих работников филиала:
                     </p>
                     ${itemsHtml}
-                    <div style="margin-top: 50px; display: flex; justify-content: space-between; font-weight: bold;">
-                        <div>${memo.signatory.split(' ')[0]}</div>
-                        <div>${memo.signatory.split(' ').slice(1).join(' ')}</div>
+                    <div style="margin-top: 60px; display: flex; justify-content: space-between; font-weight: bold; font-family: 'Times New Roman', serif; font-size: 14px;">
+                        <div style="text-align: left; width: 50%;">${roleStr}</div>
+                        <div style="text-align: right; width: 50%;">${nameStr}</div>
                     </div>
                 </div>
             `;
         } else {
+            // ГРУППИРОВКА ПО ДАТАМ для таблицы ознакомления
             let rowsHtml = '';
             let idx = 1;
 
@@ -477,17 +487,15 @@ function setupWindowFunctions() {
         }
 
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = docxLib;
-        const sigParts = memo.signatory.split(' ');
-        const roleStr = sigParts[0] || 'Инженер по ЭМТП';
-        const nameStr = sigParts.slice(1).join(' ') || 'Волчек А.А.';
+        const roleStr = memo.author_role || 'Инженер по ЭМТП';
+        const nameStr = memo.author_name || 'Волчек А.А.';
 
         const children = [
             new Paragraph({
                 alignment: AlignmentType.RIGHT,
                 spacing: { after: 200 },
                 children: [
-                    new TextRun({ text: "Директору филиала СХК\n«Великополье»\nРунцевичу Д.С.\n\n" + roleStr + "\n", font: "Times New Roman", size: 28 }),
-                    new TextRun({ text: nameStr, bold: true, font: "Times New Roman", size: 28 })
+                    new TextRun({ text: "Директору филиала СХК\n«Великополье»\nРунцевичу Д.С.\n\n", font: "Times New Roman", size: 28 })
                 ]
             }),
             new Paragraph({
@@ -502,42 +510,48 @@ function setupWindowFunctions() {
                 spacing: { after: 200 },
                 alignment: AlignmentType.JUSTIFY,
                 children: [
-                    new TextRun({ text: `В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни `, font: "Times New Roman", size: 28 }),
-                    new TextRun({ text: `(${memo.weekend_date})`, bold: true, font: "Times New Roman", size: 28 }),
-                    new TextRun({ text: ` следующих работников филиала:`, font: "Times New Roman", size: 28 })
+                    new TextRun({ text: `В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни следующих работников филиала:`, font: "Times New Roman", size: 28 })
                 ]
             })
         ];
 
-        const grouped = {};
+        // ГРУППИРОВКА ПО ДАТАМ В WORD
+        const datesGrouped = {};
         memo.items_data.forEach(item => {
-            if (!grouped[item.category]) grouped[item.category] = [];
-            grouped[item.category].push(item);
+            item.dates.forEach(d => {
+                const fDate = formatDate(d);
+                if (!datesGrouped[fDate]) datesGrouped[fDate] = [];
+                datesGrouped[fDate].push(item);
+            });
         });
 
-        let currentNum = 1;
-        for (const cat in grouped) {
-            children.push(new Paragraph({ 
-                spacing: { before: 150, after: 50 },
-                children: [new TextRun({ text: `${cat}:`, bold: true, font: "Times New Roman", size: 28 })] 
+        for (const dStr in datesGrouped) {
+            children.push(new Paragraph({
+                indent: { firstLine: 500 },
+                spacing: { before: 150, after: 80 },
+                children: [
+                    new TextRun({ text: `Прошу привлечь к работе в выходной день ${dStr}:`, bold: true, font: "Times New Roman", size: 28 })
+                ]
             }));
-            
-            grouped[cat].forEach(row => {
+
+            let num = 1;
+            datesGrouped[dStr].forEach(row => {
                 const techStr = (row.tech && row.tech !== 'Без техники') ? ` – ${row.tech}` : '';
                 children.push(new Paragraph({
-                    indent: { left: 400 },
+                    indent: { left: 500 },
                     spacing: { after: 40 },
                     children: [
-                        new TextRun({ text: `${currentNum}. ${row.fio}`, bold: true, font: "Times New Roman", size: 28 }),
-                        new TextRun({ text: `${techStr} - (${row.work});`, font: "Times New Roman", size: 28 })
+                        new TextRun({ text: `${num}. ${row.fio} `, bold: true, font: "Times New Roman", size: 28 }),
+                        new TextRun({ text: `(${row.category})${techStr} - ${row.work};`, font: "Times New Roman", size: 28 })
                     ]
                 }));
-                currentNum++;
+                num++;
             });
         }
 
+        // ИСПРАВЛЕННАЯ ПОДПИСЬ В WORD (Слева должность, Справа имя)
         children.push(new Paragraph({
-            spacing: { before: 600 },
+            spacing: { before: 800 },
             children: [
                 new TextRun({ text: roleStr, font: "Times New Roman", size: 28 }),
                 new TextRun({ text: "\t\t\t\t\t\t" + nameStr, bold: true, font: "Times New Roman", size: 28 })
@@ -585,7 +599,6 @@ function renderDraftTable() {
 }
 
 async function loadArchiveFromSupabase() {
-    // Получаем то, что сохранено локально в браузере
     const localBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
     
     try {
@@ -593,8 +606,6 @@ async function loadArchiveFromSupabase() {
         const { data, error } = await window._supabase.from('weekend_orders_json').select('*').order('id', { ascending: false });
         if (error) throw error;
         
-        // УМНОЕ ОБЪЕДИНЕНИЕ: Берем данные из сервера, но если в локальном бэкапе есть записи,
-        // которых сервер еще не знает (они новые), мы принудительно добавляем их в начало списка.
         const serverData = data || [];
         const combined = [...localBackup];
         
@@ -606,7 +617,6 @@ async function loadArchiveFromSupabase() {
         
         savedMemosArchive = combined.sort((a, b) => b.id - a.id);
     } catch (e) {
-        // Если сервер недоступен или выдал ошибку — берем локальный бэкап
         savedMemosArchive = localBackup.sort((a, b) => b.id - a.id);
     }
     window.renderArchiveRows();
@@ -629,13 +639,14 @@ window.renderArchiveRows = () => {
 
     tbody.innerHTML = filtered.map(memo => {
         const docCategoryName = memo.doc_type === 'weekend_memo' ? '📄 Служебная записка' : '📁 Документ';
+        const displayAuthor = `${memo.author_role || 'Инженер'} ${memo.author_name || 'Волчек А.А.'}`;
         return `
             <tr class="hover:bg-gray-50 transition text-xs font-bold text-gray-800">
                 <td class="p-3 text-gray-400 font-mono">#${memo.id || 'L'}</td>
                 <td class="p-3 text-gray-600">${docCategoryName}</td>
                 <td class="p-3 text-gray-950">${memo.weekend_date}</td>
                 <td class="p-3"><span class="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-black">${memo.items_data ? memo.items_data.length : 0} чел.</span></td>
-                <td class="p-3 text-gray-500 text-[11px] font-medium">${memo.signatory}</td>
+                <td class="p-3 text-gray-500 text-[11px] font-medium">${displayAuthor}</td>
                 <td class="p-3 text-right space-x-1 whitespace-nowrap">
                     <button onclick="window.printOrderDocument('${memo.id}', 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] font-bold transition">👁 Текст</button>
                     <button onclick="window.printOrderDocument('${memo.id}', 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] font-bold transition">📊 Ознакомление</button>
