@@ -27,11 +27,11 @@ const VEHICLES_LIST = [
     "ГАЗ-САЗ 35071", "Рено-Мастер", "Rosa", "FS-80", "КВК-8060", "GS3219", "КЗС-1218", "Без техники"
 ];
 
-// Надежное подключение docx на глобальный уровень окна
+// Надежное подключение библиотеки docx
 if (!window.docx) {
     const script = document.createElement('script');
     script.src = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js";
-    script.onload = () => { console.log("Библиотека DOCX успешно загружена во фронтенд."); };
+    script.onload = () => { console.log("Библиотека DOCX инициализирована."); };
     document.head.appendChild(script);
 }
 
@@ -162,7 +162,7 @@ export const template = `
                     <tr class="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold border-b border-gray-300">
                         <th class="p-3">ID записи</th>
                         <th class="p-3">Категория</th>
-                        <th class="p-3">Дата выхода</th>
+                        <th class="p-3">Даты выхода</th>
                         <th class="p-3">Задействовано</th>
                         <th class="p-3">Составил / Подпись</th>
                         <th class="p-3 text-right">Действия с документом</th>
@@ -209,7 +209,6 @@ function setupWindowFunctions() {
             if(aBtn) aBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md bg-white text-gray-950 shadow-2xs transition";
             if(cBtn) cBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md text-gray-600 hover:text-gray-950 transition";
             
-            // ПРИНУДИТЕЛЬНО ПЕРЕЗАГРУЖАЕМ АРХИВ ПРИ ПЕРЕХОДЕ НА ВКЛАДКУ
             await loadArchiveFromSupabase();
         }
     };
@@ -247,7 +246,7 @@ function setupWindowFunctions() {
         }
 
         currentDraftItems.push({
-            id: Date.now(),
+            id: Date.now() + Math.floor(Math.random() * 1000),
             dates: datesArray,
             category,
             fio,
@@ -278,10 +277,11 @@ function setupWindowFunctions() {
         const authorRole = localStorage.getItem('user_role') || 'Инженер по ЭМТП';
         const authorName = localStorage.getItem('user_name') || 'Волчек А.А.';
         const allDates = [...new Set(currentDraftItems.flatMap(i => i.dates))].sort();
+        const formattedDatesStr = allDates.map(d => formatDate(d)).join(', ');
 
         const documentPayload = {
             doc_type: 'weekend_memo',
-            weekend_date: allDates.map(d => formatDate(d)).join(', '), 
+            weekend_date: formattedDatesStr, 
             reason: 'производственная необходимость',
             signatory: `${authorRole} ${authorName}`,
             items_data: currentDraftItems
@@ -296,7 +296,7 @@ function setupWindowFunctions() {
             renderDraftTable();
             await window.switchDocsSection('archive');
         } catch (err) {
-            console.warn("Сохранение в локальный архив браузера:", err);
+            console.warn("Локальный фолбэк:", err);
             let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
             documentPayload.id = Date.now();
             archiveBackup.push(documentPayload);
@@ -309,10 +309,35 @@ function setupWindowFunctions() {
         }
     };
 
-    // --- ИСПРАВЛЕННАЯ ПЕЧАТЬ ИЗ БРАУЗЕРА БЕЗ ПУСТЫХ ЛИСТОВ ---
+    // --- ФУНКЦИЯ УДАЛЕНИЯ ДОКУМЕНТА ---
+    window.deleteOrderDocument = async (memoId) => {
+        if (!confirm("Вы уверены, что хотите безвозвратно удалить этот документ из архива?")) return;
+
+        try {
+            if (window._supabase) {
+                const { error } = await window._supabase.from('weekend_orders_json').delete().eq('id', memoId);
+                if (error) throw error;
+            }
+        } catch (e) {
+            console.log("Удаление из локального кэша");
+        }
+
+        // Чистим локальный кэш на всякий случай
+        let localData = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
+        localData = localData.filter(m => m.id != memoId);
+        localStorage.setItem('local_memos_backup', JSON.stringify(localData));
+
+        alert("Документ успешно удален из архива.");
+        await loadArchiveFromSupabase();
+    };
+
+    // --- ПЕЧАТЬ ИЗ БРАУЗЕРА ---
     window.printOrderDocument = (memoId, mode) => {
-        const memo = savedMemosArchive.find(m => m.id == memoId);
-        if (!memo) return;
+        const memo = savedMemosArchive.find(m => (m.id == memoId));
+        if (!memo) {
+            alert("Не удалось найти документ в памяти архива!");
+            return;
+        }
 
         const mainContainer = document.querySelector('.no-print-section');
         const printBlock = document.getElementById('cleanPrintBlock');
@@ -346,7 +371,7 @@ function setupWindowFunctions() {
                     </div>
                     <h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 25px; font-family: 'Times New Roman', serif;">СЛУЖЕБНАЯ ЗАПИСКА</h1>
                     <p style="text-indent: 30px; text-align: justify; margin-bottom: 15px;">
-                        В связи с производственной необходимость, прошу Вас привлечь к работе в выходные дни 
+                        В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни 
                         <b>(${memo.weekend_date})</b> следующих работников филиала:
                     </p>
                     ${itemsHtml}
@@ -416,13 +441,12 @@ function setupWindowFunctions() {
         }
     };
 
-    // --- НАДЕЖНОЕ СКАЧИВАНИЕ В WORD (.DOCX) ---
+    // --- СКАЧИВАНИЕ В WORD (.DOCX) ---
     window.downloadOrderDocx = (memoId) => {
         const memo = savedMemosArchive.find(m => m.id == memoId);
         if (!memo) return;
 
         if (!window.docx || !window.docx.Document) {
-            console.log("Ожидание инициализации библиотеки docx...");
             setTimeout(() => { window.downloadOrderDocx(memoId); }, 300);
             return;
         }
@@ -526,12 +550,12 @@ function renderDraftTable() {
 
 async function loadArchiveFromSupabase() {
     try {
-        if (!window._supabase) throw new Error("Supabase не инициализирован");
+        if (!window._supabase) throw new Error("Удаленный доступ к СУБД отсутствует");
         const { data, error } = await window._supabase.from('weekend_orders_json').select('*').order('id', { ascending: false });
         if (error) throw error;
         savedMemosArchive = data || [];
     } catch (e) {
-        console.log("Ошибка СУБД, берем данные из localStorage");
+        console.log("Временная загрузка локального кэша");
         savedMemosArchive = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
     }
     window.renderArchiveRows();
@@ -542,8 +566,8 @@ window.renderArchiveRows = () => {
     if (!tbody) return;
 
     const filterVal = document.getElementById('archiveDocTypeFilter').value;
-    
     let filtered = savedMemosArchive;
+    
     if (filterVal !== 'all') {
         filtered = savedMemosArchive.filter(m => m.doc_type === filterVal);
     }
@@ -554,6 +578,7 @@ window.renderArchiveRows = () => {
     }
 
     tbody.innerHTML = filtered.map(memo => {
+        const currentId = memo.id || Date.now();
         const docCategoryName = memo.doc_type === 'weekend_memo' ? '📄 Служебная записка' : '📁 Документ';
         return `
             <tr class="hover:bg-gray-50 transition text-xs font-bold text-gray-800">
@@ -563,9 +588,10 @@ window.renderArchiveRows = () => {
                 <td class="p-3"><span class="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-black">${memo.items_data ? memo.items_data.length : 0} чел.</span></td>
                 <td class="p-3 text-gray-500 text-[11px] font-medium">${memo.signatory}</td>
                 <td class="p-3 text-right space-x-1 whitespace-nowrap">
-                    <button onclick="window.printOrderDocument(${memo.id || memo.id}, 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] transition">👁 Текст</button>
-                    <button onclick="window.printOrderDocument(${memo.id || memo.id}, 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] transition">📊 Ознакомление</button>
-                    <button onclick="window.downloadOrderDocx(${memo.id || memo.id})" class="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-700 px-2 py-1 rounded-md text-[11px] transition">💾 Word</button>
+                    <button onclick="window.printOrderDocument(${currentId}, 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] transition">👁 Текст</button>
+                    <button onclick="window.printOrderDocument(${currentId}, 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] transition">📊 Ознакомление</button>
+                    <button onclick="window.downloadOrderDocx(${currentId})" class="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-700 px-2 py-1 rounded-md text-[11px] transition">💾 Word</button>
+                    <button onclick="window.deleteOrderDocument(${currentId})" class="bg-red-50 hover:bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded-md text-[11px] transition">❌</button>
                 </td>
             </tr>
         `;
@@ -574,7 +600,7 @@ window.renderArchiveRows = () => {
 
 function formatDate(dateStr) {
     if (!dateStr) return '';
-    if (dateStr.includes('.')) return dateStr; // уже отформатировано
+    if (dateStr.includes('.')) return dateStr;
     const parts = dateStr.split('-');
     if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
     return dateStr;
