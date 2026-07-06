@@ -238,6 +238,10 @@ function setupSubModuleNavigation() {
                     catLabel = '💼 Командировка (Word)'; catColor = 'bg-blue-600 text-white font-black';
                 } else if (f.name.startsWith('battery_')) {
                     catLabel = '🔋 Списание АКБ (Word)'; catColor = 'bg-amber-600 text-white font-black';
+                } else if (f.name.startsWith('absence_')) { // ДОБАВЛЯЕМ ЭТО УСЛОВИЕ
+                    catLabel = '🛑 Прогул (Word)'; 
+                    catColor = 'bg-red-600 text-white font-black';
+                }
                 }
 
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
