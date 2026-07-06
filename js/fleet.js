@@ -178,7 +178,11 @@ let searchQuery = "";
 let selectedCategory = "all";
 let currentSort = "name_asc";
 let refreshIntervalId = null;
-let isCategoriesDropdownOpen = false;
+
+// Безопасное объявление глобального флага для выпадающего списка
+if (typeof window._isCategoriesDropdownOpen === 'undefined') {
+    window._isCategoriesDropdownOpen = false;
+}
 
 export async function init() {
     const searchInput = document.getElementById('vehicleSearchInput');
@@ -298,7 +302,6 @@ function renderCategoriesBar() {
 
     const otherCats = categories.filter(c => c !== 'Без категории');
 
-    // Кнопки "Все" и "Без категории" остаются
     let html = `
         <button onclick="window.filterCategory('all')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${isAllActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">Все</button>
         <button onclick="window.filterCategory('Без категории')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${isNoCatActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">Без категории</button>
@@ -306,10 +309,10 @@ function renderCategoriesBar() {
         <div class="relative inline-block text-left" id="customCategoryDropdownContainer">
             <button onclick="window.toggleCategoryDropdown(event)" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 flex items-center gap-1 bg-gray-50 ${isOtherActive ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-black' : 'border-gray-400 text-gray-900 hover:bg-gray-100'}">
                 <span>${isOtherActive ? selectedCategory : `— Другие категории (${otherCats.length}) —`}</span>
-                <svg class="w-3 h-3 transition-transform ${isCategoriesDropdownOpen ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-3 h-3 transition-transform ${window._isCategoriesDropdownOpen ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
             </button>
             
-            <div class="absolute left-0 mt-1 w-56 max-h-60 overflow-y-auto bg-white border-2 border-gray-400 rounded-lg shadow-xl z-50 py-1 ${isCategoriesDropdownOpen ? '' : 'hidden'}" id="customCategoryDropdownMenu">
+            <div class="absolute left-0 mt-1 w-56 max-h-60 overflow-y-auto bg-white border-2 border-gray-400 rounded-lg shadow-xl z-50 py-1 ${window._isCategoriesDropdownOpen ? '' : 'hidden'}" id="customCategoryDropdownMenu">
                 ${otherCats.map(c => `
                     <button onclick="window.filterCategory('${c.replace(/'/g, "\\'")}')" class="w-full text-left px-3 py-2 text-xs font-bold transition hover:bg-gray-100 ${selectedCategory === c ? 'text-emerald-700 bg-emerald-50 font-black' : 'text-gray-700'}">
                         ${c}
@@ -321,27 +324,36 @@ function renderCategoriesBar() {
 
     bar.innerHTML = html;
 
-    // Функция переключения видимости меню
     window.toggleCategoryDropdown = (e) => {
-        e.stopPropagation(); // Чтобы клик не улетал дальше
-        isCategoriesDropdownOpen = !isCategoriesDropdownOpen;
+        e.stopPropagation();
+        window._isCategoriesDropdownOpen = !window._isCategoriesDropdownOpen;
         
         const menu = document.getElementById('customCategoryDropdownMenu');
         if (menu) {
-            menu.classList.toggle('hidden', !isCategoriesDropdownOpen);
+            menu.classList.toggle('hidden', !window._isCategoriesDropdownOpen);
         }
-        // Разворачиваем стрелочку svg
         const svg = e.currentTarget.querySelector('svg');
-        if (svg) svg.classList.toggle('rotate-180', isCategoriesDropdownOpen);
+        if (svg) svg.classList.toggle('rotate-180', window._isCategoriesDropdownOpen);
     };
 
     window.filterCategory = (cat) => {
         if (!cat) return;
         selectedCategory = cat;
-        isCategoriesDropdownOpen = false; // Закрываем при выборе
+        window._isCategoriesDropdownOpen = false;
         renderCategoriesBar();
         renderFleet();
     };
+}
+
+if (!window._categoryDropdownClickSetup) {
+    document.addEventListener('click', () => {
+        if (window._isCategoriesDropdownOpen) {
+            window._isCategoriesDropdownOpen = false;
+            const menu = document.getElementById('customCategoryDropdownMenu');
+            if (menu) menu.classList.add('hidden');
+        }
+    });
+    window._categoryDropdownClickSetup = true;
 }
 
 // Добавим глобальный клик: если кликнуть мимо меню, оно закроется
@@ -360,6 +372,8 @@ function renderFleet() {
     const container = document.getElementById('fleetGridContainer');
     if (!container) return;
 
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
         searchQuery = searchInput.value.toLowerCase().trim();
@@ -498,6 +512,7 @@ function renderFleet() {
     });
 
     container.innerHTML = html || `<div class="text-center text-gray-500 py-10 text-xs font-bold">Техника не найдена</div>`;
+    window.scrollTo(window.scrollX, scrollTop);
 }
 
 function openVehicleModal(vehicle = null) {
