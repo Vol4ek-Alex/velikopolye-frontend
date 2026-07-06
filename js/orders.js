@@ -27,14 +27,11 @@ const VEHICLES_LIST = [
     "ГАЗ-САЗ 35071", "Рено-Мастер", "Rosa", "FS-80", "КВК-8060", "GS3219", "КЗС-1218", "Без техники"
 ];
 
-// Гарантированное и надежное подключение библиотеки docx в глобальное окно window
-if (!window.docx) {
+// Подключаем docx, если ещё не подключен
+if (!window.docx && !window.Docx) {
     const script = document.createElement('script');
     script.src = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js";
-    script.onload = () => { 
-        window.docx = window.docx || window.Docx;
-        console.log("Библиотека DOCX успешно подключена к глобальному контексту."); 
-    };
+    script.onload = () => { console.log("Библиотека DOCX готова к работе."); };
     document.head.appendChild(script);
 }
 
@@ -58,7 +55,6 @@ export const template = `
         margin: 0 !important;
         padding: 0 !important;
     }
-    /* Скрываем боковую панель АРМ, шапки, футеры и контейнеры */
     aside, nav, header, footer, .no-print-section, button {
         display: none !important;
         opacity: 0 !important;
@@ -323,7 +319,12 @@ function setupWindowFunctions() {
             alert("Служебная записка успешно зафиксирована в реестре документов!");
             currentDraftItems = [];
             renderDraftTable();
-            await loadArchiveFromSupabase(); // Принудительно обновляем память архива СРАЗУ ПОСЛЕ сохранения
+            
+            // Сбрасываем фильтр на "Все", чтобы новый документ гарантированно отобразился
+            const filterSelect = document.getElementById('archiveDocTypeFilter');
+            if (filterSelect) filterSelect.value = 'all';
+
+            await loadArchiveFromSupabase(); 
             await window.switchDocsSection('archive');
         } catch (err) {
             console.warn("Локальный фолбэк кэширования:", err);
@@ -335,6 +336,10 @@ function setupWindowFunctions() {
             alert("Документ сохранен в локальный кэш браузера!");
             currentDraftItems = [];
             renderDraftTable();
+            
+            const filterSelect = document.getElementById('archiveDocTypeFilter');
+            if (filterSelect) filterSelect.value = 'all';
+
             savedMemosArchive = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
             window.renderArchiveRows();
             await window.switchDocsSection('archive');
@@ -384,7 +389,6 @@ function setupWindowFunctions() {
                 itemsHtml += `<p style="margin-top: 10px; margin-bottom: 2px; font-weight: bold; font-family: 'Times New Roman', serif; font-size: 14px;">${cat}:</p>`;
                 grouped[cat].forEach(row => {
                     const techStr = (row.tech && row.tech !== 'Без техники') ? ` – <b>${row.tech}</b>` : '';
-                    // СТРОГИЙ ВАР ИАНТ: Лишняя дата возле ФИО убрана!
                     itemsHtml += `<p style="margin-left: 25px; margin-top: 1px; margin-bottom: 1px; font-family: 'Times New Roman', serif; font-size: 14px;"><b>${currentNum}. ${row.fio}</b>${techStr} - (${row.work});</p>`;
                     currentNum++;
                 });
@@ -457,9 +461,7 @@ function setupWindowFunctions() {
 
         if(printBlock) {
             printBlock.innerHTML = htmlContent;
-            // Вызываем нативное окно печати
             window.print();
-            // После закрытия окна очищаем скрытый буфер
             printBlock.innerHTML = '';
         }
     };
@@ -471,10 +473,9 @@ function setupWindowFunctions() {
             return;
         }
 
-        // Страховка от долгой загрузки скрипта docx с CDN
         const docxLib = window.docx || window.Docx;
         if (!docxLib || !docxLib.Document) {
-            alert("Библиотека экспорта Word всё ещё инициализируется. Подождите пару секунд.");
+            alert("Повторите попытку. Модуль Word загружается.");
             return;
         }
 
@@ -527,7 +528,6 @@ function setupWindowFunctions() {
             
             grouped[cat].forEach(row => {
                 const techStr = (row.tech && row.tech !== 'Без техники') ? ` – ${row.tech}` : '';
-                // СТРОГИЙ ВАР ИАНТ: Из строки формирования убраны лишние даты дубликаты!
                 children.push(new Paragraph({
                     indent: { left: 400 },
                     spacing: { after: 40 },
@@ -608,11 +608,11 @@ window.renderArchiveRows = () => {
     if (!tbody) return;
 
     const filterVal = document.getElementById('archiveDocTypeFilter').value;
-    let filtered = savedMemosArchive;
     
-    if (filterVal !== 'all') {
-        filtered = savedMemosArchive.filter(m => m.doc_type === filterVal);
-    }
+    // ФИКС ФИЛЬТРАЦИИ: Если выбран фильтр 'all', берем весь архив. Если конкретная категория — фильтруем.
+    let filtered = (filterVal === 'all') 
+        ? savedMemosArchive 
+        : savedMemosArchive.filter(m => m.doc_type === filterVal);
 
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-400">В выбранной категории документы отсутствуют.</td></tr>`;
