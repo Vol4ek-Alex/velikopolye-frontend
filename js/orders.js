@@ -128,14 +128,12 @@ export const template = `
 export function init() {
     setupSubModuleNavigation();
     
-    // Выставляем текущую дату по умолчанию
     const today = new Date().toISOString().split('T')[0];
     const docDateInput = document.getElementById('tripDocDate');
     const targetDateInput = document.getElementById('tripTargetDate');
     if (docDateInput) docDateInput.value = today;
     if (targetDateInput) targetDateInput.value = today;
 
-    // Предустановка дефолтных значений для полей назначения и цели
     const destInput = document.getElementById('tripDestinationInput');
     const purpInput = document.getElementById('tripPurposeInput');
     if (destInput) destInput.value = "город Дзержинск";
@@ -203,25 +201,28 @@ function setupSubModuleNavigation() {
 
         return `
             <div style="font-family: 'Times New Roman', serif; color: black; font-size: 14px; line-height: 1.5; max-width: 650px; margin: 0 auto; padding: 10px;">
-                <div style="margin-left: auto; width: 260px; margin-bottom: 45px; font-size: 14px; text-align: left; font-family: 'Times New Roman', serif;">
-                    Директору филиала<br>СХК «Великополье»<br><span style="border-bottom: 1px dashed black;">Рунцевичу</span> Д.С.<br>
-                    Заместителя директора –<br>главного инженера<br>Маковича М.П.
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 55px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                    <div style="padding-top: 0px; font-weight: normal; color: black;">
+                        ${docDate}
+                    </div>
+                    
+                    <div style="width: 260px; text-align: left; line-height: 1.4;">
+                        Директору филиала<br>СХК «Великополье»<br><span style="border-bottom: 1px dashed black;">Рунцевичу</span> Д.С.<br>
+                        Заместителя директора –<br>главого инженера<br>Маковича М.П.
+                    </div>
                 </div>
 
-                <div style="margin-bottom: 30px; font-family: 'Times New Roman', serif; font-size: 14px; padding-left: 40px;">
-                    ${docDate}
-                </div>
-
-                <h1 style="text-align: center; font-size: 15px; font-weight: bold; margin-bottom: 25px; font-family: 'Times New Roman', serif; letter-spacing: 0.5px;">
+                <h1 style="text-align: center; font-size: 15px; font-weight: bold; margin-bottom: 30px; font-family: 'Times New Roman', serif; letter-spacing: 0.5px;">
                     Служебная записка
                 </h1>
                 
-                <p style="text-align: justify; text-indent: 40px; margin-bottom: 50px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                <p style="text-align: justify; text-indent: 40px; margin-bottom: 60px; font-family: 'Times New Roman', serif; font-size: 14px;">
                     Прошу вас, командировать водителя автомобиля <span style="border-bottom: 1px dashed black;">${driverName}</span> в <span style="border-bottom: 1px dashed black;">${destination}</span>, по вопросу <span style="border-bottom: 1px dashed black;">${purpose}</span> <span style="border-bottom: 1px dashed black;">${targetDate}г.</span>
                 </p>
                 
                 <div style="margin-top: 60px; display: flex; justify-content: space-between; font-family: 'Times New Roman', serif; font-size: 14px;">
-                    <div style="text-align: left; width: 60%;">
+                    <div style="text-align: left; width: 60%; line-height: 1.4;">
                         Заместитель директора –<br>Главный инженер
                     </div>
                     <div style="text-align: right; width: 40%; display: flex; align-items: flex-end; justify-content: flex-end;">
