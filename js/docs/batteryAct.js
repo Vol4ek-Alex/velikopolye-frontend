@@ -1,13 +1,5 @@
 // js/docs/batteryAct.js
 
-const BATTERY_MODELS = [
-    { name: "6СТ-190 АБ-3 URA6AH (40 кг)", leadWeight: 40 },
-    { name: "6СТ-90 (20 кг)", leadWeight: 20 },
-    { name: "6СТ-60 (12 кг)", leadWeight: 12 }
-];
-
-const modelOptionsHtml = BATTERY_MODELS.map(m => '<option value="' + m.name + '">' + m.name + '</option>').join('');
-
 export const batteryTemplate = `
 <div id="subModule_battery_act" class="hidden space-y-4 fade-in-sub">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -19,32 +11,27 @@ export const batteryTemplate = `
                 <input type="date" id="batteryDocDate" oninput="window.updateBatteryPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
             </div>
 
-            <div>
-                <label class="block text-[10px] font-bold text-gray-700 mb-1">Тип/Марка АКБ</label>
-                <select id="batteryModelSelect" onchange="window.handleBatteryModelChange()" class="w-full bg-white border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                    ` + modelOptionsHtml + `
-                </select>
-            </div>
-
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-700 mb-1">Количество (шт)</label>
-                    <input type="number" id="batteryCountInput" value="2" min="1" oninput="window.updateBatteryPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
+                    <label class="block text-[10px] font-bold text-gray-700 mb-1">Автомобиль / Техника</label>
+                    <input type="text" id="batteryCarDoc" value="МАЗ-533702" oninput="window.updateBatteryPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Марка машины">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-700 mb-1">Срок экспл. (мес)</label>
-                    <input type="number" id="batteryPeriodInput" value="30" oninput="window.updateBatteryPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
+                    <label class="block text-[10px] font-bold text-gray-700 mb-1">Инвентарный номер</label>
+                    <input type="text" id="batteryInvNo" value="№ 347" oninput="window.updateBatteryPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
                 </div>
             </div>
 
-            <div>
-                <label class="block text-[10px] font-bold text-gray-700 mb-1">Автомобиль (Гос. номер)</label>
-                <input type="text" id="batteryCarDoc" value="МАЗ-533702" oninput="window.updateBatteryPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-            </div>
-
-            <div>
-                <label class="block text-[10px] font-bold text-gray-700 mb-1">Инвентарный номер</label>
-                <input type="text" id="batteryInvNo" value="№ 347" oninput="window.updateBatteryPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
+            <div class="border-t border-b border-gray-200 py-3 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-[11px] font-black text-gray-600 uppercase tracking-wider">Список АКБ в акте:</span>
+                    <button onclick="window.addBatteryRow()" class="text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-300 px-2 py-0.5 rounded font-bold transition">
+                        ➕ Добавить АКБ
+                    </button>
+                </div>
+                
+                <div id="batteryRowsContainer" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                    </div>
             </div>
 
             <button onclick="window.printAndSaveBattery()" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-lg font-bold transition shadow-xs text-xs flex items-center justify-center gap-2">
@@ -60,8 +47,74 @@ export const batteryTemplate = `
 `;
 
 export function initBatteryAct() {
-    window.handleBatteryModelChange = () => {
+    // Внутренний массив для хранения списка добавленных АКБ
+    let batteryItems = [
+        { id: Date.now(), name: "6СТ-190 АБ-3 URA6AH", count: 2, period: 30, weight: 80 }
+    ];
+
+    window.addBatteryRow = () => {
+        batteryItems.push({
+            id: Date.now(),
+            name: "6СТ-190",
+            count: 1,
+            period: 24,
+            weight: 40
+        });
+        window.renderBatteryInputs();
         window.updateBatteryPreview();
+    };
+
+    window.removeBatteryRow = (id) => {
+        if (batteryItems.length <= 1) {
+            alert("В акте должна быть как минимум одна аккумуляторная батарея!");
+            return;
+        }
+        batteryItems = batteryItems.filter(item => item.id !== id);
+        window.renderBatteryInputs();
+        window.updateBatteryPreview();
+    };
+
+    window.handleBatteryInputChange = (id, field, value) => {
+        const item = batteryItems.find(i => i.id === id);
+        if (item) {
+            if (field === 'name') item.name = value;
+            if (field === 'count') item.count = parseInt(value) || 0;
+            if (field === 'period') item.period = value;
+            if (field === 'weight') item.weight = parseFloat(value) || 0;
+        }
+        window.updateBatteryPreview();
+    };
+
+    window.renderBatteryInputs = () => {
+        const container = document.getElementById('batteryRowsContainer');
+        if (!container) return;
+
+        container.innerHTML = batteryItems.map((item, index) => `
+            <div class="p-2.5 bg-gray-50 border border-gray-300 rounded-lg space-y-2 relative">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-gray-500">Батарея #${index + 1}</span>
+                    <button onclick="window.removeBatteryRow(${item.id})" class="text-red-500 hover:text-red-700 text-[10px] font-bold">Удалить</button>
+                </div>
+                <div>
+                    <label class="block text-[9px] font-bold text-gray-600 mb-0.5">Наименование АКБ (вручную)</label>
+                    <input type="text" value="${item.name}" oninput="window.handleBatteryInputChange(${item.id}, 'name', this.value)" class="w-full bg-white border border-gray-300 rounded p-1 text-xs font-semibold focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <div>
+                        <label class="block text-[9px] font-bold text-gray-600 mb-0.5">Кол-во (шт)</label>
+                        <input type="number" value="${item.count}" min="1" oninput="window.handleBatteryInputChange(${item.id}, 'count', this.value)" class="w-full bg-white border border-gray-300 rounded p-1 text-xs font-semibold focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-gray-600 mb-0.5">Срок (мес)</label>
+                        <input type="number" value="${item.period}" oninput="window.handleBatteryInputChange(${item.id}, 'period', this.value)" class="w-full bg-white border border-gray-300 rounded p-1 text-xs font-semibold focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-gray-600 mb-0.5">Общий вес (кг)</label>
+                        <input type="number" value="${item.weight}" oninput="window.handleBatteryInputChange(${item.id}, 'weight', this.value)" class="w-full bg-white border border-gray-300 rounded p-1 text-xs font-semibold focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+        `).join('');
     };
 
     function formatBatteryDate(dateStr) {
@@ -73,17 +126,22 @@ export function initBatteryAct() {
 
     window.generateBatteryHtmlContent = () => {
         const actDate = formatBatteryDate(document.getElementById('batteryDocDate')?.value);
-        const modelName = document.getElementById('batteryModelSelect')?.value || '';
-        const count = parseInt(document.getElementById('batteryCountInput')?.value || '1');
-        const period = document.getElementById('batteryPeriodInput')?.value || '30';
         const car = document.getElementById('batteryCarDoc')?.value || '';
         const invNo = document.getElementById('batteryInvNo')?.value || '';
 
-        // Вычисляем вес свинца
-        const selectedModel = BATTERY_MODELS.find(m => m.name === modelName) || BATTERY_MODELS[0];
-        const totalWeight = selectedModel.leadWeight * count;
+        // Вычисляем суммарный вес и формируем текстовые блоки для каждой АКБ
+        let totalWeightAll = 0;
+        
+        const linesHtml = batteryItems.map(item => {
+            totalWeightAll += item.weight;
+            return `<strong>${item.name}</strong> в количестве ${item.count} шт. в процессе эксплуатации (${item.period} месяцев) пришла в негодность`;
+        }).join(', а также ');
 
-        return '<div style="font-family: \'Times New Roman\', serif; color: black; font-size: 14px; line-height: 1.4; max-width: 650px; margin: 0 auto; padding: 10px;">' +
+        const listDetailsHtml = batteryItems.map(item => {
+            return `• ${item.name} - ${item.count} шт. (${item.weight} кг);`;
+        }).join('<br>');
+
+        return '<div style="font-family: \'Times New Roman\', serif; color: black; font-size: 14px; line-height: 1.5; max-width: 650px; margin: 0 auto; padding: 10px;">' +
             '<div style="text-align: left; margin-bottom: 30px; font-size: 13px;">' +
                 'Филиал СХК «Великополье»<br>ГП «Минсктранс»' +
             '</div>' +
@@ -93,26 +151,26 @@ export function initBatteryAct() {
                 'д. Великополье<br>' +
                 'О списании аккумуляторной батареи' +
             '</div>' +
-            '<div style="margin-bottom: 20px; text-align: justify;">' +
+            '<div style="margin-bottom: 25px; text-align: justify;">' +
                 '<u>Составил: Волчек</u> А.А. – Инженер по ЭМТП<br>' +
                 'в присутствии: Макович М.П. – Заместитель директора – главный инженер<br>' +
                 '<span style="padding-left: 82px;">Манулик Е.И. - Кладовщик</span><br>' +
                 '<span style="padding-left: 82px;">Ладутько И.И. - Техник</span>' +
             '</div>' +
             '<p style="text-align: justify; text-indent: 40px; margin-bottom: 20px;">' +
-                'Мы, <u>нижеподписавшиеся</u>, настоящим актом удостоверяем, что следующие аккумуляторная батарея в количестве ' + count + ' шт. в процессе эксплуатации (' + period + ' месяцев) пришла в негодность и подлежит списанию с последующим <u>оприходованием</u> на склад в качестве лома свинца суммарным весом ' + totalWeight + ' кг:' +
+                'Мы, <u>нижеподписавшиеся</u>, настоящим актом удостоверяем, что следующие аккумуляторная батарея: ' + linesHtml + ' и подлежит списанию с последующим <u>оприходованием</u> на склад в качестве лома свинца суммарным весом ' + totalWeightAll + ' кг:' +
             '</p>' +
-            '<div style="margin-bottom: 40px; padding-left: 40px; font-weight: bold;">' +
-                modelName + ' - ' + count + ' шт. (' + totalWeight + ' кг);<br>' +
+            '<div style="margin-bottom: 40px; padding-left: 40px; font-weight: bold; line-height: 1.6;">' +
+                listDetailsHtml + '<br>' +
                 'Автомобиль: ' + car + ', инв. ' + invNo +
             '</div>' +
-            '<div style="margin-top: 50px; space-y-3">' +
-                '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><div>Волчек А.А.</div><div>___________________________</div></div>' +
-                '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><div>Макович М.П.</div><div>___________________________</div></div>' +
-                '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><div>Манулик Е.И.</div><div>___________________________</div></div>' +
-                '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><div>Ладутько И.И.</div><div>___________________________</div></div>' +
-                '</div>' +
-            '</div>';
+            '<div style="margin-top: 50px; font-size: 14px;">' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><div>Волчек А.А.</div><div>___________________________</div></div>' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><div>Макович М.П.</div><div>___________________________</div></div>' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><div>Манулик Е.И.</div><div>___________________________</div></div>' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><div>Ладутько И.И.</div><div>___________________________</div></div>' +
+            '</div>' +
+        '</div>';
     };
 
     window.updateBatteryPreview = () => {
@@ -122,7 +180,6 @@ export function initBatteryAct() {
 
     window.printAndSaveBattery = async () => {
         const htmlContent = window.generateBatteryHtmlContent();
-        
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
             printBlock.innerHTML = htmlContent;
@@ -157,11 +214,17 @@ export function initBatteryAct() {
 
             if (error) throw error;
 
-            alert('Акт успешно распечатан и сохранен в общий архив как WORD (.doc)!');
+            alert('Множественный акт успешно сохранен в архив как WORD (.doc)!');
             if (typeof window.loadTripStorageHistory === 'function') window.loadTripStorageHistory();
 
         } catch (err) {
-            alert('Ошибка сохранения в архив: ' + err.message);
+            alert('Ошибка архивации: ' + err.message);
         }
     };
+
+    // Первичный запуск интерфейса ввода
+    setTimeout(() => {
+        window.renderBatteryInputs();
+        window.updateBatteryPreview();
+    }, 50);
 }
