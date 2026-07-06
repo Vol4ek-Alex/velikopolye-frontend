@@ -167,6 +167,11 @@ export const template = `
     </div>
 `;
 
+// Безопасная инициализация флага кастомного выпадающего списка во избежание Block-scope ошибок повторного объявления
+if (typeof window._isCategoriesDropdownOpen === 'undefined') {
+    window._isCategoriesDropdownOpen = false;
+}
+
 // Динамические массивы данных синхронизируются напрямую с Supabase
 let vehicles = [];
 let tasks = [];
@@ -178,11 +183,6 @@ let searchQuery = "";
 let selectedCategory = "all";
 let currentSort = "name_asc";
 let refreshIntervalId = null;
-
-// Безопасное объявление глобального флага для выпадающего списка
-if (typeof window._isCategoriesDropdownOpen === 'undefined') {
-    window._isCategoriesDropdownOpen = false;
-}
 
 export async function init() {
     const searchInput = document.getElementById('vehicleSearchInput');
@@ -227,7 +227,7 @@ export async function init() {
 async function loadAllData(isFirstLoad = false) {
     if (!window._supabase) return;
     try {
-        // Запрашиваем все связанные таблицы параллельно
+        // Запрашиваем все связанные таблицы параллельно (быстрее и эффективнее)
         const [resVehicles, resTasks, resDrivers, resCategories, resTags] = await Promise.all([
             window._supabase.from('vehicles').select('*'),
             window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false),
@@ -239,7 +239,6 @@ async function loadAllData(isFirstLoad = false) {
         if (!resVehicles.error && resVehicles.data) vehicles = resVehicles.data;
         if (!resTasks.error && resTasks.data) tasks = resTasks.data;
         
-        // Переменная для отслеживания изменений в составе категорий
         let categoriesChanged = false;
         
         // Маппинг данных из новых таблиц
@@ -251,7 +250,6 @@ async function loadAllData(isFirstLoad = false) {
             const newCategories = resCategories.data.map(c => c.name);
             if (!newCategories.includes("Без категории")) newCategories.push("Без категории");
             
-            // Если состав категорий изменился по сравнению с прошлым разом — ставим флаг
             if (JSON.stringify(categories) !== JSON.stringify(newCategories)) {
                 categories = newCategories;
                 categoriesChanged = true;
@@ -271,8 +269,7 @@ async function loadAllData(isFirstLoad = false) {
             }
         });
 
-        // ПРАВИЛЬНОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА:
-        // Рендерим бар категорий ТОЛЬКО при первой загрузке или если категории РЕАЛЬНО изменились в БД
+        // Панель категорий перерисовываем только если они реально изменились, либо при первой загрузке
         if (isFirstLoad || categoriesChanged) {
             renderCategoriesBar();
         }
@@ -284,13 +281,11 @@ async function loadAllData(isFirstLoad = false) {
             if (!document.getElementById('categoriesModal').classList.contains('hidden')) updateCategoriesDOMList();
         }
         
-        // Карточки техники можно обновлять каждые 5 сек — это не мешает селектам вверху
         renderFleet();
     } catch (e) {
         console.error("Ошибка синхронизации данных автопарка:", e);
     }
 }
-
 
 function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
@@ -345,6 +340,7 @@ function renderCategoriesBar() {
     };
 }
 
+// Глобальный обработчик закрытия кастомного списка по клику вовне
 if (!window._categoryDropdownClickSetup) {
     document.addEventListener('click', () => {
         if (window._isCategoriesDropdownOpen) {
@@ -356,24 +352,13 @@ if (!window._categoryDropdownClickSetup) {
     window._categoryDropdownClickSetup = true;
 }
 
-// Добавим глобальный клик: если кликнуть мимо меню, оно закроется
-if (!window._categoryDropdownClickSetup) {
-    document.addEventListener('click', () => {
-        if (isCategoriesDropdownOpen) {
-            isCategoriesDropdownOpen = false;
-            const menu = document.getElementById('customCategoryDropdownMenu');
-            if (menu) menu.classList.add('hidden');
-        }
-    });
-    window._categoryDropdownClickSetup = true;
-}
-
 function renderFleet() {
     const container = document.getElementById('fleetGridContainer');
     if (!container) return;
 
+    // Фиксация текущей позиции скролла перед рендером
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    
+
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
         searchQuery = searchInput.value.toLowerCase().trim();
@@ -386,7 +371,7 @@ function renderFleet() {
         const invStr = v.inv_number ? v.inv_number.toLowerCase() : '';
         const vinStr = v.vin_number ? v.vin_number.toLowerCase() : '';
         const tagsStr = v.tags ? v.tags.toLowerCase() : '';
-        const driverStr = v.notes ? v.notes.toLowerCase() : ''; 
+        const driverStr = v.notes ? v.notes.toLowerCase() : '';
 
         const queryMatch = modelStr.includes(searchQuery) || plateStr.includes(searchQuery) || invStr.includes(searchQuery) || vinStr.includes(searchQuery) || tagsStr.includes(searchQuery) || driverStr.includes(searchQuery);
         if (!queryMatch) return false;
@@ -512,6 +497,8 @@ function renderFleet() {
     });
 
     container.innerHTML = html || `<div class="text-center text-gray-500 py-10 text-xs font-bold">Техника не найдена</div>`;
+
+    // Мгновенное восстановление скролла на прежнее место после апдейта HTML
     window.scrollTo(window.scrollX, scrollTop);
 }
 
@@ -528,7 +515,7 @@ function openVehicleModal(vehicle = null) {
 
     const driverSelect = document.getElementById('vDriver');
     if (driverSelect) {
-        driverSelect.innerHTML = `<option value="">— Не закреплен —</option>` + 
+        driverSelect.innerHTML = `<option value="">— Не закреплен —</option>` +
             drivers.map(d => `<option value="${d}">${d}</option>`).join('');
     }
 
