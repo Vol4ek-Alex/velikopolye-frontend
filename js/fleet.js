@@ -178,6 +178,7 @@ let searchQuery = "";
 let selectedCategory = "all";
 let currentSort = "name_asc";
 let refreshIntervalId = null;
+let isCategoriesDropdownOpen = false;
 
 export async function init() {
     const searchInput = document.getElementById('vehicleSearchInput');
@@ -286,6 +287,7 @@ async function loadAllData(isFirstLoad = false) {
     }
 }
 
+
 function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
     if (!bar) return;
@@ -296,26 +298,62 @@ function renderCategoriesBar() {
 
     const otherCats = categories.filter(c => c !== 'Без категории');
 
+    // Кнопки "Все" и "Без категории" остаются
     let html = `
         <button onclick="window.filterCategory('all')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${isAllActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">Все</button>
         <button onclick="window.filterCategory('Без категории')" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 ${isNoCatActive ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-400 text-gray-900 hover:bg-gray-100'}">Без категории</button>
         
-        <div class="relative inline-block">
-            <select onchange="window.filterCategory(this.value)" class="px-2 py-1 text-xs font-bold rounded-md transition border-2 bg-gray-50 ${isOtherActive ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-black' : 'border-gray-400 text-gray-900 hover:bg-gray-100'}">
-                <option value="" disabled ${!isOtherActive ? 'selected' : ''}>— Другие категории (${otherCats.length}) —</option>
-                ${otherCats.map(c => `<option value="${c}" ${selectedCategory === c ? 'selected' : ''}>${c}</option>`).join('')}
-            </select>
+        <div class="relative inline-block text-left" id="customCategoryDropdownContainer">
+            <button onclick="window.toggleCategoryDropdown(event)" class="px-3 py-1 text-xs font-bold rounded-md transition border-2 flex items-center gap-1 bg-gray-50 ${isOtherActive ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-black' : 'border-gray-400 text-gray-900 hover:bg-gray-100'}">
+                <span>${isOtherActive ? selectedCategory : `— Другие категории (${otherCats.length}) —`}</span>
+                <svg class="w-3 h-3 transition-transform ${isCategoriesDropdownOpen ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            
+            <div class="absolute left-0 mt-1 w-56 max-h-60 overflow-y-auto bg-white border-2 border-gray-400 rounded-lg shadow-xl z-50 py-1 ${isCategoriesDropdownOpen ? '' : 'hidden'}" id="customCategoryDropdownMenu">
+                ${otherCats.map(c => `
+                    <button onclick="window.filterCategory('${c.replace(/'/g, "\\'")}')" class="w-full text-left px-3 py-2 text-xs font-bold transition hover:bg-gray-100 ${selectedCategory === c ? 'text-emerald-700 bg-emerald-50 font-black' : 'text-gray-700'}">
+                        ${c}
+                    </button>
+                `).join('')}
+            </div>
         </div>
     `;
 
     bar.innerHTML = html;
 
+    // Функция переключения видимости меню
+    window.toggleCategoryDropdown = (e) => {
+        e.stopPropagation(); // Чтобы клик не улетал дальше
+        isCategoriesDropdownOpen = !isCategoriesDropdownOpen;
+        
+        const menu = document.getElementById('customCategoryDropdownMenu');
+        if (menu) {
+            menu.classList.toggle('hidden', !isCategoriesDropdownOpen);
+        }
+        // Разворачиваем стрелочку svg
+        const svg = e.currentTarget.querySelector('svg');
+        if (svg) svg.classList.toggle('rotate-180', isCategoriesDropdownOpen);
+    };
+
     window.filterCategory = (cat) => {
         if (!cat) return;
         selectedCategory = cat;
+        isCategoriesDropdownOpen = false; // Закрываем при выборе
         renderCategoriesBar();
         renderFleet();
     };
+}
+
+// Добавим глобальный клик: если кликнуть мимо меню, оно закроется
+if (!window._categoryDropdownClickSetup) {
+    document.addEventListener('click', () => {
+        if (isCategoriesDropdownOpen) {
+            isCategoriesDropdownOpen = false;
+            const menu = document.getElementById('customCategoryDropdownMenu');
+            if (menu) menu.classList.add('hidden');
+        }
+    });
+    window._categoryDropdownClickSetup = true;
 }
 
 function renderFleet() {
