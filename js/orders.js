@@ -27,11 +27,14 @@ const VEHICLES_LIST = [
     "ГАЗ-САЗ 35071", "Рено-Мастер", "Rosa", "FS-80", "КВК-8060", "GS3219", "КЗС-1218", "Без техники"
 ];
 
-// Надежное динамическое подключение библиотеки docx
+// Гарантированное и надежное подключение библиотеки docx в глобальное окно window
 if (!window.docx) {
     const script = document.createElement('script');
     script.src = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js";
-    script.onload = () => { console.log("Библиотека DOCX успешно подключена."); };
+    script.onload = () => { 
+        window.docx = window.docx || window.Docx;
+        console.log("Библиотека DOCX успешно подключена к глобальному контексту."); 
+    };
     document.head.appendChild(script);
 }
 
@@ -39,6 +42,30 @@ let currentDraftItems = [];
 let savedMemosArchive = [];
 
 export const template = `
+<style>
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #cleanPrintBlock, #cleanPrintBlock * {
+        visibility: visible !important;
+    }
+    #cleanPrintBlock {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    /* Скрываем боковую панель АРМ, шапки, футеры и контейнеры */
+    aside, nav, header, footer, .no-print-section, button {
+        display: none !important;
+        opacity: 0 !important;
+    }
+}
+</style>
+
 <div class="space-y-6 no-print-section">
     <div class="bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs">
         <h2 class="text-xl font-bold text-gray-950 tracking-tight">📁 Электронный документооборот</h2>
@@ -178,7 +205,7 @@ export const template = `
     </div>
 </div>
 
-<div id="cleanPrintBlock" class="hidden"></div>
+<div id="cleanPrintBlock"></div>
 `;
 
 export async function init() {
@@ -290,13 +317,13 @@ function setupWindowFunctions() {
         try {
             if (!window._supabase) throw new Error("Нет СУБД");
             
-            // ВАЖНО: Добавлен .select() возвращающий созданный ID от сервера БД наружу
             const { data, error } = await window._supabase.from('weekend_orders_json').insert([documentPayload]).select();
             if (error) throw error;
 
             alert("Служебная записка успешно зафиксирована в реестре документов!");
             currentDraftItems = [];
             renderDraftTable();
+            await loadArchiveFromSupabase(); // Принудительно обновляем память архива СРАЗУ ПОСЛЕ сохранения
             await window.switchDocsSection('archive');
         } catch (err) {
             console.warn("Локальный фолбэк кэширования:", err);
@@ -308,6 +335,8 @@ function setupWindowFunctions() {
             alert("Документ сохранен в локальный кэш браузера!");
             currentDraftItems = [];
             renderDraftTable();
+            savedMemosArchive = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
+            window.renderArchiveRows();
             await window.switchDocsSection('archive');
         }
     };
@@ -335,13 +364,11 @@ function setupWindowFunctions() {
     window.printOrderDocument = (memoId, mode) => {
         const memo = savedMemosArchive.find(m => String(m.id) === String(memoId));
         if (!memo) {
-            alert("Не удалось найти документ в памяти архива! Попробуйте обновить вкладку.");
+            alert("Не удалось найти документ в памяти архива! Попробуйте обновить страницу.");
             return;
         }
 
-        const mainContainer = document.querySelector('.no-print-section');
         const printBlock = document.getElementById('cleanPrintBlock');
-        
         let htmlContent = '';
 
         if (mode === 'text') {
@@ -354,11 +381,11 @@ function setupWindowFunctions() {
             let currentNum = 1;
             let itemsHtml = '';
             for (const cat in grouped) {
-                itemsHtml += `<p style="margin-top: 10px; margin-bottom: 2px; font-weight: bold; font-family: 'Times New Roman', serif;">${cat}:</p>`;
+                itemsHtml += `<p style="margin-top: 10px; margin-bottom: 2px; font-weight: bold; font-family: 'Times New Roman', serif; font-size: 14px;">${cat}:</p>`;
                 grouped[cat].forEach(row => {
-                    const formattedDates = row.dates.map(d => formatDate(d)).join(' и ');
                     const techStr = (row.tech && row.tech !== 'Без техники') ? ` – <b>${row.tech}</b>` : '';
-                    itemsHtml += `<p style="margin-left: 25px; margin-top: 1px; margin-bottom: 1px; font-family: 'Times New Roman', serif;"><b>${currentNum}. ${row.fio}</b> (${formattedDates})${techStr} - (${row.work});</p>`;
+                    // СТРОГИЙ ВАР ИАНТ: Лишняя дата возле ФИО убрана!
+                    itemsHtml += `<p style="margin-left: 25px; margin-top: 1px; margin-bottom: 1px; font-family: 'Times New Roman', serif; font-size: 14px;"><b>${currentNum}. ${row.fio}</b>${techStr} - (${row.work});</p>`;
                     currentNum++;
                 });
             }
@@ -428,34 +455,31 @@ function setupWindowFunctions() {
             `;
         }
 
-        if(printBlock && mainContainer) {
+        if(printBlock) {
             printBlock.innerHTML = htmlContent;
-            mainContainer.style.display = 'none';
-            printBlock.classList.remove('hidden');
-
+            // Вызываем нативное окно печати
             window.print();
-
-            printBlock.classList.add('hidden');
+            // После закрытия окна очищаем скрытый буфер
             printBlock.innerHTML = '';
-            mainContainer.style.display = 'block';
         }
     };
 
     window.downloadOrderDocx = (memoId) => {
         const memo = savedMemosArchive.find(m => String(m.id) === String(memoId));
         if (!memo) {
-            alert("Документ не найден в локальной памяти архива.");
+            alert("Документ не найден в памяти архива.");
             return;
         }
 
-        if (!window.docx || !window.docx.Document) {
-            alert("Библиотека экспорта в Word ещё загружается. Подождите пару секунд и нажмите снова.");
+        // Страховка от долгой загрузки скрипта docx с CDN
+        const docxLib = window.docx || window.Docx;
+        if (!docxLib || !docxLib.Document) {
+            alert("Библиотека экспорта Word всё ещё инициализируется. Подождите пару секунд.");
             return;
         }
 
-        const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
+        const { Document, Packer, Paragraph, TextRun, AlignmentType } = docxLib;
 
-        // Строгое разделение роли и ФИО составителя
         const sigParts = memo.signatory.split(' ');
         const roleStr = sigParts[0] || 'Инженер по ЭМТП';
         const nameStr = sigParts.slice(1).join(' ') || 'Волчек А.А.';
@@ -488,7 +512,6 @@ function setupWindowFunctions() {
             })
         ];
 
-        // Группировка списка людей по их категориям (профессиям)
         const grouped = {};
         memo.items_data.forEach(item => {
             if (!grouped[item.category]) grouped[item.category] = [];
@@ -503,22 +526,20 @@ function setupWindowFunctions() {
             }));
             
             grouped[cat].forEach(row => {
-                const datesRowStr = row.dates.map(d => formatDate(d)).join(' и ');
                 const techStr = (row.tech && row.tech !== 'Без техники') ? ` – ${row.tech}` : '';
-                
+                // СТРОГИЙ ВАР ИАНТ: Из строки формирования убраны лишние даты дубликаты!
                 children.push(new Paragraph({
                     indent: { left: 400 },
                     spacing: { after: 40 },
                     children: [
                         new TextRun({ text: `${currentNum}. ${row.fio}`, bold: true, font: "Times New Roman", size: 28 }),
-                        new TextRun({ text: ` (${datesRowStr})${techStr} - (${row.work});`, font: "Times New Roman", size: 28 })
+                        new TextRun({ text: `${techStr} - (${row.work});`, font: "Times New Roman", size: 28 })
                     ]
                 }));
                 currentNum++;
             });
         }
 
-        // Подвал документа с подписью составителя
         children.push(new Paragraph({
             spacing: { before: 600 },
             children: [
@@ -536,8 +557,8 @@ function setupWindowFunctions() {
             a.click();
             window.URL.revokeObjectURL(url);
         }).catch(err => {
-            console.error("Ошибка упаковщика docx:", err);
-            alert("Ошибка сборщика DOCX. Проверьте структуру заполненных данных.");
+            console.error(err);
+            alert("Ошибка генерации документа.");
         });
     };
 }
@@ -577,7 +598,6 @@ async function loadArchiveFromSupabase() {
         if (error) throw error;
         savedMemosArchive = data || [];
     } catch (e) {
-        console.log("Временная загрузка локального кэша");
         savedMemosArchive = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
     }
     window.renderArchiveRows();
