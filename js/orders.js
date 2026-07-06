@@ -326,7 +326,7 @@ function setupSubModuleNavigation() {
         if (previewBlock) previewBlock.innerHTML = window.generateTripHtmlContent();
     };
 
-    // Функция ПЕЧАТИ + РЕАЛЬНОЕ СОХРАНЕНИЕ В SUPABASE STORAGE
+    // Функция ПЕЧАТИ + РЕАЛЬНОЕ СОХРАНЕНИЕ В КОРЕНЬ БАКЕТА SUPABASE STORAGE
     window.printAndSaveTrip = async () => {
         const htmlContent = window.generateTripHtmlContent();
         
@@ -345,23 +345,33 @@ function setupSubModuleNavigation() {
             return;
         }
 
-        // 3. Формируем чистое имя файла и виртуальный путь (папку категории)
+        // 3. Формируем чистое имя файла латиницей (без вложенных папок, прямо в корень)
         const docDate = document.getElementById('tripDocDate')?.value || 'unknown-date';
         const selectVal = document.getElementById('tripDriverSelect')?.value;
         const customVal = document.getElementById('tripDriverCustomInput')?.value.trim();
         const driverRaw = selectVal === 'CUSTOM' ? customVal : selectVal;
-        const driverTranslit = (driverRaw || 'worker').replace(/\s+/g, '_').replace(/\./g, '');
         
-        const fileName = docDate + '_' + driverTranslit + '.html';
-        const storageFolder = 'business_trips/'; 
-        const fullPath = storageFolder + fileName;
+        const translit = (str) => {
+            const ru = {
+                'а':'a', 'б':'b', 'в':'v', 'г':'g', 'д':'d', 'е':'e', 'ё':'e', 'ж':'zh', 'з':'z',
+                'и':'i', 'й':'y', 'к':'k', 'л':'l', 'м':'m', 'н':'n', 'о':'o', 'п':'p', 'р':'r',
+                'с':'s', 'т':'t', 'у':'u', 'ф':'f', 'х':'h', 'ц':'c', 'ч':'ch', 'ш':'sh', 'щ':'shch',
+                'ы':'y', 'э':'e', 'ю':'yu', 'я':'ya', ' ': '_', '.': ''
+            };
+            return str.toLowerCase().split('').map(c => ru[c] || (/[a-z0-9_-]/.test(c) ? c : '')).join('');
+        };
+
+        const driverSafe = translit(driverRaw || 'worker');
+        
+        // Имя теперь имеет префикс trip_ для сортировки и понимания категории
+        const fileName = 'trip_' + docDate + '_' + driverSafe + '.html';
 
         try {
             const fileBlob = new Blob([htmlContent], { type: 'text/html' });
             
             const { data, error } = await supabase.storage
                 .from('documents-history')
-                .upload(fullPath, fileBlob, {
+                .upload(fileName, fileBlob, {
                     cacheControl: '3600',
                     upsert: true
                 });
@@ -391,7 +401,7 @@ function setupSubModuleNavigation() {
 
             const a = document.createElement('a');
             a.href = data.signedUrl;
-            a.download = filePath.split('/').pop(); 
+            a.download = filePath; 
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -425,7 +435,7 @@ function setupSubModuleNavigation() {
         }
     };
 
-    // Функция загрузки списка файлов с распределением категорий
+    // Функция загрузки списка файлов напрямую из корня бакета с умным парсингом префиксов (trip_, vacation_)
     window.loadTripStorageHistory = async () => {
         const tBody = document.getElementById('tripStorageTableBody');
         if (!tBody) return;
@@ -439,44 +449,46 @@ function setupSubModuleNavigation() {
         }
 
         try {
-            const categoriesToLoad = [
-                { folder: 'business_trips', label: '💼 Командировка', color: 'bg-blue-100 text-blue-800' },
-                { folder: 'vacations', label: '🌴 Отпуск', color: 'bg-green-100 text-green-800' },
-                { folder: 'weekend_memos', label: '📝 Выходной день', color: 'bg-purple-100 text-purple-800' }
-            ];
+            // Запрашиваем плоский список файлов прямо из корня бакета
+            const { data: files, error } = await supabase.storage
+                .from('documents-history')
+                .list('', { sortBy: { column: 'name', order: 'desc' } });
 
-            let allCombinedFiles = [];
+            if (error) throw error;
 
-            for (const cat of categoriesToLoad) {
-                const { data: files, error } = await supabase.storage
-                    .from('documents-history')
-                    .list(cat.folder, { sortBy: { column: 'name', order: 'desc' } });
+            // Исключаем системные заглушки
+            const filteredFiles = files ? files.filter(f => f.name !== '.emptyFolderPlaceholder') : [];
 
-                if (!error && files) {
-                    const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
-                    
-                    filtered.forEach(f => {
-                        allCombinedFiles.push({
-                            name: f.name,
-                            fullPath: cat.folder + '/' + f.name,
-                            categoryLabel: cat.label,
-                            categoryColor: cat.color,
-                            sortKey: f.name 
-                        });
-                    });
-                }
-            }
-
-            if (allCombinedFiles.length === 0) {
+            if (filteredFiles.length === 0) {
                 tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400 font-medium">Архив документов пуст.</td></tr>';
                 return;
             }
 
-            // Сортировка по дате (новые сверху)
-            allCombinedFiles.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+            // Мапим файлы и на лету определяем категорию по префиксу имени файла
+            const processedFiles = filteredFiles.map(f => {
+                let catLabel = '📁 Документ';
+                let catColor = 'bg-gray-100 text-gray-800';
+
+                if (f.name.startsWith('trip_')) {
+                    catLabel = '💼 Командировка';
+                    catColor = 'bg-blue-100 text-blue-800';
+                } else if (f.name.startsWith('vacation_')) {
+                    catLabel = '🌴 Отпуск';
+                    catColor = 'bg-green-100 text-green-800';
+                } else if (f.name.startsWith('weekend_')) {
+                    catLabel = '📝 Выходной день';
+                    catColor = 'bg-purple-100 text-purple-800';
+                }
+
+                return {
+                    name: f.name,
+                    categoryLabel: catLabel,
+                    categoryColor: catColor
+                };
+            });
 
             // Рендер строк таблицы
-            tBody.innerHTML = allCombinedFiles.map(file => {
+            tBody.innerHTML = processedFiles.map(file => {
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
                     '<td class="p-2.5 font-mono text-gray-900 font-semibold">' + file.name + '</td>' +
                     '<td class="p-2.5">' +
@@ -485,17 +497,17 @@ function setupSubModuleNavigation() {
                         '</span>' +
                     '</td>' +
                     '<td class="p-2.5 text-center">' +
-                        '<button onclick="window.downloadStorageFile(\'' + file.fullPath + '\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-md transition text-[11px]">Открыть / Скачать</button>' +
+                        '<button onclick="window.downloadStorageFile(\'' + file.name + '\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-md transition text-[11px]">Открыть / Скачать</button>' +
                     '</td>' +
                     '<td class="p-2.5 text-right">' +
-                        '<button onclick="window.deleteStorageFile(\'' + file.fullPath + '\')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md border border-red-200 transition text-[11px]">❌ Удалить</button>' +
+                        '<button onclick="window.deleteStorageFile(\'' + file.name + '\')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md border border-red-200 transition text-[11px]">❌ 删除</button>' +
                     '</td>' +
                 '</tr>';
             }).join('');
 
         } catch (err) {
             console.error('Ошибка рендеринга истории:', err);
-            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Ошибка получения архива: ' + err.message + '</td></tr>';
+            tBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Ошибка получения архива. Проверьте имя бакета в Supabase.</td></tr>';
         }
     };
 }
