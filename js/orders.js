@@ -63,7 +63,7 @@ export const template = `
                     <p class="text-[11px] text-gray-500 mt-1 font-medium">Привлечение персонала к работе в субботу/воскресенье с формированием ведомостей ознакомления.</p>
                 </div>
             </div>
-            </div>
+        </div>
 
         <div id="memoDesignerContainer" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
             <div class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs space-y-4">
@@ -74,11 +74,11 @@ export const template = `
                 
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-700 mb-1">Дата 1 (Обязательно)</label>
+                        <label class="block text-[10px] font-bold text-gray-700 mb-1">Дата 1 (Обяз.)</label>
                         <input type="date" id="orderMemoDate1" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-emerald-600">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-700 mb-1">Дата 2 (Опционально)</label>
+                        <label class="block text-[10px] font-bold text-gray-700 mb-1">Дата 2 (Опц.)</label>
                         <input type="date" id="orderMemoDate2" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-emerald-600">
                     </div>
                 </div>
@@ -150,7 +150,7 @@ export const template = `
 
     <div id="docsSectionArchive" class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs hidden space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2">
-            <h3 class="text-xs font-black text-gray-800 uppercase tracking-wider">📂 Централизованный реестр документов</h3>
+            <h3 class="text-xs font-black text-gray-800 uppercase tracking-wider">📂 Реестр документов</h3>
             <select id="archiveDocTypeFilter" onchange="window.renderArchiveRows()" class="bg-white border border-gray-300 rounded-lg p-1 text-xs font-bold focus:outline-none">
                 <option value="all">Все категории документов</option>
                 <option value="weekend_memo">Служебные записки (Выходные)</option>
@@ -192,21 +192,25 @@ export async function init() {
 }
 
 function setupWindowFunctions() {
-    window.switchDocsSection = (section) => {
+    window.switchDocsSection = async (section) => {
         const cSec = document.getElementById('docsSectionCatalog');
         const aSec = document.getElementById('docsSectionArchive');
         const cBtn = document.getElementById('subTabBtnCatalog');
         const aBtn = document.getElementById('subTabBtnArchive');
 
         if (section === 'catalog') {
-            cSec.classList.remove('hidden'); aSec.classList.add('hidden');
-            cBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md bg-white text-gray-950 shadow-2xs transition";
-            aBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md text-gray-600 hover:text-gray-950 transition";
+            if(cSec) cSec.classList.remove('hidden'); 
+            if(aSec) aSec.classList.add('hidden');
+            if(cBtn) cBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md bg-white text-gray-950 shadow-2xs transition";
+            if(aBtn) aBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md text-gray-600 hover:text-gray-950 transition";
         } else {
-            cSec.classList.add('hidden'); aSec.classList.remove('hidden');
-            aBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md bg-white text-gray-950 shadow-2xs transition";
-            cBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md text-gray-600 hover:text-gray-950 transition";
-            loadArchiveFromSupabase();
+            if(cSec) cSec.classList.add('hidden'); 
+            if(aSec) aSec.classList.remove('hidden');
+            if(aBtn) aBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md bg-white text-gray-950 shadow-2xs transition";
+            if(cBtn) cBtn.className = "flex-1 text-center py-2 text-xs font-bold rounded-md text-gray-600 hover:text-gray-950 transition";
+            
+            // ПРИНУДИТЕЛЬНО ПЕРЕЗАГРУЖАЕМ АРХИВ ПРИ ПЕРЕХОДЕ НА ВКЛАДКУ
+            await loadArchiveFromSupabase();
         }
     };
 
@@ -237,7 +241,6 @@ function setupWindowFunctions() {
             return;
         }
 
-        // Формируем текстовое представление дат (один день или два подряд)
         let datesArray = [date1];
         if (date2 && date2 !== date1) {
             datesArray.push(date2);
@@ -274,13 +277,12 @@ function setupWindowFunctions() {
 
         const authorRole = localStorage.getItem('user_role') || 'Инженер по ЭМТП';
         const authorName = localStorage.getItem('user_name') || 'Волчек А.А.';
-        // Собираем все уникальные даты из этого приказа для вывода в общую строку архива
         const allDates = [...new Set(currentDraftItems.flatMap(i => i.dates))].sort();
 
         const documentPayload = {
-            doc_type: 'weekend_memo', // Классификатор категории для общей истории
-            weekend_date: allDates.join(', '), 
-            reason: 'производственная необходимость', // Убрали основание из инпутов, пишем константу
+            doc_type: 'weekend_memo',
+            weekend_date: allDates.map(d => formatDate(d)).join(', '), 
+            reason: 'производственная необходимость',
             signatory: `${authorRole} ${authorName}`,
             items_data: currentDraftItems
         };
@@ -292,9 +294,9 @@ function setupWindowFunctions() {
             alert("Служебная записка успешно зафиксирована в реестре документов!");
             currentDraftItems = [];
             renderDraftTable();
-            window.switchDocsSection('archive');
+            await window.switchDocsSection('archive');
         } catch (err) {
-            console.warn("Фолбэк сохранения в localStorage:", err);
+            console.warn("Сохранение в локальный архив браузера:", err);
             let archiveBackup = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
             documentPayload.id = Date.now();
             archiveBackup.push(documentPayload);
@@ -303,11 +305,11 @@ function setupWindowFunctions() {
             alert("Документ зафиксирован в локальном архиве АРМ.");
             currentDraftItems = [];
             renderDraftTable();
-            window.switchDocsSection('archive');
+            await window.switchDocsSection('archive');
         }
     };
 
-    // --- ПРЯМАЯ ИСПРАВЛЕННАЯ ПЕЧАТЬ ИЗ БРАУЗЕРА БЕЗ ПУСТЫХ ЛИСТОВ ---
+    // --- ИСПРАВЛЕННАЯ ПЕЧАТЬ ИЗ БРАУЗЕРА БЕЗ ПУСТЫХ ЛИСТОВ ---
     window.printOrderDocument = (memoId, mode) => {
         const memo = savedMemosArchive.find(m => m.id == memoId);
         if (!memo) return;
@@ -336,8 +338,6 @@ function setupWindowFunctions() {
                 });
             }
 
-            const uniqueDatesFormatted = [...new Set(memo.items_data.flatMap(i => i.dates))].map(d => formatDate(d)).join(', ');
-
             htmlContent = `
                 <div style="font-family: 'Times New Roman', serif; color: black; font-size: 14px; line-height: 1.4; max-width: 700px; margin: 0 auto; padding: 20px;">
                     <div style="margin-left: auto; width: 280px; margin-bottom: 40px; line-height: 1.3;">
@@ -346,8 +346,8 @@ function setupWindowFunctions() {
                     </div>
                     <h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 25px; font-family: 'Times New Roman', serif;">СЛУЖЕБНАЯ ЗАПИСКА</h1>
                     <p style="text-indent: 30px; text-align: justify; margin-bottom: 15px;">
-                        В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни 
-                        <b>(${uniqueDatesFormatted})</b> следующих работников филиала:
+                        В связи с производственной необходимость, прошу Вас привлечь к работе в выходные дни 
+                        <b>(${memo.weekend_date})</b> следующих работников филиала:
                     </p>
                     ${itemsHtml}
                     <div style="margin-top: 50px; display: flex; justify-content: space-between; font-weight: bold;">
@@ -357,7 +357,6 @@ function setupWindowFunctions() {
                 </div>
             `;
         } else {
-            // Лист ознакомления (Таблица-ведомость)
             let rowsHtml = '';
             let idx = 1;
 
@@ -381,12 +380,10 @@ function setupWindowFunctions() {
                 idx++;
             });
 
-            const docTitleDates = [...new Set(memo.items_data.flatMap(i => i.dates))].map(d => formatDate(d)).join(', ');
-
             htmlContent = `
                 <div style="font-family: 'Times New Roman', serif; color: black; font-size: 13px; max-width: 750px; margin: 0 auto; padding: 10px;">
                     <h2 style="text-align: center; font-size: 14px; font-weight: bold; line-height: 1.4; margin-bottom: 20px;">
-                        Список работников, привлеченных к работе в выходные дни<br>на ${docTitleDates}гг.
+                        Список работников, привлеченных к работе в выходные дни<br>на ${memo.weekend_date}гг.
                     </h2>
                     <table style="width: 100%; border-collapse: collapse; font-family: 'Times New Roman', serif;">
                         <thead>
@@ -406,34 +403,31 @@ function setupWindowFunctions() {
             `;
         }
 
-        // Временная подмена контента для чистой печати без прыжков страниц и пустых бланков
-        printBlock.innerHTML = htmlContent;
-        mainContainer.style.display = 'none';
-        printBlock.classList.remove('hidden');
+        if(printBlock && mainContainer) {
+            printBlock.innerHTML = htmlContent;
+            mainContainer.style.display = 'none';
+            printBlock.classList.remove('hidden');
 
-        window.print();
+            window.print();
 
-        // Возвращаем интерфейс обратно в исходное состояние
-        printBlock.classList.add('hidden');
-        printBlock.innerHTML = '';
-        mainContainer.style.display = 'block';
+            printBlock.classList.add('hidden');
+            printBlock.innerHTML = '';
+            mainContainer.style.display = 'block';
+        }
     };
 
-    // --- НАДЕЖНОЕ ГАРАНТИРОВАННОЕ СКАЧИВАНИЕ В WORD (.DOCX) ---
+    // --- НАДЕЖНОЕ СКАЧИВАНИЕ В WORD (.DOCX) ---
     window.downloadOrderDocx = (memoId) => {
         const memo = savedMemosArchive.find(m => m.id == memoId);
         if (!memo) return;
 
-        // Если глобальный объект docx еще инициализируется скриптом, вызовем повторно через 300мс
         if (!window.docx || !window.docx.Document) {
-            console.log("Ожидание инициализации дескрипторов библиотеки docx...");
+            console.log("Ожидание инициализации библиотеки docx...");
             setTimeout(() => { window.downloadOrderDocx(memoId); }, 300);
             return;
         }
 
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
-
-        const uniqueDatesStr = [...new Set(memo.items_data.flatMap(i => i.dates))].map(d => formatDate(d)).join(', ');
 
         const children = [
             new Paragraph({
@@ -454,7 +448,7 @@ function setupWindowFunctions() {
                 indent: { firstLine: 400 },
                 spacing: { after: 150 },
                 children: [
-                    new TextRun({ text: `В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни (${uniqueDatesStr}) следующих работников филиала:`, font: "Times New Roman" })
+                    new TextRun({ text: `В связи с производственной необходимостью, прошу Вас привлечь к работе в выходные дни (${memo.weekend_date}) следующих работников филиала:`, font: "Times New Roman" })
                 ]
             })
         ];
@@ -495,7 +489,7 @@ function setupWindowFunctions() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `Служебная_записка_${memo.id || 'документ'}.docx`;
+            a.download = `Служебная_записка_${memo.id || Date.now()}.docx`;
             a.click();
             window.URL.revokeObjectURL(url);
         });
@@ -532,10 +526,12 @@ function renderDraftTable() {
 
 async function loadArchiveFromSupabase() {
     try {
+        if (!window._supabase) throw new Error("Supabase не инициализирован");
         const { data, error } = await window._supabase.from('weekend_orders_json').select('*').order('id', { ascending: false });
         if (error) throw error;
         savedMemosArchive = data || [];
     } catch (e) {
+        console.log("Ошибка СУБД, берем данные из localStorage");
         savedMemosArchive = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
     }
     window.renderArchiveRows();
@@ -567,9 +563,9 @@ window.renderArchiveRows = () => {
                 <td class="p-3"><span class="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-black">${memo.items_data ? memo.items_data.length : 0} чел.</span></td>
                 <td class="p-3 text-gray-500 text-[11px] font-medium">${memo.signatory}</td>
                 <td class="p-3 text-right space-x-1 whitespace-nowrap">
-                    <button onclick="window.printOrderDocument(${memo.id}, 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] transition">👁 Текст</button>
-                    <button onclick="window.printOrderDocument(${memo.id}, 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] transition">📊 Ознакомление</button>
-                    <button onclick="window.downloadOrderDocx(${memo.id})" class="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-700 px-2 py-1 rounded-md text-[11px] transition">💾 Word</button>
+                    <button onclick="window.printOrderDocument(${memo.id || memo.id}, 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] transition">👁 Текст</button>
+                    <button onclick="window.printOrderDocument(${memo.id || memo.id}, 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] transition">📊 Ознакомление</button>
+                    <button onclick="window.downloadOrderDocx(${memo.id || memo.id})" class="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-700 px-2 py-1 rounded-md text-[11px] transition">💾 Word</button>
                 </td>
             </tr>
         `;
@@ -578,6 +574,7 @@ window.renderArchiveRows = () => {
 
 function formatDate(dateStr) {
     if (!dateStr) return '';
+    if (dateStr.includes('.')) return dateStr; // уже отформатировано
     const parts = dateStr.split('-');
     if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
     return dateStr;
