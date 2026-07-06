@@ -2,11 +2,11 @@
 
 import { tripTemplate, initBusinessTrip } from './docs/businessTrip.js';
 import { batteryTemplate, initBatteryAct } from './docs/batteryAct.js';
+import { absenceTemplate, initAbsenceAct } from './docs/absenceAct.js';
 
 const ALL_DOC_CARDS = [
     { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов и служебных записок.', icon: '💼', category: 'personal' },
-    { id: 'weekend_memo', title: 'Выходные дни', desc: 'Привлечение персонала к работе в субботу и воскресенье.', icon: '📝', category: 'personal' },
-    { id: 'vacation', title: 'График отпусков', desc: 'Заявления на ежегодный отпуск и перенос дат отдыха.', icon: '🌴', category: 'personal' },
+    { id: 'absence_act', title: 'Акт о прогуле', desc: 'Акт об отсутствии сотрудника на рабочем месте с указанием периода.', icon: '🛑', category: 'acts' }, // Новый пункт
     { id: 'battery_act', title: 'Списание АКБ', desc: 'Акт на списание аккумуляторных батарей с расчетом лома свинца.', icon: '🔋', category: 'acts' },
     { id: 'inventory_act', title: 'Акт инвентаризации', desc: 'Списание, проверка и учет ТМЦ.', icon: '📊', category: 'sklad' }
 ];
@@ -77,6 +77,7 @@ export const template = `
 
     ` + tripTemplate + `
     ` + batteryTemplate + `
+    ` + absenceTemplate + `
 </div>
 
 <div id="tripPrintBlock"></div>
@@ -86,6 +87,7 @@ export function init() {
     setupSubModuleNavigation();
     initBusinessTrip();
     initBatteryAct();
+    initAbsenceAct();
     renderDocCards(ALL_DOC_CARDS);
     window.switchDocSubModule('menu');
 }
@@ -151,7 +153,8 @@ function setupSubModuleNavigation() {
         const backBtn = document.getElementById('docBackToMenuBtn');
         const subContainers = { 
             business_trip: document.getElementById('subModule_business_trip'),
-            battery_act: document.getElementById('subModule_battery_act')
+            battery_act: document.getElementById('subModule_battery_act'),
+            absence_act: document.getElementById('subModule_absence_act')
         };
 
         if (mainContainer) mainContainer.classList.add('hidden');
@@ -176,6 +179,13 @@ function setupSubModuleNavigation() {
                 const today = new Date().toISOString().split('T')[0];
                 if (document.getElementById('batteryDocDate')) document.getElementById('batteryDocDate').value = today;
                 window.updateBatteryPreview();
+            }
+            if (targetModule === 'absence_act' && typeof window.updateAbsencePreview === 'function') {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('absenceDocDate').value = today;
+                document.getElementById('absenceStartDate').value = today;
+                document.getElementById('absenceEndDate').value = today;
+                window.updateAbsencePreview();
             }
         }
     };
