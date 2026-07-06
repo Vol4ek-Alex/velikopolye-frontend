@@ -24,6 +24,11 @@ const TRIP_DESTINATIONS = [
 
 let currentSubModule = "menu";
 
+// Генерируем опции для select заранее, чтобы не ломать шаблонную строку
+const driverOptionsHtml = DRIVERS_DATABASE.map(d => '<option value="' + d + '">' + d + '</option>').join('');
+const destinationsHtml = TRIP_DESTINATIONS.map(dest => '<option value="' + dest + '">').join('');
+const purposesHtml = TRIP_PURPOSES.map(p => '<option value="' + p + '">').join('');
+
 export const template = `
 <style>
 .fade-in-sub {
@@ -87,7 +92,7 @@ export const template = `
             <div>
                 <label class="block text-[10px] font-bold text-gray-700 mb-1">Водитель автомобиля</label>
                 <select id="tripDriverSelect" onchange="window.handleTripDriverSelect()" class="w-full bg-white border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                    \${DRIVERS_DATABASE.map(d => `<option value="\${d}">\${d}</option>`).join('')}
+                    ${driverOptionsHtml}
                     <option value="CUSTOM">-- Ввести вручную (Новый сотрудник) --</option>
                 </select>
                 <input type="text" id="tripDriverCustomInput" oninput="window.updateTripPreview()" class="hidden mt-2 w-full bg-gray-50 border-2 border-blue-400 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Введите ФИО (например, Иванов И.И.)">
@@ -97,7 +102,7 @@ export const template = `
                 <label class="block text-[10px] font-bold text-gray-700 mb-1">Куда (Пункт назначения)</label>
                 <input type="text" id="tripDestinationInput" list="destinationsList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Например, город Дзержинск">
                 <datalist id="destinationsList">
-                    \${TRIP_DESTINATIONS.map(dest => `<option value="\${dest}">`).join('')}
+                    ${destinationsHtml}
                 </datalist>
             </div>
 
@@ -105,7 +110,7 @@ export const template = `
                 <label class="block text-[10px] font-bold text-gray-700 mb-1">Для чего (Цель командировки)</label>
                 <input type="text" id="tripPurposeInput" list="purposesList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Например, получения запчастей">
                 <datalist id="purposesList">
-                    \${TRIP_PURPOSES.map(p => `<option value="\${p}">`).join('')}
+                    ${purposesHtml}
                 </datalist>
             </div>
 
@@ -184,7 +189,7 @@ function setupSubModuleNavigation() {
     function formatTripDate(dateStr) {
         if (!dateStr) return '';
         const parts = dateStr.split('-');
-        if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+        if (parts.length === 3) return parts[2] + '.' + parts[1] + '.' + parts[0];
         return dateStr;
     }
 
@@ -199,38 +204,43 @@ function setupSubModuleNavigation() {
         const destination = document.getElementById('tripDestinationInput')?.value.trim() || '';
         const purpose = document.getElementById('tripPurposeInput')?.value.trim() || '';
 
-        return `
-            <div style="font-family: 'Times New Roman', serif; color: black; font-size: 15px; line-height: 1.6; max-width: 650px; margin: 0 auto; padding: 10px;">
+        // Полностью безопасная сборка строки без использования символа $ внутри функции
+        return '<div style="font-family: \'Times New Roman\', serif; color: black; font-size: 15px; line-height: 1.6; max-width: 650px; margin: 0 auto; padding: 10px;">' +
                 
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 60px; font-family: 'Times New Roman', serif; font-size: 15px;">
-                    <div style="padding-top: 0px; font-weight: normal; color: black;">
-                        \${docDate}
-                    </div>
+                '' +
+                '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 60px; font-family: \'Times New Roman\', serif; font-size: 15px;">' +
+                    '' +
+                    '<div style="padding-top: 0px; font-weight: normal; color: black;">' +
+                        docDate +
+                    '</div>' +
                     
-                    <div style="width: 280px; text-align: left; line-height: 1.4; padding-left: 15px;">
-                        Директору филиала<br>СХК «Великополье»<br>Рунцевичу Д.С.<br>
-                        Заместителя директора –<br>главного инженера<br>Маковича М.П.
-                    </div>
-                </div>
+                    '' +
+                    '<div style="width: 280px; text-align: left; line-height: 1.4; padding-left: 15px;">' +
+                        'Директору филиала<br>СХК «Великополье»<br>Рунцевичу Д.С.<br>' +
+                        'Заместителя директора –<br>главного инженера<br>Маковича М.П.' +
+                    '</div>' +
+                '</div>' +
 
-                <h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 35px; font-family: 'Times New Roman', serif; letter-spacing: 0.5px;">
-                    Служебная записка
-                </h1>
+                '' +
+                '<h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 35px; font-family: \'Times New Roman\', serif; letter-spacing: 0.5px;">' +
+                    'Служебная записка' +
+                '</h1>' +
                 
-                <p style="text-align: justify; text-indent: 40px; margin-bottom: 70px; font-family: 'Times New Roman', serif; font-size: 15px;">
-                    Прошу вас, командировать водителя автомобиля \${driverName} в \${destination}, по вопросу \${purpose} \${targetDate}г.
-                </p>
+                '' +
+                '<p style="text-align: justify; text-indent: 40px; margin-bottom: 70px; font-family: \'Times New Roman\', serif; font-size: 15px;">' +
+                    'Прошу вас, командировать водителя автомобиля ' + driverName + ' в ' + destination + ', по вопросу ' + purpose + ' ' + targetDate + 'г.' +
+                '</p>' +
                 
-                <div style="margin-top: 70px; display: flex; justify-content: space-between; font-family: 'Times New Roman', serif; font-size: 15px;">
-                    <div style="text-align: left; width: 60%; line-height: 1.4;">
-                        Заместитель директора –<br>Главный инженер
-                    </div>
-                    <div style="text-align: right; width: 40%; display: flex; align-items: flex-end; justify-content: flex-end;">
-                        Макович М.П.
-                    </div>
-                </div>
-            </div>
-        `;
+                '' +
+                '<div style="margin-top: 70px; display: flex; justify-content: space-between; font-family: \'Times New Roman\', serif; font-size: 15px;">' +
+                    '<div style="text-align: left; width: 60%; line-height: 1.4;">' +
+                        'Заместитель директора –<br>Главный инженер' +
+                    '</div>' +
+                    '<div style="text-align: right; width: 40%; display: flex; align-items: flex-end; justify-content: flex-end;">' +
+                        'Макович М.П.' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
     };
 
     window.updateTripPreview = () => {
