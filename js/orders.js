@@ -300,13 +300,12 @@ function setupWindowFunctions() {
         const formattedDatesStr = allDates.map(d => formatDate(d)).join(', ');
         const generatedId = Date.now();
         
-        // СТРОГОЕ СООТВЕТСТВИЕ СТРУКТУРЕ ВАШЕЙ ТАБЛИЦЫ В СУБД
+        // СТРОГОЕ СООТВЕТСТВИЕ 4 КОЛОНКАМ ТАБЛИЦЫ БД (id, doc_type, weekend_date, items_data)
         const documentPayload = {
             id: generatedId,
             doc_type: 'weekend_memo',
             weekend_date: formattedDatesStr, 
-            reason: 'производственная необходимость',
-            items_data: currentDraftItems // Все внутренние данные, включая списки, уходят сюда
+            items_data: currentDraftItems
         };
 
         // Локальное резервное копирование
@@ -327,7 +326,7 @@ function setupWindowFunctions() {
         window.renderArchiveRows();
         await window.switchDocsSection('archive');
 
-        // Отправка в Supabase — теперь поля строго совпадают с Вашим скриншотом!
+        // Отправка в Supabase — теперь без лишних колонок (точно по структуре)
         try {
             if (window._supabase) {
                 const { error } = await window._supabase.from('weekend_orders_json').insert([documentPayload]);
@@ -400,7 +399,7 @@ function setupWindowFunctions() {
                     categoriesInDate[cat].forEach(row => {
                         const techStr = (row.tech && row.tech !== 'Без техники') ? ` – ${row.tech}` : '';
                         itemsHtml += `<p style="margin-left: 30px; margin-top: 1px; margin-bottom: 1px; font-family: 'Times New Roman', serif; font-size: 14px;">
-                            ${num}.<br>${row.fio}${techStr} - (${row.work});
+                            ${num}. <b>${row.fio}</b>${techStr} - (${row.work});
                         </p>`;
                         num++;
                     });
@@ -410,8 +409,8 @@ function setupWindowFunctions() {
             htmlContent = `
                 <div style="font-family: 'Times New Roman', serif; color: black; font-size: 14px; line-height: 1.4; max-width: 700px; margin: 0 auto; padding: 20px;">
                     <div style="margin-left: auto; width: 280px; margin-bottom: 40px; line-height: 1.3; text-align: left;">
-                        Инженера по ЭМТП<br>Волчка А.А.<br><br>
                         Директору филиала СХК<br>«Великополье»<br>Рунцевичу Д.С.<br>
+                        Инженера по ЭМТП<br>Волчка А.А.
                     </div>
                     <h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 25px; font-family: 'Times New Roman', serif;">СЛУЖЕБНАЯ ЗАПИСКА</h1>
                     
@@ -495,7 +494,7 @@ function setupWindowFunctions() {
                 alignment: AlignmentType.RIGHT,
                 spacing: { after: 200 },
                 children: [
-                    new TextRun({ text: "Инженера по ЭМТП\nВолчка А.А.\n\nДиректору филиала СХК\n«Великополье»\nРунцевичу Д.С.\n\n", font: "Times New Roman", size: 28 })
+                    new TextRun({ text: "Директору филиала СХК\n«Великополье»\nРунцевичу Д.С.\n\nИнженера по ЭМТП\nВолчка А.А.\n\n", font: "Times New Roman", size: 28 })
                 ]
             }),
             new Paragraph({
@@ -549,7 +548,7 @@ function setupWindowFunctions() {
                         indent: { left: 300 },
                         spacing: { after: 40 },
                         children: [
-                            new TextRun({ text: `${num}.\n`, font: "Times New Roman", size: 28 }),
+                            new TextRun({ text: `${num}. `, font: "Times New Roman", size: 28 }),
                             new TextRun({ text: `${row.fio}`, bold: true, font: "Times New Roman", size: 28 }),
                             new TextRun({ text: `${techStr} - (${row.work});`, font: "Times New Roman", size: 28 })
                         ]
