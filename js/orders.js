@@ -322,7 +322,6 @@ function setupWindowFunctions() {
             console.log("Удаление из локального кэша");
         }
 
-        // Чистим локальный кэш на всякий случай
         let localData = JSON.parse(localStorage.getItem('local_memos_backup') || '[]');
         localData = localData.filter(m => m.id != memoId);
         localStorage.setItem('local_memos_backup', JSON.stringify(localData));
@@ -333,7 +332,7 @@ function setupWindowFunctions() {
 
     // --- ПЕЧАТЬ ИЗ БРАУЗЕРА ---
     window.printOrderDocument = (memoId, mode) => {
-        const memo = savedMemosArchive.find(m => (m.id == memoId));
+        const memo = savedMemosArchive.find(m => m.id == memoId);
         if (!memo) {
             alert("Не удалось найти документ в памяти архива!");
             return;
@@ -578,7 +577,6 @@ window.renderArchiveRows = () => {
     }
 
     tbody.innerHTML = filtered.map(memo => {
-        const currentId = memo.id || Date.now();
         const docCategoryName = memo.doc_type === 'weekend_memo' ? '📄 Служебная записка' : '📁 Документ';
         return `
             <tr class="hover:bg-gray-50 transition text-xs font-bold text-gray-800">
@@ -588,10 +586,10 @@ window.renderArchiveRows = () => {
                 <td class="p-3"><span class="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-black">${memo.items_data ? memo.items_data.length : 0} чел.</span></td>
                 <td class="p-3 text-gray-500 text-[11px] font-medium">${memo.signatory}</td>
                 <td class="p-3 text-right space-x-1 whitespace-nowrap">
-                    <button onclick="window.printOrderDocument(${currentId}, 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] transition">👁 Текст</button>
-                    <button onclick="window.printOrderDocument(${currentId}, 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] transition">📊 Ознакомление</button>
-                    <button onclick="window.downloadOrderDocx(${currentId})" class="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-700 px-2 py-1 rounded-md text-[11px] transition">💾 Word</button>
-                    <button onclick="window.deleteOrderDocument(${currentId})" class="bg-red-50 hover:bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded-md text-[11px] transition">❌</button>
+                    <button onclick="window.printOrderDocument(${memo.id}, 'text')" class="bg-gray-50 hover:bg-gray-100 border border-gray-400 text-gray-800 px-2 py-1 rounded-md text-[11px] font-bold transition">👁 Текст</button>
+                    <button onclick="window.printOrderDocument(${memo.id}, 'table')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 px-2 py-1 rounded-md text-[11px] font-bold transition">📊 Ознакомление</button>
+                    <button onclick="window.downloadOrderDocx(${memo.id})" class="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-700 px-2 py-1 rounded-md text-[11px] font-bold transition">💾 Word</button>
+                    <button onclick="window.deleteOrderDocument(${memo.id})" class="bg-red-50 hover:bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded-md text-[11px] font-bold transition">❌</button>
                 </td>
             </tr>
         `;
