@@ -2,12 +2,12 @@ export const template = `
     <div class="mb-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs">
     <div class="space-y-0.5">
         <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
-        <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, контроль документов и логов ремонта</p>
+        <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, механизаторов, контроль документов и логов ремонта</p>
     </div>
     
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full xl:w-auto">
         <button id="manageDriversBtn" onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
-            👤 Водители
+            👤 Вод/Мех
         </button>
         <button id="manageTagsBtn" onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
             🏷️ Теги
@@ -59,7 +59,7 @@ export const template = `
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Закрепленный водитель</label>
+                        <label class="block text-gray-700 mb-1 font-bold">Закрепленный вод/мех</label>
                         <select id="vDriver" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600"></select>
                     </div>
                     <div>
@@ -111,11 +111,11 @@ export const template = `
 
     <div id="driversManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
-            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">👤 Список водителей предприятия</h3>
+            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">👤 Список водителей, механизаторов предприятия</h3>
             <div class="space-y-1.5 max-h-44 overflow-y-auto" id="modalDriversList"></div>
             <div class="pt-2 border-t border-gray-200 space-y-2">
-                <input type="text" id="newDriverNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="ФИО водителя (например, Ладутько И.И.)...">
-                <button onclick="window.addCustomDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Добавить водителя</button>
+                <input type="text" id="newDriverNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="ФИО вод/мех (например, Ладутько И.И.)...">
+                <button onclick="window.addCustomDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Добавить вод/мех-а</button>
             </div>
             <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
         </div>
@@ -437,7 +437,7 @@ function renderFleet() {
                                         <h4 class="font-bold text-gray-950 text-sm tracking-tight truncate">${v.model}</h4>
                                         
                                         <div class="text-[11px] text-gray-600 font-bold flex items-center gap-1.5 mt-0.5">
-                                            <span>👤 Водитель:</span>
+                                            <span>👤 Вод/Мех:</span>
                                             <span class="text-gray-950 font-black">${v.notes || 'Не закреплен'}</span>
                                         </div>
 
@@ -669,7 +669,7 @@ function renderDriversModalList() {
 
     window.deleteCustomDriver = async (driverName) => {
         if (!window._supabase) return;
-        if (confirm(`Удалить водителя "${driverName}" из базы данных?`)) {
+        if (confirm(`Удалить вод/мех-а "${driverName}" из базы данных?`)) {
             try {
                 await window._supabase.from('fleet_drivers').delete().eq('name', driverName);
                 await loadAllData(false);
