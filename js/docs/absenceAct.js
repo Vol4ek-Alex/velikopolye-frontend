@@ -107,7 +107,7 @@ export function initAbsenceAct() {
         scaler.style.marginTop = offsetY + 'px';
     }
 
-    // Генерация HTML-контента для превью (каждый акт и служебка – отдельный блок)
+    // Генерация контента: для превью – отдельные блоки с тенью, для Word – разрывы страниц
     window.generateAbsenceHtmlContent = (isForWord = false) => {
         const empName = document.getElementById('absenceEmployeeName')?.value || '';
         const empNameIm = document.getElementById('absenceEmployeeNameIm')?.value || '';
@@ -123,90 +123,100 @@ export function initAbsenceAct() {
         const formattedStart = formatRusDate(startRaw);
         const formattedEnd = formatRusDate(endRaw);
 
-        // Разделитель страниц для Word
-        const pageBreak = isForWord ? '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">' : '<hr style="border: 1px dashed #ccc; margin: 20px 0;">';
-
-        // Генерация актов (каждый акт – отдельный блок)
-        const actsHtml = dateList.map(dateStr => {
+        // Функция генерации одного акта (без внешней обёртки для страницы)
+        function generateActHtml(dateStr) {
             const formattedCurrentDate = formatRusDate(dateStr);
             return `
-            <div style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 0; margin-bottom: 20px; page-break-after: always;">
-                <div style="text-align: left; margin-bottom: 30px; font-size: 13px;">
-                    Филиал СХК «Великополье»<br>ГП «Минсктранс»
+                <div style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 0; margin-bottom: 0;">
+                    <div style="text-align: left; margin-bottom: 30px; font-size: 13px;">
+                        Филиал СХК «Великополье»<br>ГП «Минсктранс»
+                    </div>
+                    <div style="margin-bottom: 25px;">
+                        <strong>АКТ</strong><br>
+                        ${formattedCurrentDate}г.<br>
+                        д. Великополье<br>
+                        Об отсутствии на рабочем месте
+                    </div>
+                    <div style="margin-bottom: 35px; text-align: left;">
+                        Составил: Волчек А.А. - инженер Э.М.Т.П.<br>
+                        в присутствии: Маковича М.П. – заместителя директора - главного инженера<br>
+                        <span style="padding-left: 82px;">Миколенко Ю.С. – заведующего гаражом</span><br>
+                        <span style="padding-left: 82px;">Ладутько И.И. – техника</span>
+                    </div>
+                    <p style="text-indent: 40px; margin-bottom: 40px;">
+                        Мы, нижеподписавшиеся, настоящим актом удостоверяем, что ${empJob} <strong>${empName}</strong> отсутствовал на рабочем месте ${formattedCurrentDate}г.
+                    </p>
+                    <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 20px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                        <tr style="height: 35px;">
+                            <td style="width: 40%; text-align: left; border: none; padding: 0;">Волчек А.А.</td>
+                            <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
+                        </tr>
+                        <tr style="height: 35px;">
+                            <td style="width: 40%; text-align: left; border: none; padding: 0;">Макович М.П.</td>
+                            <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
+                        </tr>
+                        <tr style="height: 35px;">
+                            <td style="width: 40%; text-align: left; border: none; padding: 0;">Миколенко Ю.С.</td>
+                            <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
+                        </tr>
+                        <tr style="height: 35px;">
+                            <td style="width: 40%; text-align: left; border: none; padding: 0;">Ладутько И.И.</td>
+                            <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
+                        </tr>
+                    </table>
                 </div>
-                <div style="margin-bottom: 25px;">
-                    <strong>АКТ</strong><br>
-                    ${formattedCurrentDate}г.<br>
-                    д. Великополье<br>
-                    Об отсутствии на рабочем месте
+            `;
+        }
+
+        // Генерация докладной
+        function generateReportHtml() {
+            return `
+                <div style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 0; margin-bottom: 0;">
+                    <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 40px;">
+                        <tr>
+                            <td style="width: 45%; border: none;"></td>
+                            <td style="width: 55%; text-align: left; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.3; border: none; padding: 0;">
+                                Директору филиала СХК<br>
+                                «Великополье»<br>
+                                Рунцевичу Д.С.<br>
+                                Инженера по ЭМТП<br>
+                                Волчка А.А.
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="margin-bottom: 15px; font-size: 14px;">${formattedEnd}г.</div>
+                    <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px;">Докладная записка</div>
+                    <p style="text-indent: 40px; margin-bottom: 40px;">
+                        Довожу до Вашего сведения, что ${empJob} ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
+                    </p>
+                    <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 20px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                        <tr>
+                            <td style="width: 50%; text-align: left; border: none; padding: 0;">Инженер по ЭМТП</td>
+                            <td style="width: 50%; text-align: right; border: none; padding: 0;">Волчек А.А.</td>
+                        </tr>
+                    </table>
                 </div>
-                <div style="margin-bottom: 35px; text-align: left;">
-                    Составил: Волчек А.А. - инженер Э.М.Т.П.<br>
-                    в присутствии: Маковича М.П. – заместителя директора - главного инженера<br>
-                    <span style="padding-left: 82px;">Миколенко Ю.С. – заведующего гаражом</span><br>
-                    <span style="padding-left: 82px;">Ладутько И.И. – техника</span>
-                </div>
-                <p style="text-indent: 40px; margin-bottom: 40px;">
-                    Мы, нижеподписавшиеся, настоящим актом удостоверяем, что ${empJob} <strong>${empName}</strong> отсутствовал на рабочем месте ${formattedCurrentDate}г.
-                </p>
-                <!-- Подписи сразу после текста -->
-                <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 20px; font-family: 'Times New Roman', serif; font-size: 14px;">
-                    <tr style="height: 35px;">
-                        <td style="width: 40%; text-align: left; border: none; padding: 0;">Волчек А.А.</td>
-                        <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
-                    </tr>
-                    <tr style="height: 35px;">
-                        <td style="width: 40%; text-align: left; border: none; padding: 0;">Макович М.П.</td>
-                        <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
-                    </tr>
-                    <tr style="height: 35px;">
-                        <td style="width: 40%; text-align: left; border: none; padding: 0;">Миколенко Ю.С.</td>
-                        <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
-                    </tr>
-                    <tr style="height: 35px;">
-                        <td style="width: 40%; text-align: left; border: none; padding: 0;">Ладутько И.И.</td>
-                        <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
-                    </tr>
-                </table>
-            </div>`;
-        }).join(isForWord ? '' : '<hr style="border: 1px dashed #ccc; margin: 20px 0;">');
+            `;
+        }
 
-        // Докладная (отдельная страница)
-        const reportHtml = `
-        <div style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 0; page-break-after: always;">
-            <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 40px;">
-                <tr>
-                    <td style="width: 45%; border: none;"></td>
-                    <td style="width: 55%; text-align: left; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.3; border: none; padding: 0;">
-                        Директору филиала СХК<br>
-                        «Великополье»<br>
-                        Рунцевичу Д.С.<br>
-                        Инженера по ЭМТП<br>
-                        Волчка А.А.
-                    </td>
-                </tr>
-            </table>
-            <div style="margin-bottom: 15px; font-size: 14px;">${formattedEnd}г.</div>
-            <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px;">Докладная записка</div>
-            <p style="text-indent: 40px; margin-bottom: 40px;">
-                Довожу до Вашего сведения, что ${empJob} ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
-            </p>
-            <!-- Подпись сразу после текста -->
-            <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 20px; font-family: 'Times New Roman', serif; font-size: 14px;">
-                <tr>
-                    <td style="width: 50%; text-align: left; border: none; padding: 0;">Инженер по ЭМТП</td>
-                    <td style="width: 50%; text-align: right; border: none; padding: 0;">Волчек А.А.</td>
-                </tr>
-            </table>
-        </div>`;
+        // Для Word: каждый акт и докладная с принудительным разрывом страницы
+        if (isForWord) {
+            const actsWord = dateList.map(dateStr => generateActHtml(dateStr)).join('<br clear="all" style="page-break-before: always; mso-break-type: section-break;">');
+            const reportWord = generateReportHtml();
+            const fullWord = actsWord + '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">' + reportWord;
+            return fullWord;
+        }
 
-        // Объединяем акты и служебку
-        const combined = actsHtml + (isForWord ? '' : '<hr style="border: 1px dashed #ccc; margin: 20px 0;">') + reportHtml;
+        // Для превью (не Word): каждый акт и докладная обёрнуты в отдельный блок с тенью и отступом
+        const actsPreview = dateList.map(dateStr => {
+            const actContent = generateActHtml(dateStr);
+            return `<div style="background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 30px; border: 1px solid #eee;">${actContent}</div>`;
+        }).join('');
 
-        // Для Word добавляем разделители страниц
-        const finalContent = isForWord ? actsHtml + pageBreak + reportHtml : combined;
+        const reportPreview = `<div style="background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 30px; border: 1px solid #eee;">${generateReportHtml()}</div>`;
 
-        return isForWord ? finalContent : { combinedHtml: combined };
+        const combined = actsPreview + reportPreview;
+        return { combinedHtml: combined };
     };
 
     window.updateAbsencePreview = () => {
@@ -234,7 +244,6 @@ export function initAbsenceAct() {
         const startRaw = document.getElementById('absenceStartDate')?.value || 'date';
         const empNameIm = document.getElementById('absenceEmployeeNameIm')?.value || 'сотрудник';
         const safeName = translitForFilename(empNameIm);
-        // Имя файла только на латинице, без пробелов и кириллицы
         const fileName = `progul_${startRaw}_${safeName}.doc`;
 
         try {
