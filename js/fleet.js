@@ -212,7 +212,7 @@ let refreshIntervalId = null;
 function getUnitByCategory(type) {
     if (!type) return 'м/ч';
     const lower = type.toLowerCase();
-    const carKeywords = ['легковой', 'грузовой', 'грузопассажирский', 'автобус', 'микроавтобус', 'пикап', 'фургон', 'тягач', 'седельный'];
+    const carKeywords = ['легков', 'грузов', 'грузопассажир', 'автобус', 'микроавтобус', 'пикап', 'фургон', 'тягач', 'седельный'];
     for (let kw of carKeywords) {
         if (lower.includes(kw)) return 'км';
     }
@@ -223,7 +223,7 @@ function getUnitByCategory(type) {
 function getDriverRole(type) {
     if (!type) return 'Механизатор';
     const lower = type.toLowerCase();
-    const carKeywords = ['легковой', 'грузовой', 'грузопассажирский', 'автобус', 'микроавтобус', 'пикап', 'фургон', 'тягач', 'седельный'];
+    const carKeywords = ['легков', 'грузов', 'грузопассажир', 'автобус', 'микроавтобус', 'пикап', 'фургон', 'тягач', 'седельный'];
     for (let kw of carKeywords) {
         if (lower.includes(kw)) return 'Водитель';
     }
