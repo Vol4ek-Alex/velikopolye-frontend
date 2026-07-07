@@ -7,7 +7,7 @@ import { machineryLifecycleTemplate, initMachineryLifecycle } from './docs/machi
 
 const ALL_DOC_CARDS = [
     { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов и служебных записок.', icon: '💼', category: 'personal' },
-    { id: 'absence_act', title: 'Акт о прогуле', desc: 'Акт об отсутствии сотрудника на рабочем месте с указанием периода.', icon: '🛑', category: 'acts' },
+    { id: 'absence_act', title: 'Aкт о прогуле', desc: 'Акт об отсутствии сотрудника на рабочем месте с указанием периода.', icon: '🛑', category: 'acts' },
     { id: 'battery_act', title: 'Списание АКБ', desc: 'Акт на списание аккумуляторных батарей с расчетом лома свинца.', icon: '🔋', category: 'acts' },
     { id: 'machinery_lifecycle', title: 'Жизненный цикл техники', desc: 'Акты хранения (ГОСТ), дефектные акты, рапорты ТО (авто/трактора) и выход из ремонта.', icon: '🚜', category: 'acts' },
     { id: 'inventory_act', title: 'Акт инвентаризации', desc: 'Списание, проверка и учет ТМЦ.', icon: '📊', category: 'sklad' }
@@ -16,7 +16,6 @@ const ALL_DOC_CARDS = [
 let currentCategory = 'all';
 let currentSubModule = "menu";
 
-// Полностью восстановлен оригинальный строгий вид шаблона и интерполяция подмодулей
 export const template = `
 <style>
 .fade-in-sub { animation: fadeInSub 0.25s ease-out forwards; }
@@ -31,7 +30,7 @@ export const template = `
 <div class="p-6 max-w-7xl mx-auto space-y-6">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white border-2 border-gray-900 p-5 rounded-2xl shadow-xs gap-4">
         <div>
-            <h1 class="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">✍️ Генератор служебных документов</h1>
+            <h1 class="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">💼 Документооборот</h1>
             <p class="text-xs text-gray-500 font-medium mt-0.5">Автоматическое заполнение строго по регламентам и бланкам предприятия</p>
         </div>
         <button id="btnBackToMenu" onclick="window.backToDocMenu()" class="hidden bg-gray-900 hover:bg-gray-800 text-white font-bold px-4 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-xs">
@@ -142,7 +141,7 @@ export function init() {
             initAbsenceAct();
         } else if (id === 'machinery_lifecycle') {
             document.getElementById('subModule_machinery_lifecycle').classList.remove('hidden');
-            // Передаем хук загрузки истории файлов, чтобы при генерации актов модуль мог проверять наличие файлов в хранилище
+            // Передаем в инициализацию массив уже загруженных файлов из Storage для быстрой сверки
             initMachineryLifecycle(window.lastLoadedFilesHistory || []);
         }
     };
@@ -177,7 +176,7 @@ export function init() {
 
             if (error) throw error;
             
-            // Сохраняем историю в глобальный массив для аналитики нехватки документов в подмодуле техники
+            // Сохраняем кэш файлов, чтобы подмодуль техники мог строить аналитику "присутствует файл или нет"
             window.lastLoadedFilesHistory = data || [];
 
             if (!data || data.length === 0) {
@@ -221,11 +220,6 @@ export function init() {
                     </tr>
                 `;
             }).join('');
-
-            // Если мы сейчас находимся внутри подмодуля техники, то при обновлении истории пересчитываем его таблицы
-            if (currentSubModule === 'machinery_lifecycle' && typeof window.reloadLifecycleDashboard === 'font') {
-                window.reloadLifecycleDashboard();
-            }
 
         } catch (err) {
             tableBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-xs text-red-500 font-bold">Ошибка загрузки: ' + err.message + '</td></tr>';
