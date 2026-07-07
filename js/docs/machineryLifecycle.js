@@ -85,7 +85,8 @@ export async function initMachineryLifecycle(storageFiles) {
 
     async function loadData() {
         try {
-            const { data, error } = await supabase.from('vehicles').select('id, brand, model, inv_num, type, driver_name');
+            // Исключили brand, добавили name (для совместимости с твоей структурой)
+            const { data, error } = await supabase.from('vehicles').select('id, name, model, inv_num, type, driver_name');
             if (error) throw error;
             allVehicles = data || [];
             renderTable(allVehicles);
@@ -104,13 +105,16 @@ export async function initMachineryLifecycle(storageFiles) {
         tableBody.innerHTML = vehiclesList.map(v => {
             const inv = v.inv_num || 'б/н';
             
+            // Безопасное определение названия: если name пустой, берем model
+            const vehicleTitle = v.name || v.model || 'Техника';
+            
             const hasDefect = storageFiles.some(f => f.name.includes('defect_') && f.name.includes(inv));
             const hasTo = storageFiles.some(f => f.name.includes('to_report_') && f.name.includes(inv));
             const hasRepair = storageFiles.some(f => f.name.includes('repair_out_') && f.name.includes(inv));
             const hasStorage = storageFiles.some(f => f.name.includes('storage_') && f.name.includes(inv));
 
             return '<tr class="border-b border-gray-200 hover:bg-gray-50 transition text-xs font-medium text-gray-800">' +
-                '<td class="p-3 font-bold text-gray-900">' + (v.brand || '') + ' ' + (v.model || '') + ' <span class="block text-[10px] text-gray-400 font-mono">Инв: ' + inv + '</span></td>' +
+                '<td class="p-3 font-bold text-gray-900">' + vehicleTitle + ' <span class="block text-[10px] text-gray-400 font-mono">Инв: ' + inv + '</span></td>' +
                 '<td class="p-3 text-[11px] text-gray-500">' + (v.type || '—') + '</td>' +
                 '<td class="p-3 font-semibold text-gray-700">' + (v.driver_name || '❌ Не назначен') + '</td>' +
                 '<td class="p-3 text-center text-sm">' + (hasDefect ? '🟢' : '🔴') + '</td>' +
@@ -127,7 +131,7 @@ export async function initMachineryLifecycle(storageFiles) {
     searchInput?.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = allVehicles.filter(v => 
-            (v.brand && v.brand.toLowerCase().includes(query)) || 
+            (v.name && v.name.toLowerCase().includes(query)) || 
             (v.model && v.model.toLowerCase().includes(query)) || 
             (v.inv_num && v.inv_num.toLowerCase().includes(query))
         );
@@ -140,8 +144,10 @@ export async function initMachineryLifecycle(storageFiles) {
         selectedVehicle = allVehicles.find(v => v.id == id);
         if (!selectedVehicle) return;
 
+        const vehicleTitle = selectedVehicle.name || selectedVehicle.model || 'Техника';
+
         document.getElementById('lifecycleFormsBlock').classList.remove('hidden');
-        document.getElementById('selectedVehicleTitle').innerText = '🚜 Выбрана машина: ' + (selectedVehicle.brand || '') + ' ' + (selectedVehicle.model || '') + ' (Инв. № ' + (selectedVehicle.inv_num || 'б/н') + ')';
+        document.getElementById('selectedVehicleTitle').innerText = '🚜 Выбрана машина: ' + vehicleTitle + ' (Инв. № ' + (selectedVehicle.inv_num || 'б/н') + ')';
         
         const driverInputs = ['defect_driver', 'to_driver', 'repair_driver', 'storage_driver'];
         driverInputs.forEach(i => {
