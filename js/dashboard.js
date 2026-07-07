@@ -192,7 +192,11 @@ function getUnitByCategory(type) {
     }
     return 'м/ч';
 }
-
+// ===== Сброс фильтра =====
+function dashResetFilter() {
+    localStorage.removeItem('dash_hidden_warranty');
+    loadDashboardData();
+}
 // ---------- Инициализация ----------
 export async function init() {
     window.dashCompleteTask = dashCompleteTask;
@@ -203,6 +207,7 @@ export async function init() {
     window.dashOpenDocsModal = dashOpenDocsModal;
     window.dashCloseModal = dashCloseModal;
     window.dashSaveModalData = dashSaveModalData;
+    window.dashResetFilter = dashResetFilter;
 
     document.addEventListener('click', function(e) {
         const drop = document.getElementById('dashFilterDropdown');
@@ -311,8 +316,10 @@ function renderFilterCheckboxes(vehicles) {
         const tags = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         return tags.includes('Гарантия');
     });
+    const statsEl = document.getElementById('dashFilterStats');
     if (warrantyVehicles.length === 0) {
         container.innerHTML = `<p class="text-gray-400 text-sm py-2 text-center font-medium">Нет гарантийной техники</p>`;
+        if (statsEl) statsEl.innerText = '';
         return;
     }
     warrantyVehicles.sort((a,b) => a.model.localeCompare(b.model));
@@ -325,6 +332,8 @@ function renderFilterCheckboxes(vehicles) {
             </label>
         `;
     }).join('');
+    const visibleCount = warrantyVehicles.filter(v => !hiddenVehicles.includes(v.id)).length;
+    if (statsEl) statsEl.innerText = `Показано ${visibleCount} из ${warrantyVehicles.length}`;
 }
 
 function dashToggleLocalVisibility(vehicleId, isChecked) {
@@ -339,6 +348,12 @@ function dashToggleLocalVisibility(vehicleId, isChecked) {
         renderSeparatedAlerts(window.dashCachedVehicles, window.dashCachedTasks);
     }
 }
+
+// Сброс фильтра (показать все машины)
+window.dashResetFilter = () => {
+    localStorage.removeItem('dash_hidden_warranty');
+    loadDashboardData();
+};
 
 // ---------- Модалки ----------
 function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDate, insDate) {
