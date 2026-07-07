@@ -4,7 +4,7 @@ export const absenceTemplate = `
 <div id="subModule_absence_act" class="hidden space-y-4 fade-in-sub">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Левая панель (параметры) -->
-        <div class="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
             <h3 class="text-sm font-extrabold text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-3">
                 <span>🛑</span> Параметры актов о прогуле
             </h3>
@@ -13,11 +13,11 @@ export const absenceTemplate = `
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-600 mb-0.5">С какого числа</label>
-                        <input type="date" id="absenceStartDate" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+                        <input type="date" id="absenceStartDate" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-gray-600 mb-0.5">По какое число</label>
-                        <input type="date" id="absenceEndDate" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+                        <input type="date" id="absenceEndDate" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                     </div>
                 </div>
                 <p class="text-[10px] text-amber-600 font-bold">💡 Будет сгенерирован отдельный акт на каждый день диапазона.</p>
@@ -26,15 +26,15 @@ export const absenceTemplate = `
                 <span class="text-xs font-extrabold text-gray-600 uppercase tracking-wider">Данные сотрудника</span>
                 <div>
                     <label class="block text-[10px] font-bold text-gray-600 mb-0.5">ФИО (род. падеж) — для Актов</label>
-                    <input type="text" id="absenceEmployeeName" value="Пустельникова А.Ю." oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+                    <input type="text" id="absenceEmployeeName" value="Пустельникова А.Ю." oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-gray-600 mb-0.5">ФИО (им. падеж) — для Докладной</label>
-                    <input type="text" id="absenceEmployeeNameIm" value="Алексей Юрьевич" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+                    <input type="text" id="absenceEmployeeNameIm" value="Алексей Юрьевич" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-gray-600 mb-0.5">Должность</label>
-                    <input type="text" id="absenceEmployeeJob" value="тракторист-машинист" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+                    <input type="text" id="absenceEmployeeJob" value="тракторист-машинист" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                 </div>
             </div>
             <button onclick="window.printAndSaveAbsence()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
@@ -42,15 +42,53 @@ export const absenceTemplate = `
             </button>
         </div>
 
-        <!-- Правая панель – превью -->
-        <div class="lg:col-span-2 bg-gray-50 rounded-2xl p-4 border border-gray-200 flex flex-col h-[600px] lg:h-auto">
-            <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex-1 overflow-auto" id="absenceLivePreview" style="font-family: 'Times New Roman', serif; min-height: 400px; max-height: 800px;"></div>
+        <!-- Правая панель – превью с масштабированием -->
+        <div class="lg:col-span-2 bg-gray-50 rounded-2xl p-3 border border-gray-200 flex flex-col min-h-[500px]">
+            <div id="absencePreviewWrapper" class="flex-1 flex items-center justify-center overflow-hidden relative">
+                <div id="absencePreviewScaler" style="transform-origin: top left; transition: transform 0.2s ease;">
+                    <div id="absenceLivePreview" class="bg-white shadow-lg" style="width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; color: black; overflow: hidden;">
+                        <!-- Сюда динамически вставляется содержимое -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 `;
 
 export function initAbsenceAct() {
+    // Функция масштабирования превью
+    function scalePreview() {
+        const wrapper = document.getElementById('absencePreviewWrapper');
+        const scaler = document.getElementById('absencePreviewScaler');
+        const preview = document.getElementById('absenceLivePreview');
+        if (!wrapper || !scaler || !preview) return;
+
+        // Получаем размеры wrapper
+        const wrapperWidth = wrapper.clientWidth;
+        const wrapperHeight = wrapper.clientHeight;
+
+        // Естественные размеры превью (А4 в мм, но мы используем px, так как задали width: 210mm)
+        // Но на экране браузер интерпретирует mm в пиксели. Лучше получить реальные размеры элемента.
+        const previewWidth = preview.offsetWidth;
+        const previewHeight = preview.offsetHeight;
+
+        // Вычисляем коэффициенты масштаба, чтобы вписать в wrapper
+        const scaleX = wrapperWidth / previewWidth;
+        const scaleY = wrapperHeight / previewHeight;
+        const scale = Math.min(scaleX, scaleY, 1); // не больше 1, чтобы не увеличивать
+
+        // Применяем трансформацию
+        scaler.style.transform = `scale(${scale})`;
+        scaler.style.transformOrigin = 'top left';
+        // Смещаем, чтобы центрировать
+        const offsetX = (wrapperWidth - previewWidth * scale) / 2;
+        const offsetY = (wrapperHeight - previewHeight * scale) / 2;
+        scaler.style.marginLeft = offsetX + 'px';
+        scaler.style.marginTop = offsetY + 'px';
+    }
+
+    // Остальные функции (генерация контента и т.д.)
     function getDatesInRange(startStr, endStr) {
         const dates = [];
         if (!startStr || !endStr) return dates;
@@ -81,7 +119,6 @@ export function initAbsenceAct() {
         return str.toLowerCase().split('').map(c => ru[c] || (/[a-z0-9_-]/.test(c) ? c : '')).join('');
     }
 
-    // Генерация HTML для акта (для превью и для Word)
     window.generateAbsenceHtmlContent = (isForWord = false) => {
         const empName = document.getElementById('absenceEmployeeName')?.value || '';
         const empNameIm = document.getElementById('absenceEmployeeNameIm')?.value || '';
@@ -96,14 +133,13 @@ export function initAbsenceAct() {
 
         const formattedStart = formatRusDate(startRaw);
         const formattedEnd = formatRusDate(endRaw);
-        // Для Word используем разрыв страницы, для экрана просто разделяем
-        const separator = isForWord ? '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">' : '<hr class="my-6 border-gray-300">';
+        const separator = isForWord ? '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">' : '';
 
-        // Генерация актов (каждый акт – это отдельный блок)
+        // Генерация актов
         const actsArrayHtml = dateList.map(dateStr => {
             const formattedCurrentDate = formatRusDate(dateStr);
             return `
-            <div class="print-page-a4" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; max-width: 100%;">
+            <div style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 0; margin-bottom: 20px; page-break-after: always;">
                 <div style="text-align: left; margin-bottom: 30px; font-size: 13px;">
                     Филиал СХК «Великополье»<br>ГП «Минсктранс»
                 </div>
@@ -143,10 +179,10 @@ export function initAbsenceAct() {
             </div>`;
         });
 
-        // Докладная записка
+        // Докладная
         const reportDate = formattedEnd;
         const reportHtml = `
-        <div class="print-page-a4" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px; margin-top: 20px; max-width: 100%;">
+        <div style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 0; page-break-after: always;">
             <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 40px;">
                 <tr>
                     <td style="width: 45%; border: none;"></td>
@@ -160,7 +196,7 @@ export function initAbsenceAct() {
                 </tr>
             </table>
             <div style="margin-bottom: 15px; font-size: 14px;">${reportDate}г.</div>
-            <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; letter-spacing: 1px;">Докладная записка</div>
+            <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px;">Докладная записка</div>
             <p style="text-indent: 40px; margin-bottom: 60px;">
                 Довожу до Вашего сведения, что ${empJob} ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
             </p>
@@ -173,8 +209,7 @@ export function initAbsenceAct() {
         </div>`;
 
         const allActsCombined = actsArrayHtml.join(separator);
-        const finalContent = allActsCombined + (isForWord ? separator : '<hr class="my-6 border-gray-300">') + reportHtml;
-
+        const finalContent = allActsCombined + separator + reportHtml;
         return isForWord ? finalContent : { combinedHtml: finalContent };
     };
 
@@ -183,22 +218,21 @@ export function initAbsenceAct() {
         if (!previewBlock) return;
         const { combinedHtml } = window.generateAbsenceHtmlContent(false);
         previewBlock.innerHTML = combinedHtml;
+        // После вставки контента – пересчитать масштаб
+        setTimeout(scalePreview, 50);
     };
 
     window.printAndSaveAbsence = async () => {
         const fullWordHtml = window.generateAbsenceHtmlContent(true);
         if (!fullWordHtml) return alert('Нет данных для печати.');
 
-        // Печать через print-блок
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
-            // Вставляем весь контент без дополнительных стилей (для печати)
-            printBlock.innerHTML = fullWordHtml;
+            printBlock.innerHTML = window.generateAbsenceHtmlContent(false).combinedHtml;
             window.print();
             printBlock.innerHTML = '';
         }
 
-        // Сохранение в Supabase Storage
         const supabase = window._supabase || window.supabase;
         if (!supabase) return alert('Ошибка: Клиент Supabase не найден.');
 
@@ -210,15 +244,7 @@ export function initAbsenceAct() {
         try {
             const wordContent = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-                <head>
-                    <meta charset="utf-8">
-                    <style>
-                        /* Стили для Word, чтобы акты были на отдельных страницах */
-                        @page { size: A4; margin: 2.5cm 2cm 2.5cm 2.5cm; }
-                        body { font-family: 'Times New Roman', serif; font-size: 14pt; }
-                        .print-page-a4 { page-break-after: always; }
-                    </style>
-                </head>
+                <head><meta charset="utf-8"></head>
                 <body>${fullWordHtml}</body>
                 </html>
             `;
@@ -232,13 +258,18 @@ export function initAbsenceAct() {
         }
     };
 
-    // Установка значений по умолчанию при загрузке
+    // Инициализация: установка дат и привязка обработчика ресайза
     setTimeout(() => {
         const today = new Date().toISOString().split('T')[0];
-        const startEl = document.getElementById('absenceStartDate');
-        const endEl = document.getElementById('absenceEndDate');
-        if (startEl) startEl.value = today;
-        if (endEl) endEl.value = today;
+        if (document.getElementById('absenceStartDate')) document.getElementById('absenceStartDate').value = today;
+        if (document.getElementById('absenceEndDate')) document.getElementById('absenceEndDate').value = today;
         window.updateAbsencePreview();
+
+        // При изменении размера окна пересчитываем масштаб
+        window.addEventListener('resize', scalePreview);
+        // А также при смене ориентации экрана
+        window.addEventListener('orientationchange', () => {
+            setTimeout(scalePreview, 300);
+        });
     }, 50);
 }
