@@ -450,6 +450,21 @@ function renderFleet() {
                                         </div>
                                     </div>
                                     
+                                    <div class="grid grid-cols-2 gap-2 pt-0.5">
+                                        <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[11px] text-center font-bold text-gray-800 bg-gray-50 border-2 border-gray-400 rounded-md hover:bg-gray-100 transition py-1">
+                                            Изменить
+                                        </button>
+                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[11px] text-center font-bold text-emerald-800 bg-emerald-50 border-2 border-emerald-400 rounded-md hover:bg-emerald-100 transition py-1">
+                                            Задачи (${vTasks.length})
+                                        </button>
+                                    </div>
+                                    <!-- НОВЫЙ БЛОК: добавление часов -->
+                                    <div class="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-gray-200">
+                                        <span class="text-[10px] text-gray-500 font-bold whitespace-nowrap">➕ часы:</span>
+                                        <input type="number" id="addHours_${v.id}" min="0" step="0.5" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-md p-1 text-xs font-bold focus:border-emerald-600" placeholder="0.5">
+                                        <button onclick="window.addHoursToVehicle(${v.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-md text-xs font-bold transition">Добавить</button>
+                                    </div>
+
                                     <div class="space-y-1">
                                         <div class="text-sm font-mono font-black text-gray-950 bg-gray-50 border-2 border-gray-900 inline-block px-3 py-1 rounded-md tracking-wider">
                                             ${v.plate || 'БЕЗ ГОСНОМЕРА'}
@@ -781,4 +796,36 @@ window.completeTask = async (taskId) => {
         const modal = document.getElementById('tasksModal');
         if (modal && !modal.classList.contains('hidden')) renderTasksListInsideModal();
     } catch (e) { console.error(e); }
+};
+
+window.addHoursToVehicle = async (vehicleId) => {
+    const input = document.getElementById(`addHours_${vehicleId}`);
+    if (!input) return;
+    const hours = parseFloat(input.value);
+    if (isNaN(hours) || hours <= 0) {
+        alert("Введите положительное число часов (например, 8.5)");
+        return;
+    }
+    if (!window._supabase) return;
+    try {
+        // Получаем текущие часы
+        const { data, error } = await window._supabase
+            .from('vehicles')
+            .select('current_hours')
+            .eq('id', vehicleId)
+            .single();
+        if (error) throw error;
+        const current = data.current_hours || 0;
+        const newHours = current + hours;
+        // Обновляем
+        const { error: updateError } = await window._supabase
+            .from('vehicles')
+            .update({ current_hours: newHours })
+            .eq('id', vehicleId);
+        if (updateError) throw updateError;
+        input.value = ''; // очищаем поле
+        await loadAllData(false); // перезагружаем данные (без сброса фильтров)
+    } catch (err) {
+        alert("Ошибка добавления часов: " + err.message);
+    }
 };
