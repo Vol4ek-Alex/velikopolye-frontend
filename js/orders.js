@@ -189,7 +189,6 @@ function setupSubModuleNavigation() {
             }
             if (targetModule === 'absence_act' && typeof window.updateAbsencePreview === 'function') {
                 const today = new Date().toISOString().split('T')[0];
-                document.getElementById('absenceDocDate').value = today;
                 document.getElementById('absenceStartDate').value = today;
                 document.getElementById('absenceEndDate').value = today;
                 window.updateAbsencePreview();
@@ -234,25 +233,29 @@ function setupSubModuleNavigation() {
             let typeLabel = 'Документ';
             let bgColor = 'bg-gray-100';
             let textColor = 'text-gray-700';
-            if (f.name.startsWith('trip_')) {
+            if (f.name.startsWith('trip_') || f.name.includes('Командировка')) {
                 icon = '💼';
                 typeLabel = 'Командировка';
                 bgColor = 'bg-blue-100';
                 textColor = 'text-blue-800';
-            } else if (f.name.startsWith('battery_')) {
+            } else if (f.name.startsWith('battery_') || f.name.includes('СписаниеАКБ')) {
                 icon = '🔋';
                 typeLabel = 'Списание АКБ';
                 bgColor = 'bg-amber-100';
                 textColor = 'text-amber-800';
-            } else if (f.name.startsWith('absence_')) {
+            } else if (f.name.startsWith('absence_') || f.name.includes('Прогул')) {
                 icon = '🛑';
                 typeLabel = 'Прогул';
                 bgColor = 'bg-red-100';
                 textColor = 'text-red-800';
             }
-            // Извлекаем дату из имени (если есть)
+            // Извлекаем дату из имени (формат ГГГГ-ММ-ДД)
             const dateMatch = f.name.match(/\d{4}-\d{2}-\d{2}/);
             const displayDate = dateMatch ? dateMatch[0] : '—';
+
+            // Извлекаем ФИО/название (после даты, до .doc)
+            let namePart = f.name.replace(/^[^_]*_/, '').replace(/\d{4}-\d{2}-\d{2}_/, '').replace(/\.doc$/, '');
+            if (namePart.length > 30) namePart = namePart.slice(0, 28) + '…';
 
             return `
                 <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition flex flex-col">
@@ -260,9 +263,10 @@ function setupSubModuleNavigation() {
                         <span class="text-2xl">${icon}</span>
                         <div class="flex-1 min-w-0">
                             <div class="font-bold text-gray-800 text-sm truncate" title="${f.name}">${f.name}</div>
-                            <div class="flex items-center gap-2 mt-0.5">
+                            <div class="flex items-center gap-2 mt-0.5 flex-wrap">
                                 <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${bgColor} ${textColor}">${typeLabel}</span>
                                 <span class="text-[10px] text-gray-400">📅 ${displayDate}</span>
+                                <span class="text-[10px] text-gray-500 truncate">${namePart}</span>
                             </div>
                         </div>
                     </div>
