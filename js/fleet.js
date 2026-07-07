@@ -333,14 +333,18 @@ async function loadAllData(isFirstLoad = false) {
             renderCategoriesBar();
         }
 
-        // Обновление открытых модалок, если они видны
+        // Обновление открытых модалок, если они видны (с проверкой на существование)
         if (!isFirstLoad) {
-            if (!document.getElementById('driversManagementModal').classList.contains('hidden')) updateDriversDOMList();
-            if (!document.getElementById('tagsManagementModal').classList.contains('hidden')) updateTagsDOMList();
-            if (!document.getElementById('categoriesModal').classList.contains('hidden')) updateCategoriesDOMList();
+            const driversModal = document.getElementById('driversManagementModal');
+            const tagsModal = document.getElementById('tagsManagementModal');
+            const categoriesModal = document.getElementById('categoriesModal');
+
+            if (driversModal && !driversModal.classList.contains('hidden')) updateDriversDOMList();
+            if (tagsModal && !tagsModal.classList.contains('hidden')) updateTagsDOMList();
+            if (categoriesModal && !categoriesModal.classList.contains('hidden')) updateCategoriesDOMList();
         }
 
-        renderFleet(isFirstLoad);
+        renderFleet();
     } catch (e) {
         console.error("Ошибка синхронизации данных автопарка:", e);
     }

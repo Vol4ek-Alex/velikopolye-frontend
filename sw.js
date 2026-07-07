@@ -1,4 +1,3 @@
-// sw.js
 const CACHE_NAME = 'arm-cache-v1';
 const urlsToCache = [
     '/',
@@ -34,10 +33,9 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-    // Отвечаем только на GET-запросы и только на свои URL
-    const url = new URL(event.request.url);
-    if (event.request.method !== 'GET' || url.origin !== location.origin) {
-        // Пропускаем POST и запросы к другим доменам (Supabase)
+    // Не кешируем POST, PUT, DELETE и т.п.
+    if (event.request.method !== 'GET') {
+        event.respondWith(fetch(event.request));
         return;
     }
 
@@ -52,7 +50,6 @@ self.addEventListener('fetch', event => {
                         if (!networkResponse || networkResponse.status !== 200) {
                             return networkResponse;
                         }
-                        // Клонируем только успешные GET-ответы
                         const responseToCache = networkResponse.clone();
                         caches.open(CACHE_NAME)
                             .then(cache => {

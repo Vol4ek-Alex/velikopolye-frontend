@@ -1,6 +1,77 @@
 // js/links.js
 
-export const template = ` ... (шаблон без изменений) ... `;
+export const template = `
+    <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+                <span class="bg-purple-100 p-1.5 rounded-lg">🔗</span> Полезные ссылки
+            </h2>
+            <p class="text-sm text-gray-500 font-medium">Быстрый доступ к нужным ресурсам</p>
+        </div>
+        <button onclick="window.openLinkModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2">
+            ➕ Добавить ссылку
+        </button>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm mb-6">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-2">Категории:</span>
+            <button onclick="window.filterLinks('all')" id="linkCat_all" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-purple-600 bg-purple-600 text-white">Все</button>
+            <div id="linkCategoriesContainer" class="flex flex-wrap gap-2"></div>
+            <button onclick="window.openCategoryModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">+ Управлять</button>
+        </div>
+    </div>
+
+    <div id="linksGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div class="col-span-full text-center py-12 text-sm text-gray-400 font-medium bg-white rounded-2xl border border-gray-200">Загрузка ссылок...</div>
+    </div>
+
+    <div id="linkFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative">
+            <button onclick="window.closeLinkModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
+            <h3 id="linkModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Добавление ссылки</h3>
+            <form id="linkForm" class="space-y-4 text-sm">
+                <input type="hidden" id="linkId">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Название *</label>
+                    <input type="text" id="linkTitle" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent" placeholder="Например: Яндекс">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">URL *</label>
+                    <input type="url" id="linkUrl" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent" placeholder="https://example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Категория</label>
+                    <select id="linkCategory" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent">
+                        <option value="">Без категории</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Иконка (URL картинки или эмодзи)</label>
+                    <input type="text" id="linkIcon" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent" placeholder="https://... или 🚜">
+                </div>
+                <div class="flex gap-3 pt-3 border-t border-gray-100">
+                    <button type="button" onclick="window.closeLinkModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
+                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
+                </div>
+                <button type="button" id="linkDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить ссылку</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="categoryModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+            <button onclick="window.closeCategoryModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
+            <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Управление категориями</h3>
+            <div id="categoryList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            <div class="pt-3 border-t border-gray-100 flex gap-2">
+                <input type="text" id="newCategoryInput" placeholder="Новая категория..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent">
+                <button onclick="window.addCategory()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition shadow-sm">Добавить</button>
+            </div>
+            <button onclick="window.closeCategoryModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
+        </div>
+    </div>
+`;
 
 // ===== Глобальные переменные =====
 let links = [];
@@ -8,7 +79,7 @@ let categories = [];
 let currentCategory = 'all';
 let refreshIntervalId = null;
 
-// ===== Инициализация =====
+// ===== Инициализация модуля =====
 export async function init() {
     console.log('🔗 Модуль "Ссылки" инициализирован');
 
@@ -21,15 +92,10 @@ export async function init() {
     window.deleteCategory = deleteCategory;
     window.deleteLink = deleteLink;
 
-    if (!window._supabase) {
-        document.getElementById('linksGrid').innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-medium">Ошибка: Supabase не инициализирован</div>`;
-        return;
-    }
-
-    // Привязываем обработчик формы здесь, а не в DOMContentLoaded
+    // Привязываем обработчик формы (чтобы не было перезагрузки)
     const form = document.getElementById('linkForm');
     if (form) {
-        // Удаляем старые обработчики, чтобы не было дублей
+        // Убираем старые обработчики, чтобы не дублировать
         form.removeEventListener('submit', handleFormSubmit);
         form.addEventListener('submit', handleFormSubmit);
     }
@@ -39,6 +105,12 @@ export async function init() {
     if (deleteBtn) {
         deleteBtn.removeEventListener('click', handleDelete);
         deleteBtn.addEventListener('click', handleDelete);
+    }
+
+    if (!window._supabase) {
+        console.error('❌ Supabase не инициализирован');
+        document.getElementById('linksGrid').innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-medium">Ошибка: Supabase не инициализирован</div>`;
+        return;
     }
 
     await loadLinks();
@@ -51,74 +123,6 @@ export async function init() {
         await loadLinks();
         renderLinks();
     }, 30000);
-}
-
-// ===== Обработчик отправки формы =====
-async function handleFormSubmit(e) {
-    e.preventDefault(); // сразу предотвращаем перезагрузку
-    const id = document.getElementById('linkId').value;
-    const title = document.getElementById('linkTitle').value.trim();
-    const url = document.getElementById('linkUrl').value.trim();
-    const category = document.getElementById('linkCategory').value || null;
-    const icon = document.getElementById('linkIcon').value.trim() || null;
-
-    if (!title || !url) {
-        alert('Название и URL обязательны!');
-        return;
-    }
-
-    if (!window._supabase) {
-        alert('Ошибка: Supabase не инициализирован');
-        return;
-    }
-
-    const payload = { title, url, category, icon };
-
-    try {
-        let result;
-        if (id) {
-            result = await window._supabase
-                .from('links')
-                .update(payload)
-                .eq('id', id);
-        } else {
-            result = await window._supabase
-                .from('links')
-                .insert([payload]);
-        }
-        if (result.error) throw result.error;
-
-        console.log('✅ Ссылка сохранена');
-        closeLinkModal();
-        await loadLinks();
-        await loadCategories();
-        renderCategories();
-        renderLinks();
-    } catch (err) {
-        console.error('❌ Ошибка сохранения:', err);
-        alert('Ошибка сохранения: ' + err.message);
-    }
-}
-
-// ===== Обработчик удаления из модалки =====
-async function handleDelete() {
-    const id = document.getElementById('linkId').value;
-    if (!id) return;
-    if (!confirm('Удалить ссылку?')) return;
-    try {
-        const { error } = await window._supabase
-            .from('links')
-            .delete()
-            .eq('id', id);
-        if (error) throw error;
-        closeLinkModal();
-        await loadLinks();
-        await loadCategories();
-        renderCategories();
-        renderLinks();
-    } catch (err) {
-        alert('Ошибка удаления: ' + err.message);
-    }
 }
 
 // ===== Загрузка ссылок =====
@@ -134,7 +138,6 @@ async function loadLinks() {
         console.log(`✅ Загружено ${links.length} ссылок`);
     } catch (err) {
         console.error('❌ Ошибка загрузки ссылок:', err);
-        alert('Ошибка загрузки ссылок: ' + err.message);
     }
 }
 
@@ -251,7 +254,6 @@ function openLinkModal(id = null) {
     const deleteBtn = document.getElementById('linkDeleteBtn');
     const categorySelect = document.getElementById('linkCategory');
 
-    // Заполняем категории
     const allCats = ['', ...categories];
     categorySelect.innerHTML = allCats.map(c => `<option value="${c}">${c || 'Без категории'}</option>`).join('');
 
@@ -284,6 +286,75 @@ function closeLinkModal() {
 
 window.closeLinkModal = closeLinkModal;
 window.openLinkModal = openLinkModal;
+
+// ===== Обработчик отправки формы =====
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    console.log('Форма отправлена');
+    const id = document.getElementById('linkId').value;
+    const title = document.getElementById('linkTitle').value.trim();
+    const url = document.getElementById('linkUrl').value.trim();
+    const category = document.getElementById('linkCategory').value || null;
+    const icon = document.getElementById('linkIcon').value.trim() || null;
+
+    if (!title || !url) {
+        alert('Название и URL обязательны!');
+        return;
+    }
+
+    if (!window._supabase) {
+        alert('Ошибка: Supabase не инициализирован');
+        return;
+    }
+
+    const payload = { title, url, category, icon };
+
+    try {
+        let result;
+        if (id) {
+            result = await window._supabase
+                .from('links')
+                .update(payload)
+                .eq('id', id);
+        } else {
+            result = await window._supabase
+                .from('links')
+                .insert([payload]);
+        }
+        if (result.error) throw result.error;
+
+        console.log('✅ Ссылка сохранена');
+        closeLinkModal();
+        await loadLinks();
+        await loadCategories();
+        renderCategories();
+        renderLinks();
+    } catch (err) {
+        console.error('❌ Ошибка сохранения:', err);
+        alert('Ошибка сохранения: ' + err.message);
+    }
+}
+
+// ===== Обработчик удаления из модалки =====
+async function handleDelete() {
+    const id = document.getElementById('linkId').value;
+    if (!id) return;
+    if (!confirm('Удалить ссылку?')) return;
+    try {
+        const { error } = await window._supabase
+            .from('links')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        closeLinkModal();
+        await loadLinks();
+        await loadCategories();
+        renderCategories();
+        renderLinks();
+    } catch (err) {
+        alert('Ошибка удаления: ' + err.message);
+    }
+}
 
 // ===== Удаление ссылки через кнопку на карточке =====
 window.deleteLink = async (id) => {
@@ -343,7 +414,6 @@ window.addCategory = async () => {
     input.value = '';
     renderCategoryList();
     renderCategories();
-    // Обновить селект в модалке
     const select = document.getElementById('linkCategory');
     if (select) {
         const option = document.createElement('option');
@@ -366,7 +436,6 @@ window.deleteCategory = async (cat) => {
         renderCategories();
         renderLinks();
         renderCategoryList();
-        // Обновить селект
         const select = document.getElementById('linkCategory');
         if (select) {
             select.querySelectorAll('option').forEach(opt => {
