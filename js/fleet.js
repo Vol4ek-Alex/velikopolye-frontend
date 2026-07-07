@@ -5,7 +5,7 @@ export const template = `
             <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
                 <span class="bg-blue-100 p-1.5 rounded-lg">🚜</span> Управление автопарком
             </h2>
-            <p class="text-sm text-gray-500 font-medium">Учет техники, закрепление водителей, контроль документов и ремонтов</p>
+            <p class="text-sm text-gray-500 font-medium">Учет техники, закрепление водителей и механизаторов, контроль документов и ремонтов</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <button onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">👤 Вод/Мех</button>
@@ -13,7 +13,6 @@ export const template = `
             <button onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">📂 Категории</button>
             <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">⏱️ Добавить часы</button>
             <button onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">➕ Карта</button>
-            <button onclick="window.downloadSimpleReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">📄 Скачать отчёт (CSV)</button>
         </div>
     </div>
 
@@ -38,9 +37,10 @@ export const template = `
         <div class="text-center text-gray-400 py-12 text-sm font-medium bg-white rounded-2xl border border-gray-200">Загрузка данных...</div>
     </div>
 
-    <!-- Модалка редактирования техники -->
+    <!-- Модалка редактирования техники (с крестиком) -->
     <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
+            <button onclick="window.closeVModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 id="vModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Карточка техники</h3>
             <form id="vForm" class="space-y-4 text-sm">
                 <input type="hidden" id="vId">
@@ -93,7 +93,6 @@ export const template = `
                     <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200 max-h-32 overflow-y-auto"></div>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="window.closeVModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
                     <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
                 </div>
                 <button type="button" id="vDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить из базы</button>
@@ -101,9 +100,12 @@ export const template = `
         </div>
     </div>
 
+    <!-- Остальные модалки (водители, теги, категории, задачи, часы) – без изменений, 
+         но для единообразия тоже добавим крестик (это не критично, можно оставить как есть) -->
     <!-- Модалка водителей -->
     <div id="driversManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+            <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">👤 Водители и механизаторы</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto" id="modalDriversList"></div>
             <div class="pt-3 border-t border-gray-100 space-y-3">
@@ -116,7 +118,8 @@ export const template = `
 
     <!-- Модалка тегов -->
     <div id="tagsManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+            <button onclick="document.getElementById('tagsManagementModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">🏷️ Управление тегами</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto" id="modalTagsList"></div>
             <div class="pt-3 border-t border-gray-100 space-y-3">
@@ -133,7 +136,8 @@ export const template = `
 
     <!-- Модалка категорий -->
     <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+            <button onclick="document.getElementById('categoriesModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">📂 Категории</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto" id="modalCategoriesList"></div>
             <div class="pt-3 border-t border-gray-100 space-y-3">
@@ -146,7 +150,8 @@ export const template = `
 
     <!-- Модалка задач -->
     <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-4">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+            <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <div>
                 <h3 id="tasksModalTitle" class="text-lg font-extrabold text-gray-900">Задачи по технике</h3>
                 <p class="text-sm text-gray-500 font-medium" id="tasksModalSubtitle"></p>
@@ -164,7 +169,8 @@ export const template = `
 
     <!-- Модалка добавления часов -->
     <div id="hoursModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+            <button onclick="window.closeHoursModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">⏱️ Добавить наработку</h3>
             <div class="space-y-4">
                 <div>
@@ -204,15 +210,26 @@ let refreshIntervalId = null;
 
 // Определение единицы измерения в зависимости от категории
 function getUnitByCategory(type) {
-    if (!type) return 'м/ч'; // по умолчанию
+    if (!type) return 'м/ч';
     const lower = type.toLowerCase();
-    // Список категорий, для которых используем километры (пробег)
     const carKeywords = ['легковой', 'грузовой', 'грузопассажирский', 'автобус', 'микроавтобус', 'пикап', 'фургон', 'тягач', 'седельный'];
     for (let kw of carKeywords) {
         if (lower.includes(kw)) return 'км';
     }
-    return 'м/ч'; // все остальное — моточасы
+    return 'м/ч';
 }
+
+// Определение роли: Водитель или Механизатор
+function getDriverRole(type) {
+    if (!type) return 'Механизатор';
+    const lower = type.toLowerCase();
+    const carKeywords = ['легковой', 'грузовой', 'грузопассажирский', 'автобус', 'микроавтобус', 'пикап', 'фургон', 'тягач', 'седельный'];
+    for (let kw of carKeywords) {
+        if (lower.includes(kw)) return 'Водитель';
+    }
+    return 'Механизатор';
+}
+
 // ===== Инициализация модуля =====
 export async function init() {
     // Поиск
@@ -260,14 +277,13 @@ export async function init() {
     window.openTasksModalForm = openTasksModalForm;
     window.addVehicleTask = addVehicleTask;
     window.completeTask = completeTask;
-    window.downloadSimpleReport = downloadSimpleReport
 
     // Первая загрузка данных
     await loadAllData(true);
 
-    // Автообновление каждые 5 секунд
+    // Автообновление каждые 10 секунд (увеличил, чтобы реже мигало)
     if (refreshIntervalId) clearInterval(refreshIntervalId);
-    refreshIntervalId = setInterval(() => loadAllData(false), 5000);
+    refreshIntervalId = setInterval(() => loadAllData(false), 10000);
 }
 
 // ===== Загрузка данных из Supabase =====
@@ -324,7 +340,7 @@ async function loadAllData(isFirstLoad = false) {
             if (!document.getElementById('categoriesModal').classList.contains('hidden')) updateCategoriesDOMList();
         }
 
-        renderFleet();
+        renderFleet(isFirstLoad);
     } catch (e) {
         console.error("Ошибка синхронизации данных автопарка:", e);
     }
@@ -335,7 +351,6 @@ function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
     if (!bar) return;
 
-    // Сохраняем позицию прокрутки меню, если оно открыто
     const menu = document.getElementById('customCategoryDropdownMenu');
     let savedScrollTop = 0;
     if (menu && !menu.classList.contains('hidden')) {
@@ -370,15 +385,10 @@ function renderCategoriesBar() {
 
     bar.innerHTML = html;
 
-    // Восстанавливаем прокрутку, если меню было открыто
     const newMenu = document.getElementById('customCategoryDropdownMenu');
     if (newMenu && !newMenu.classList.contains('hidden') && savedScrollTop > 0) {
         newMenu.scrollTop = savedScrollTop;
     }
-
-    // (остальные обработчики toggleCategoryDropdown и filterCategory остаются без изменений)
-    // Они уже объявлены ниже, но чтобы не дублировать, убедитесь, что они есть.
-    // Если вы не переносили их, они останутся из предыдущего кода.
 
     window.toggleCategoryDropdown = (e) => {
         e.stopPropagation();
@@ -410,8 +420,8 @@ if (!window._categoryDropdownClickSetup) {
     window._categoryDropdownClickSetup = true;
 }
 
-// ===== Рендеринг карточек =====
-function renderFleet() {
+// ===== Рендеринг карточек с улучшенным дизайном и кликабельностью =====
+function renderFleet(isFirstLoad = false) {
     const container = document.getElementById('fleetGridContainer');
     if (!container) return;
 
@@ -465,14 +475,13 @@ function renderFleet() {
                             if (!dateStr) return { text: '—', classes: 'text-gray-500 font-bold' };
                             const diffDays = Math.ceil((new Date(dateStr) - now) / (1000 * 60 * 60 * 24));
                             const formattedDate = new Date(dateStr).toLocaleDateString('ru-RU');
-                            
                             if (diffDays <= 0) {
-                                return { text: `${formattedDate} (Просрочено)`, classes: 'text-red-700 bg-red-50 border-2 border-red-300 px-2 py-0.5 rounded font-black text-[11px]' };
+                                return { text: `${formattedDate} (Просрочено)`, classes: 'text-red-700 bg-red-50 border border-red-300 px-2 py-0.5 rounded font-black text-[11px]' };
                             }
                             if (diffDays <= 30) {
-                                return { text: `${formattedDate} (${diffDays} дн.)`, classes: 'text-amber-900 bg-amber-50 border-2 border-amber-400 px-2 py-0.5 rounded font-black text-[11px]' };
+                                return { text: `${formattedDate} (${diffDays} дн.)`, classes: 'text-amber-900 bg-amber-50 border border-amber-400 px-2 py-0.5 rounded font-black text-[11px]' };
                             }
-                            return { text: formattedDate, classes: 'text-gray-900 bg-gray-50 border-2 border-gray-300 px-2 py-0.5 rounded font-bold text-[11px]' };
+                            return { text: formattedDate, classes: 'text-gray-900 bg-gray-50 border border-gray-300 px-2 py-0.5 rounded font-bold text-[11px]' };
                         };
 
                         const toInfo = formatDocStatus(v.inspection_date);
@@ -480,72 +489,78 @@ function renderFleet() {
                         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
                         const vTasks = tasks.filter(t => t.vehicle_id === v.id);
                         const safeVehicleJson = JSON.stringify(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                        const unit = getUnitByCategory(v.type);
+                        const label = unit === 'км' ? 'Пробег' : 'Наработка';
+                        const role = getDriverRole(v.type);
+
+                        // Определяем цветовую схему для карточки (по статусу)
+                        let cardBorder = 'border-gray-200';
+                        let cardShadow = 'shadow-sm';
+                        let statusColor = 'text-gray-600';
+                        if (vehicleTagsArray.includes('Неисправен')) {
+                            cardBorder = 'border-red-300';
+                            cardShadow = 'shadow-red-100';
+                            statusColor = 'text-red-700';
+                        } else if (vehicleTagsArray.includes('Гарантия')) {
+                            cardBorder = 'border-blue-300';
+                            cardShadow = 'shadow-blue-100';
+                            statusColor = 'text-blue-700';
+                        }
 
                         return `
-                            <div class="relative bg-white border-2 border-gray-400 rounded-xl p-4 shadow-2xs hover:border-emerald-600 transition flex flex-col justify-between">
+                            <div onclick="window.openVehicleModalForm(${safeVehicleJson})" class="relative bg-white border-2 rounded-xl p-4 ${cardBorder} ${cardShadow} hover:shadow-lg transition cursor-pointer flex flex-col justify-between">
+                                <div class="flex justify-between items-start">
+                                    <h4 class="font-bold text-gray-900 text-sm tracking-tight">${v.model}</h4>
+                                    <button onclick="event.stopPropagation(); window.openVehicleModalForm(${safeVehicleJson})" class="text-gray-400 hover:text-gray-700 transition text-xs" title="Редактировать">✏️</button>
+                                </div>
                                 
-                                ${v.inv_number ? `
-                                    <div class="absolute top-4 right-4 bg-gray-100 text-[11px] text-gray-900 px-2 py-0.5 rounded border-2 border-gray-400 font-mono font-bold">
-                                        Инв. №: ${v.inv_number}
+                                <div class="text-xs text-gray-600 font-medium mt-1 flex items-center gap-1.5">
+                                    <span>👤 ${role}:</span>
+                                    <span class="text-gray-900 font-black">${v.notes || 'Не закреплен'}</span>
+                                </div>
+
+                                <div class="mt-2 flex flex-wrap gap-1">
+                                    ${vehicleTagsArray.map(t => {
+                                        const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
+                                        const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
+                                        return `<span style="background-color: ${badgeBg}" class="border border-gray-300 text-gray-800 text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider shadow-3xs">${t}</span>`;
+                                    }).join('')}
+                                </div>
+
+                                <div class="mt-3 flex items-center gap-2">
+                                    <div class="text-sm font-mono font-black text-gray-900 bg-gray-50 border border-gray-400 inline-block px-3 py-1 rounded-md tracking-wider">
+                                        ${v.plate || 'БЕЗ ГОСНОМЕРА'}
+                                    </div>
+                                    ${v.inv_number ? `
+                                        <span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-300">
+                                            Инв. №: ${v.inv_number}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                                ${v.vin_number ? `
+                                    <div class="text-[10px] font-mono font-bold text-gray-500 truncate mt-1" title="${v.vin_number}">
+                                        VIN: ${v.vin_number}
                                     </div>
                                 ` : ''}
 
-                                <div class="space-y-3.5">
-                                    <div class="space-y-1 pr-28">
-                                        <h4 class="font-bold text-gray-950 text-sm tracking-tight truncate">${v.model}</h4>
-                                        
-                                        <div class="text-[11px] text-gray-600 font-bold flex items-center gap-1.5 mt-0.5">
-                                            <span>👤 Вод/Мех:</span>
-                                            <span class="text-gray-950 font-black">${v.notes || 'Не закреплен'}</span>
-                                        </div>
-
-                                        <div class="flex flex-wrap gap-1 mt-1.5">
-                                            ${vehicleTagsArray.map(t => {
-                                                const knownTag = baseTags.find(bt => bt.name.toLowerCase() === t.toLowerCase());
-                                                const badgeBg = knownTag ? knownTag.color : '#e2e8f0';
-                                                return `<span style="background-color: ${badgeBg}" class="border-2 border-gray-400 text-gray-900 text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider shadow-3xs">${t}</span>`;
-                                            }).join('')}
-                                        </div>
+                                <div class="pt-3 mt-3 border-t border-gray-200 text-xs space-y-1.5">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 font-bold">${label}:</span>
+                                        <span class="font-black text-gray-900">${v.current_hours || 0} ${unit}</span>
                                     </div>
-                                    
-                                    <div class="space-y-1">
-                                        <div class="text-sm font-mono font-black text-gray-950 bg-gray-50 border-2 border-gray-900 inline-block px-3 py-1 rounded-md tracking-wider">
-                                            ${v.plate || 'БЕЗ ГОСНОМЕРА'}
-                                        </div>
-                                        ${v.vin_number ? `
-                                            <div class="text-[10px] font-mono font-bold text-gray-600 truncate" title="${v.vin_number}">
-                                                VIN: ${v.vin_number}
-                                            </div>
-                                        ` : ''}
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 font-bold">Техосмотр:</span>
+                                        <span class="${toInfo.classes}">${toInfo.text}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 font-bold">Страховка:</span>
+                                        <span class="${insInfo.classes}">${insInfo.text}</span>
                                     </div>
                                 </div>
 
-                                <div class="pt-3 mt-3 border-t-2 border-gray-200 text-[11px] space-y-2.5">
-                                    <div class="space-y-1.5">
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-gray-600 font-bold">${getUnitByCategory(v.type) === 'км' ? 'Пробег:' : 'Наработка:'}</span>
-                                            <span class="font-black text-gray-950">${v.current_hours || 0} ${getUnitByCategory(v.type)}</span>
-                                        </div>
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-gray-600 font-bold">Техосмотр:</span>
-                                            <span class="${toInfo.classes}">${toInfo.text}</span>
-                                        </div>
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-gray-600 font-bold">Страховка:</span>
-                                            <span class="${insInfo.classes}">${insInfo.text}</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Только ОДИН блок с кнопками Изменить и Задачи -->
-                                    <div class="grid grid-cols-2 gap-2 pt-0.5">
-                                        <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[11px] text-center font-bold text-gray-800 bg-gray-50 border-2 border-gray-400 rounded-md hover:bg-gray-100 transition py-1">
-                                            Изменить
-                                        </button>
-                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[11px] text-center font-bold text-emerald-800 bg-emerald-50 border-2 border-emerald-400 rounded-md hover:bg-emerald-100 transition py-1">
-                                            Задачи (${vTasks.length})
-                                        </button>
-                                    </div>
-                                </div>
+                                <button onclick="event.stopPropagation(); window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="mt-3 w-full text-xs text-center font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 rounded-lg hover:bg-emerald-100 transition py-1.5">
+                                    📋 Задачи (${vTasks.length})
+                                </button>
                             </div>
                         `;
                     }).join('')}
@@ -881,50 +896,3 @@ async function submitHours() {
         alert('Ошибка: ' + err.message);
     }
 }
-// ===== Скачивание CSV-отчёта =====
-window.downloadSimpleReport = async () => {
-    if (!window._supabase) return alert('Нет подключения к БД');
-    try {
-        const { data, error } = await window._supabase
-            .from('vehicles')
-            .select('*')
-            .order('type', { ascending: true })
-            .order('model', { ascending: true });
-        if (error) throw error;
-
-        // Форматирование даты (минус 1 год)
-        const formatDateMinusYear = (dateStr) => {
-            if (!dateStr) return '—';
-            const d = new Date(dateStr);
-            d.setFullYear(d.getFullYear() - 1);
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = String(d.getFullYear()).slice(-2);
-            return `${day}.${month}.${year}`;
-        };
-
-        // Строим CSV
-        let csv = 'Наименование;Госномер / Инв. №;Наработка;Техосмотр (год назад)\n';
-        data.forEach(v => {
-            const model = v.model || '—';
-            const plate = v.plate || '';
-            const inv = v.inv_number || '';
-            const identifier = [plate, inv].filter(Boolean).join(' / ') || '—';
-            const unit = getUnitByCategory(v.type);
-            const hours = v.current_hours || 0;
-            const hoursStr = `${hours} ${unit}`;
-            const inspection = formatDateMinusYear(v.inspection_date);
-            csv += `${model};${identifier};${hoursStr};${inspection}\n`;
-        });
-
-        // Скачивание
-        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `Отчёт_${new Date().toISOString().slice(0,10)}.csv`;
-        link.click();
-        URL.revokeObjectURL(link.href);
-    } catch (err) {
-        alert('Ошибка: ' + err.message);
-    }
-};
