@@ -220,7 +220,7 @@ function setupSubModuleNavigation() {
         }
     };
 
-    function renderArchiveCards(files) {
+        function renderArchiveCards(files) {
         const grid = document.getElementById('archiveGrid');
         if (!grid) return;
         if (files.length === 0) {
@@ -253,24 +253,24 @@ function setupSubModuleNavigation() {
             const dateMatch = f.name.match(/\d{4}-\d{2}-\d{2}/);
             const displayDate = dateMatch ? dateMatch[0] : '—';
 
-            // Извлекаем ФИО/название (после даты, до .doc)
+            // Извлекаем имя/название (после даты, до .doc) и делаем читаемым
             let namePart = f.name.replace(/^[^_]*_/, '').replace(/\d{4}-\d{2}-\d{2}_/, '').replace(/\.doc$/, '');
-            if (namePart.length > 30) namePart = namePart.slice(0, 28) + '…';
+            // Если имя слишком длинное, обрезаем
+            if (namePart.length > 25) namePart = namePart.slice(0, 22) + '…';
+            // Заменяем подчёркивания на пробелы для читаемости
+            namePart = namePart.replace(/_/g, ' ');
 
             return `
                 <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition flex flex-col">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="text-2xl">${icon}</span>
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl flex-shrink-0">${icon}</span>
                         <div class="flex-1 min-w-0">
-                            <div class="font-bold text-gray-800 text-sm truncate" title="${f.name}">${f.name}</div>
-                            <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${bgColor} ${textColor}">${typeLabel}</span>
-                                <span class="text-[10px] text-gray-400">📅 ${displayDate}</span>
-                                <span class="text-[10px] text-gray-500 truncate">${namePart}</span>
-                            </div>
+                            <div class="font-bold text-gray-800 text-sm">${typeLabel}</div>
+                            <div class="text-xs text-gray-500">📅 ${displayDate}</div>
+                            <div class="text-xs text-gray-700 font-medium truncate" title="${namePart}">${namePart}</div>
                         </div>
                     </div>
-                    <div class="flex gap-2 mt-2 pt-2 border-t border-gray-100">
+                    <div class="flex gap-2 mt-3 pt-2 border-t border-gray-100">
                         <button onclick="window.downloadStorageFile('${f.name}')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1.5 rounded-lg transition shadow-sm">📥 Скачать</button>
                         <button onclick="window.deleteStorageFile('${f.name}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold py-1.5 rounded-lg border border-red-200 transition">🗑️ Удалить</button>
                     </div>
