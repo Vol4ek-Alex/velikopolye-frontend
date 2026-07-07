@@ -1,9 +1,9 @@
 // js/docs/machineryLifecycle.js
 
-import { storageTemplate, generateStorageContent } from './lifecycle/storageAct.js';
-import { defectTemplate, generateDefectContent } from './lifecycle/defectAct.js';
-import { repairOutTemplate, generateRepairOutContent } from './lifecycle/repairOutAct.js';
-import { toTemplate, generateToContent } from './lifecycle/toReport.js';
+import { storageTemplate } from './lifecycle/storageAct.js';
+import { defectTemplate } from './lifecycle/defectAct.js';
+import { repairOutTemplate } from './lifecycle/repairOutAct.js';
+import { toTemplate } from './lifecycle/toReport.js';
 
 let allVehicles = [];
 let selectedVehicle = null;
@@ -75,7 +75,6 @@ export async function initMachineryLifecycle(storageFiles) {
     const searchInput = document.getElementById('lifecycleSearch');
     const docTypeSelect = document.getElementById('lifecycleDocType');
 
-    // Переключение отображения полей форм в зависимости от выбранного акта
     docTypeSelect?.addEventListener('change', (e) => {
         const types = ['defect', 'to_report', 'repair_out', 'storage'];
         types.forEach(t => document.getElementById(`form_block_${t}`)?.classList.add('hidden'));
@@ -103,7 +102,6 @@ export async function initMachineryLifecycle(storageFiles) {
         tableBody.innerHTML = vehiclesList.map(v => {
             const inv = v.inv_num || 'б/н';
             
-            // Проверяем наличие файлов в архиве по префиксам и инвентарному номеру
             const hasDefect = storageFiles.some(f => f.name.includes(`defect_`) && f.name.includes(inv));
             const hasTo = storageFiles.some(f => f.name.includes(`to_report_`) && f.name.includes(inv));
             const hasRepair = storageFiles.some(f => f.name.includes(`repair_out_`) && f.name.includes(inv));
@@ -126,7 +124,6 @@ export async function initMachineryLifecycle(storageFiles) {
         }).join('');
     }
 
-    // Поиск/фильтрация на лету
     searchInput?.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = allVehicles.filter(v => 
@@ -146,49 +143,48 @@ export async function initMachineryLifecycle(storageFiles) {
         document.getElementById('lifecycleFormsBlock').classList.remove('hidden');
         document.getElementById('selectedVehicleTitle').innerText = `🚜 Выбрана машина: ${selectedVehicle.brand || ''} ${selectedVehicle.model || ''} (Инв. № ${selectedVehicle.inv_num || 'б/н'})`;
         
-        // Автозаполнение полей во всех вложенных формах
         const driverInputs = ['defect_driver', 'to_driver', 'repair_driver', 'storage_driver'];
         driverInputs.forEach(i => {
             const input = document.getElementById(i);
             if (input) input.value = selectedVehicle.driver_name || '';
         });
 
-        // Срабатывает триггер отображения дефолтной формы (Дефектный акт)
         if (docTypeSelect) {
             docTypeSelect.value = 'defect';
             docTypeSelect.dispatchEvent(new Event('change'));
         }
     };
 
-        window.uploadLifecycleToStorage = async (fileName, bodyContent) => {
-            const supabase = window._supabase || window.supabase;
-        if (!supabase) return;
-
-        try {
-            const wordContent = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-                <head><meta charset="utf-8"><style>
-                    @page { size: 21cm 29.7cm; margin: 2cm 1.5cm 2cm 2.5cm; }
-                    body { font-family: "Times New Roman", serif; font-size: 11pt; }
-                </style></head>
-                <body>${bodyContent}</body></html>
-            `;
-
-            const fileBlob = new Blob([wordContent], { type: 'application/msword;charset=utf-8' });
-            const { error } = await supabase.storage.from('documents-history').upload(fileName, fileBlob, { cacheControl: '3600', upsert: true });
-        
-            if (error) throw error;
-            alert(`Файл ${fileName} успешно сгенерирован и загружен в архив!`);
-        
-            if (typeof window.loadTripStorageHistory === 'function') {
-                await window.loadTripStorageHistory();
-            }
-        } catch (err) {
-            alert('Ошибка сохранения файла: ' + err.message);
-        }
-        };
-
     window.getActiveVehicle = () => selectedVehicle;
 
     await loadData();
 }
+
+// Универсальный метод загрузки Word в Supabase Storage
+window.uploadLifecycleToStorage = async (fileName, bodyContent) => {
+    const supabase = window._supabase || window.supabase;
+    if (!supabase) return;
+
+    try {
+        const wordContent = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8"><style>
+                @page { size: 21cm 29.7cm; margin: 2cm 1.5cm 2cm 2.5cm; }
+                body { font-family: "Times New Roman", serif; font-size: 11pt; }
+            </style></head>
+            <body>${bodyContent}</body></html>
+        `;
+
+        const fileBlob = new Blob([wordContent], { type: 'application/msword;charset=utf-8' });
+        const { error } = await supabase.storage.from('documents-history').upload(fileName, fileBlob, { cacheControl: '3600', upsert: true });
+        
+        if (error) throw error;
+        alert(\`Файл \${fileName} успешно сгенерирован и загружен в архив!\`);
+        
+        if (typeof window.loadTripStorageHistory === 'function') {
+            await window.loadTripStorageHistory();
+        }
+    } catch (err) {
+        alert('Ошибка сохранения файла: ' + err.message);
+    }
+};

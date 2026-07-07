@@ -47,7 +47,6 @@ window.generateDefectDoc = async () => {
         </div>
     `;
 
-    // Вызываем оригинальный метод скачивания/загрузки в Supabase
     if (typeof window.uploadLifecycleToStorage === 'function') {
         window.uploadLifecycleToStorage(`defect_${num}_${vehicle.inv_num}.doc`, htmlContent);
     }
