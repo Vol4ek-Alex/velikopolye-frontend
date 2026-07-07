@@ -2,9 +2,52 @@
 
 export const absenceTemplate = `
 <div id="subModule_absence_act" class="hidden space-y-4 fade-in-sub">
+    <!-- Добавляем изолированные стили для правильной подневной печати на А4 -->
+    <style>
+        @media print {
+            /* Прячем весь интерфейс сайта, кроме блока печати */
+            body * {
+                visibility: hidden;
+            }
+            #tripPrintBlock, #tripPrintBlock * {
+                visibility: visible;
+            }
+            #tripPrintBlock {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            /* Превращаем каждую карточку в полноценную страницу А4 */
+            .print-page-a4 {
+                visibility: visible !important;
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                font-family: "Times New Roman", serif !important;
+                font-size: 14pt !important;
+                line-height: 1.5 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
+            /* Настройки полей страницы */
+            @page {
+                size: A4 portrait;
+                margin: 2.5cm 2cm 2.5cm 2.5cm;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Ввод параметров -->
-        <div class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs space-y-4">
+        <div class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs space-y-4 no-print">
             <h3 class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">📋 Параметры актов (Подневный расчет)</h3>
             
             <div class="border-t border-gray-200 pt-3 space-y-3">
@@ -43,8 +86,8 @@ export const absenceTemplate = `
             </button>
         </div>
 
-        <!-- Предпросмотр -->
-        <div class="lg:col-span-2 bg-gray-100 p-4 rounded-xl border-2 border-gray-300 flex flex-col justify-between max-h-[80vh] overflow-y-auto">
+        <!-- Предпросмотр на экране -->
+        <div class="lg:col-span-2 bg-gray-100 p-4 rounded-xl border-2 border-gray-300 flex flex-col justify-between max-h-[80vh] overflow-y-auto no-print">
             <div id="absenceLivePreview" class="space-y-6">
                 <!-- Сюда сгенерируются Акты по дням + Докладная -->
             </div>
@@ -92,15 +135,16 @@ export function initAbsenceAct() {
         const formattedStart = formatRusDate(startRaw);
         const formattedEnd = formatRusDate(endRaw);
 
-        const pageBreakWord = '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">';
-        const pageBreakScreen = '<hr class="my-6 border-t-2 border-dashed border-gray-400 no-print">';
-        const separator = isForWord ? pageBreakWord : pageBreakScreen;
+        // Для Word используем XML-разрыв секции, для браузера — пустую строку (так как разрывы страниц теперь регулирует CSS класс .print-page-a4)
+        const separator = isForWord 
+            ? '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">' 
+            : '';
 
-        // 1. ГЕНЕРИРУЕМ МАССИВ АКТОВ (БЕЗ ПОДЧЕРКИВАНИЙ)
+        // 1. ГЕНЕРИРУЕМ МАССИВ АКТОВ (Добавлен класс print-page-a4)
         const actsArrayHtml = dateList.map(dateStr => {
             const formattedCurrentDate = formatRusDate(dateStr);
             return `
-            <div class="bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; margin-bottom: 10px;">
+            <div class="print-page-a4 bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5;">
                 <div style="text-align: left; margin-bottom: 30px; font-size: 13px;">
                     Филиал СХК «Великополье»<br>ГП «Минсктранс»
                 </div>
@@ -128,11 +172,10 @@ export function initAbsenceAct() {
             </div>`;
         });
 
-        // 2. ГЕНЕРИРУЕМ ДОКЛАДНУЮ ЗАПИСКУ (БЕЗ ПОДЧЕРКИВАНИЙ)
+        // 2. ГЕНЕРИРУЕМ СЛУЖЕБКУ / ДОКЛАДНУЮ (Добавлен класс print-page-a4)
         const reportDate = formattedEnd; 
-
         const reportHtml = `
-        <div class="bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5;">
+        <div class="print-page-a4 bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5;">
             <div style="text-align: right; margin-left: auto; width: 280px; margin-bottom: 40px; font-size: 14px; line-height: 1.3;">
                 Зам. директору-<br>гл. инженеру<br>
                 филиала СХК<br>«Великополье»<br>
@@ -147,11 +190,11 @@ export function initAbsenceAct() {
                 Докладная записка
             </div>
             <p style="text-indent: 40px; margin-bottom: 60px;">
-                Довожу до Вашего сведения, что тракторист-машинист ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
+                Довожу до Вашего сведения, что тракторист-машинист Пустельников ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
             </p>
             <div style="display: flex; justify-content: space-between; margin-top: 50px;">
                 <div>Инженер по ЭМТП</div>
-                <div>Volchek А.А.</div>
+                <div>Волчек А.А.</div>
             </div>
         </div>`;
 
@@ -173,9 +216,10 @@ export function initAbsenceAct() {
         const fullWordHtml = window.generateAbsenceHtmlContent(true);
         if (!fullWordHtml) return alert('Нет данных для печати.');
         
+        // Рендерим во временный блок печати (стили @media print сделают из этого листы А4)
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
-            printBlock.innerHTML = fullWordHtml;
+            printBlock.innerHTML = window.generateAbsenceHtmlContent(false).combinedHtml;
             window.print();
             printBlock.innerHTML = '';
         }
