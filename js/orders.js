@@ -141,7 +141,6 @@ export function init() {
             initAbsenceAct();
         } else if (id === 'machinery_lifecycle') {
             document.getElementById('subModule_machinery_lifecycle').classList.remove('hidden');
-            // Передаем в инициализацию массив уже загруженных файлов из Storage для быстрой сверки
             initMachineryLifecycle(window.lastLoadedFilesHistory || []);
         }
     };
@@ -153,11 +152,9 @@ export function init() {
 
         const subs = ['subModule_trip', 'subModule_battery_act', 'subModule_absence_act', 'subModule_machinery_lifecycle'];
         subs.forEach(s => document.getElementById(s)?.classList.add('hidden'));
-        
         window.loadTripStorageHistory();
     };
 
-    // --- РАБОТА С АРХИВОМ ИСТОРИИ ФАЙЛОВ В SUPABASE STORAGE ---
     window.loadTripStorageHistory = async () => {
         const tableBody = document.getElementById('storageTripHistoryTable');
         if (!tableBody) return;
@@ -175,8 +172,6 @@ export function init() {
             });
 
             if (error) throw error;
-            
-            // Сохраняем кэш файлов, чтобы подмодуль техники мог строить аналитику "присутствует файл или нет"
             window.lastLoadedFilesHistory = data || [];
 
             if (!data || data.length === 0) {
@@ -188,28 +183,13 @@ export function init() {
                 let catLabel = '📝 Документ';
                 let catColor = 'bg-gray-600 text-white font-black';
 
-                if (f.name.startsWith('trip_')) {
-                    catLabel = '💼 Командировка (Word)';
-                    catColor = 'bg-gray-900 text-white font-black';
-                } else if (f.name.startsWith('battery_')) {
-                    catLabel = '🔋 Списание АКБ (Word)';
-                    catColor = 'bg-amber-600 text-white font-black';
-                } else if (f.name.startsWith('absence_')) {
-                    catLabel = '🛑 Прогул (Word)';
-                    catColor = 'bg-red-600 text-white font-black';
-                } else if (f.name.startsWith('storage_')) {
-                    catLabel = '❄️ Хранение ГОСТ (Word)';
-                    catColor = 'bg-blue-600 text-white font-black';
-                } else if (f.name.startsWith('defect_')) {
-                    catLabel = '🛠️ Дефектный акт (Word)';
-                    catColor = 'bg-purple-600 text-white font-black';
-                } else if (f.name.startsWith('repair_out_')) {
-                    catLabel = '🟢 Из ремонта (Word)';
-                    catColor = 'bg-emerald-600 text-white font-black';
-                } else if (f.name.startsWith('to_report_')) {
-                    catLabel = '⚙️ Рапорт ТО (Word)';
-                    catColor = 'bg-cyan-600 text-white font-black';
-                }
+                if (f.name.startsWith('trip_')) { catLabel = '💼 Командировка (Word)'; catColor = 'bg-gray-900 text-white font-black'; }
+                else if (f.name.startsWith('battery_')) { catLabel = '🔋 Списание АКБ (Word)'; catColor = 'bg-amber-600 text-white font-black'; }
+                else if (f.name.startsWith('absence_')) { catLabel = '🛑 Прогул (Word)'; catColor = 'bg-red-600 text-white font-black'; }
+                else if (f.name.startsWith('storage_')) { catLabel = '❄️ Хранение ГОСТ (Word)'; catColor = 'bg-blue-600 text-white font-black'; }
+                else if (f.name.startsWith('defect_')) { catLabel = '🛠️ Дефектный акт (Word)'; catColor = 'bg-purple-600 text-white font-black'; }
+                else if (f.name.startsWith('repair_out_')) { catLabel = '🟢 Из ремонта (Word)'; catColor = 'bg-emerald-600 text-white font-black'; }
+                else if (f.name.startsWith('to_report_')) { catLabel = '⚙️ Рапорт ТО (Word)'; catColor = 'bg-cyan-600 text-white font-black'; }
 
                 return `
                     <tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">
@@ -234,27 +214,20 @@ export function init() {
             if (error) throw error;
             const url = URL.createObjectURL(data);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        } catch (err) {
-            alert('Ошибка скачивания: ' + err.message);
-        }
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        } catch (err) { alert('Ошибка скачивания: ' + err.message); }
     };
 
     window.deleteStorageFile = async (name) => {
-        if (!confirm('Вы уверены, что хотите окончательно удалить файл ' + name + ' из архива?')) return;
+        if (!confirm('Вы уверены, что хотите удалить файл ' + name + '?')) return;
         const supabase = window._supabase || window.supabase;
         if (!supabase) return;
         try {
             const { error } = await supabase.storage.from('documents-history').remove([name]);
             if (error) throw error;
             window.loadTripStorageHistory();
-        } catch (err) {
-            alert('Ошибка удаления: ' + err.message);
-        }
+        } catch (err) { alert('Ошибка удаления: ' + err.message); }
     };
 
     setTimeout(window.loadTripStorageHistory, 200);
