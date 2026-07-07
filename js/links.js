@@ -96,6 +96,22 @@ export async function init() {
     window.filterLinks = filterLinks;
     window.addCategory = addCategory;
     window.deleteCategory = deleteCategory;
+    window.deleteLink = deleteLink;
+
+    // Навешиваем обработчик формы
+    const form = document.getElementById('linkForm');
+    if (form) {
+        // Удаляем старые обработчики, чтобы не дублировались
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        newForm.addEventListener('submit', handleFormSubmit);
+    }
+
+    // Кнопка удаления в модалке
+    const deleteBtn = document.getElementById('linkDeleteBtn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', handleDeleteFromModal);
+    }
 
     // Проверка Supabase
     if (!window._supabase) {
@@ -116,6 +132,74 @@ export async function init() {
         await loadLinks();
         renderLinks();
     }, 30000);
+}
+
+// ===== Обработчик формы (вынесен в отдельную функцию) =====
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('linkId').value;
+    const title = document.getElementById('linkTitle').value.trim();
+    const url = document.getElementById('linkUrl').value.trim();
+    const category = document.getElementById('linkCategory').value || null;
+    const icon = document.getElementById('linkIcon').value.trim() || null;
+
+    if (!title || !url) {
+        alert('Название и URL обязательны!');
+        return;
+    }
+
+    if (!window._supabase) {
+        alert('Ошибка: Supabase не инициализирован');
+        return;
+    }
+
+    const payload = { title, url, category, icon };
+
+    try {
+        let result;
+        if (id) {
+            result = await window._supabase
+                .from('links')
+                .update(payload)
+                .eq('id', id);
+        } else {
+            result = await window._supabase
+                .from('links')
+                .insert([payload]);
+        }
+        if (result.error) throw result.error;
+
+        console.log('✅ Ссылка сохранена');
+        closeLinkModal();
+        await loadLinks();
+        await loadCategories();
+        renderCategories();
+        renderLinks();
+    } catch (err) {
+        console.error('❌ Ошибка сохранения:', err);
+        alert('Ошибка сохранения: ' + err.message);
+    }
+}
+
+// ===== Удаление из модалки =====
+async function handleDeleteFromModal() {
+    const id = document.getElementById('linkId').value;
+    if (!id) return;
+    if (!confirm('Удалить ссылку?')) return;
+    try {
+        const { error } = await window._supabase
+            .from('links')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        closeLinkModal();
+        await loadLinks();
+        await loadCategories();
+        renderCategories();
+        renderLinks();
+    } catch (err) {
+        alert('Ошибка удаления: ' + err.message);
+    }
 }
 
 // ===== Загрузка ссылок =====
@@ -174,7 +258,7 @@ function updateActiveCategory() {
     });
 }
 
-// ===== Фильтр по категории =====
+// ===== Фильтр =====
 window.filterLinks = (cat) => {
     currentCategory = cat;
     updateActiveCategory();
@@ -281,82 +365,6 @@ function closeLinkModal() {
 
 window.closeLinkModal = closeLinkModal;
 window.openLinkModal = openLinkModal;
-
-// Обработчик отправки формы
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('linkForm');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('linkId').value;
-            const title = document.getElementById('linkTitle').value.trim();
-            const url = document.getElementById('linkUrl').value.trim();
-            const category = document.getElementById('linkCategory').value || null;
-            const icon = document.getElementById('linkIcon').value.trim() || null;
-
-            if (!title || !url) {
-                alert('Название и URL обязательны!');
-                return;
-            }
-
-            if (!window._supabase) {
-                alert('Ошибка: Supabase не инициализирован');
-                return;
-            }
-
-            const payload = { title, url, category, icon };
-
-            try {
-                let result;
-                if (id) {
-                    result = await window._supabase
-                        .from('links')
-                        .update(payload)
-                        .eq('id', id);
-                } else {
-                    result = await window._supabase
-                        .from('links')
-                        .insert([payload]);
-                }
-                if (result.error) throw result.error;
-
-                console.log('✅ Ссылка сохранена');
-                closeLinkModal();
-                await loadLinks();
-                await loadCategories();
-                renderCategories();
-                renderLinks();
-            } catch (err) {
-                console.error('❌ Ошибка сохранения:', err);
-                alert('Ошибка сохранения: ' + err.message);
-            }
-        });
-    }
-
-    // Удаление из модалки
-    const deleteBtn = document.getElementById('linkDeleteBtn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', async () => {
-            const id = document.getElementById('linkId').value;
-            if (!id) return;
-            if (!confirm('Удалить ссылку?')) return;
-            try {
-                const { error } = await window._supabase
-                    .from('links')
-                    .delete()
-                    .eq('id', id);
-                if (error) throw error;
-                closeLinkModal();
-                await loadLinks();
-                await loadCategories();
-                renderCategories();
-                renderLinks();
-            } catch (err) {
-                alert('Ошибка удаления: ' + err.message);
-            }
-        });
-    }
-});
 
 // ===== Удаление ссылки через кнопку на карточке =====
 window.deleteLink = async (id) => {
