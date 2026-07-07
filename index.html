@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>АРМ «Великополье»</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
@@ -12,11 +12,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
-            margin: 0;
             height: 100vh;
             overflow: hidden;
         }
@@ -27,7 +26,7 @@
             overflow: hidden;
             position: relative;
         }
-        /* Боковое меню: фиксированное слева, выезжает */
+        /* Боковое меню */
         #sidebar {
             position: fixed;
             top: 0;
@@ -50,7 +49,6 @@
         #sidebar.open {
             transform: translateX(0);
         }
-        /* Оверлей для затемнения фона при открытом меню */
         #sidebarOverlay {
             position: fixed;
             inset: 0;
@@ -64,83 +62,66 @@
             opacity: 1;
             pointer-events: all;
         }
-        /* Основная рабочая область */
+        /* Основная область */
         #main {
             flex: 1;
             height: 100vh;
             overflow-y: auto;
             padding: 16px;
-            margin-left: 0;
-            transition: margin-left 0.3s ease;
+            padding-top: 80px;
             background: transparent;
         }
         @media (min-width: 768px) {
             #main {
                 padding: 32px;
+                padding-top: 90px;
             }
         }
-        /* Кнопка-гамбургер для открытия меню */
+        /* Кнопка меню */
         #menuToggle {
             position: fixed;
             top: 16px;
             left: 16px;
             z-index: 1001;
-            background: white;
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 12px;
-            padding: 10px 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 14px;
+            padding: 10px 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 500;
             color: #1f2937;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        #menuToggle.hidden-btn {
+            opacity: 0 !important;
+            transform: translateY(-20px) !important;
+            pointer-events: none !important;
         }
         #menuToggle:hover {
-            background: #f3f4f6;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.85);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.1);
         }
-        #menuToggle span {
+        #menuToggle span.text {
             font-size: 14px;
         }
         @media (min-width: 768px) {
             #menuToggle {
                 top: 24px;
                 left: 24px;
+                padding: 12px 20px;
             }
         }
-        /* Анимация для модулей */
-        .module-enter {
-            animation: fadeIn 0.4s ease-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        /* Пользовательский аватар */
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 16px;
-            text-transform: uppercase;
-            flex-shrink: 0;
-        }
-        /* Стили для скроллбара в модулях */
-        #main::-webkit-scrollbar { width: 6px; }
-        #main::-webkit-scrollbar-track { background: transparent; }
-        #main::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        #main::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-        /* Меню: пункты */
+        /* Навигация в меню */
         .nav-item {
             display: flex;
             align-items: center;
@@ -166,49 +147,143 @@
             font-weight: 600;
             border-right: 3px solid #4f46e5;
         }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        #main::-webkit-scrollbar { width: 6px; }
+        #main::-webkit-scrollbar-track { background: transparent; }
+        #main::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        #main::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .module-enter {
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Стили для оверлея аутентификации */
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .auth-card {
+            background: white;
+            border-radius: 32px;
+            max-width: 440px;
+            width: 100%;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .auth-card .icon {
+            width: 72px;
+            height: 72px;
+            background: #eef2ff;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 16px;
+        }
+        .auth-card h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        .auth-card p.sub {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .auth-card input, .auth-card select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 14px;
+            background: #f9fafb;
+            transition: border 0.2s;
+        }
+        .auth-card input:focus, .auth-card select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+        .auth-card .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .auth-card .btn-primary:hover {
+            background: #4338ca;
+        }
+        .auth-card .error {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 8px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 <div id="app">
 
-    <!-- Оверлей аутентификации (поверх всего) -->
-    <div id="siteAuthOverlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4" style="display: flex;">
-        <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl border border-gray-100/50 text-center space-y-6 fade-in">
-            <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl border border-indigo-100 shadow-sm flex items-center justify-center text-4xl mx-auto">🔐</div>
-            <div>
-                <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">филиал СХК «Великополье»</p>
-                <h2 class="text-2xl font-black text-gray-800">Вход в систему АРМ</h2>
-                <p class="text-sm text-gray-500 mt-1 font-medium">Выберите должность и введите ПИН-код</p>
+    <!-- Оверлей аутентификации -->
+    <div id="siteAuthOverlay" class="auth-overlay">
+        <div class="auth-card">
+            <div class="icon">🔐</div>
+            <h2>Вход в АРМ</h2>
+            <p class="sub">филиал СХК «Великополье»</p>
+            <div style="text-align: left; margin-bottom: 16px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 4px;">Должность</label>
+                <select id="authRoleSelect">
+                    <option value="Директор">Директор</option>
+                    <option value="Инженер по ЭМТП">Инженер по ЭМТП</option>
+                    <option value="Техник">Техник</option>
+                </select>
             </div>
-            <div class="space-y-5 text-left">
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-1.5">Должность</label>
-                    <select id="authRoleSelect" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition">
-                        <option value="Директор">Директор</option>
-                        <option value="Инженер по ЭМТП">Инженер по ЭМТП</option>
-                        <option value="Техник">Техник</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-1.5">ПИН-код</label>
-                    <input type="password" id="sitePinInput" inputmode="numeric" pattern="[0-9]*" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-center font-mono text-xl tracking-widest text-gray-900 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition" placeholder="••••">
-                </div>
-                <button onclick="checkSiteAccess()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-md text-sm flex items-center justify-center gap-2">
-                    Войти в систему
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-                </button>
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 4px;">ПИН-код</label>
+                <input type="password" id="sitePinInput" inputmode="numeric" pattern="[0-9]*" placeholder="••••">
             </div>
-            <p id="authErrorMsg" class="text-xs font-semibold text-red-600 hidden">❌ Неверный ПИН-код! Попробуйте снова.</p>
+            <button class="btn-primary" onclick="checkSiteAccess()">Войти</button>
+            <p id="authErrorMsg" class="error">❌ Неверный ПИН-код</p>
         </div>
     </div>
 
-    <!-- Оверлей для меню (затемнение) -->
-    <div id="sidebarOverlay" class="active" onclick="closeSidebar()"></div>
+    <!-- Оверлей для меню -->
+    <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <!-- Боковое меню -->
     <aside id="sidebar">
         <div>
-            <!-- Логотип -->
             <div class="flex items-center gap-3 mb-8 px-2 border-b border-gray-100/80 pb-5">
                 <span class="text-3xl bg-indigo-50 p-2.5 rounded-2xl border border-indigo-100 shadow-sm flex items-center justify-center">🚜</span>
                 <div class="flex flex-col justify-center">
@@ -217,10 +292,8 @@
                     <span class="text-[11px] font-medium text-gray-400 leading-none mt-1 block">ГП «Минсктранс»</span>
                 </div>
             </div>
-            <!-- Меню -->
             <nav id="menuContainer" class="space-y-1"></nav>
         </div>
-        <!-- Блок пользователя -->
         <div class="space-y-4 border-t border-gray-100/80 pt-4 mt-auto">
             <div class="bg-gray-50/80 border border-gray-200/80 rounded-2xl p-3 flex items-center justify-between shadow-sm gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -237,229 +310,214 @@
         </div>
     </aside>
 
-    <!-- Кнопка открытия меню (гамбургер) -->
-    <button id="menuToggle" onclick="toggleSidebar()" class="fixed top-4 left-4 z-50 bg-white/60 backdrop-blur-md border border-white/30 rounded-xl px-4 py-2.5 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 text-gray-700 hover:text-gray-900 opacity-100">
-        <span class="text-xl">☰</span>
-        <span class="hidden sm:inline text-sm font-medium">Меню</span>
+    <!-- Кнопка меню -->
+    <button id="menuToggle" onclick="toggleSidebar()">
+        <span>☰</span>
+        <span class="text hidden sm:inline">Меню</span>
     </button>
 
     <!-- Основная область -->
-    <main id="main" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full relative z-10 pt-16 md:pt-20">
+    <main id="main" class="module-enter">
         <div id="moduleWorkspace" class="w-full h-full"></div>
     </main>
 
 </div>
 
-<script type="module">
-    // Инициализация Supabase
-    const SUPABASE_URL = "https://eaiitxfoqlkmykyqqapg.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm";
-    window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // Модули приложения
-    const APP_MODULES = [
-        { id: 'dashboard', name: '🏠 Главная', file: './js/dashboard.js' },
-        { id: 'orders', name: '📄 Документы', file: './js/orders.js' },
-        { id: 'fleet', name: '🚜 Автопарк', file: './js/fleet.js' },
-        { id: 'links', name: '🔗 Ссылки', file: './js/links.js' }
-    ];
-
-    let currentModuleId = 'dashboard';
-
-    // Переключение модуля
-    window.switchModule = async (moduleId) => {
-        currentModuleId = moduleId;
-        renderMenu();
-        const workspace = document.getElementById('moduleWorkspace');
-        workspace.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400">Загрузка модуля...</div>';
-        const target = APP_MODULES.find(m => m.id === moduleId);
-        if (target) {
-            try {
-                const module = await import(`${target.file}?v=${Date.now()}`);
-                workspace.innerHTML = module.template;
-                if (module.init) module.init();
-                // Закрываем меню после выбора
-                closeSidebar();
-            } catch (err) {
-                workspace.innerHTML = `<div class="text-red-500 p-4 bg-red-50 border rounded-xl">Ошибка загрузки: ${err.message}</div>`;
-            }
-        }
-    };
-
-    // Рендер меню
-    function renderMenu() {
-        const container = document.getElementById('menuContainer');
-        if (!container) return;
-        container.innerHTML = APP_MODULES.map(mod => {
-            const isActive = mod.id === currentModuleId;
-            return `<button onclick="switchModule('${mod.id}')" class="nav-item ${isActive ? 'active' : ''}">
-                <span class="text-lg">${mod.name}</span>
-            </button>`;
-        }).join('');
-    }
-
-    // Управление меню
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('active');
-    }
-    window.toggleSidebar = toggleSidebar;
-
-    function closeSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        sidebar.classList.remove('open');
-        overlay.classList.remove('active');
-    }
-    window.closeSidebar = closeSidebar;
-
-    // Закрытие меню по Escape
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSidebar(); });
-
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => reg.update())
-                .catch(err => console.error('SW error:', err));
-        });
-    }
-
-    // PWA установка
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        document.getElementById('pwaInstallBtn').classList.remove('hidden');
-    });
-
-    window.installPWA = async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            document.getElementById('pwaInstallBtn').classList.add('hidden');
-        }
-        deferredPrompt = null;
-    };
-
-    // Аутентификация
-    const USER_PROFILES = {
-        "Директор": { name: "Рунцевич Д.С.", pin: "1111" },
-        "Инженер по ЭМТП": { name: "Волчек А.А.", pin: "2174" },
-        "Техник": { name: "Ладутько И.И.", pin: "1987" }
-    };
-
-    window.checkSiteAccess = () => {
-        const input = document.getElementById('sitePinInput');
-        const error = document.getElementById('authErrorMsg');
-        const roleSelect = document.getElementById('authRoleSelect');
-        if (!input || !roleSelect) return;
-        const role = roleSelect.value;
-        const profile = USER_PROFILES[role];
-        if (profile && input.value === profile.pin) {
-            localStorage.setItem('user_role', role);
-            localStorage.setItem('user_name', profile.name);
-            localStorage.setItem('site_access_granted', 'true');
-            document.getElementById('siteAuthOverlay').style.display = 'none';
-            updateSidebarUser();
-        } else {
-            if (error) error.classList.remove('hidden');
-            input.value = '';
-            input.focus();
-        }
-    };
-
-    function updateSidebarUser() {
-        const role = localStorage.getItem('user_role') || 'Сотрудник';
-        const name = localStorage.getItem('user_name') || 'Неизвестный';
-        document.getElementById('userBoxRole').innerText = role;
-        document.getElementById('userBoxName').innerText = name;
-        const avatar = document.getElementById('userAvatar');
-        if (avatar) {
-            const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2);
-            avatar.textContent = initials || '?';
-        }
-    }
-
-    window.logoutSystemUser = () => {
-        if (confirm("Выйти из учётной записи?")) {
-            localStorage.removeItem('site_access_granted');
-            localStorage.removeItem('user_role');
-            localStorage.removeItem('user_name');
-            verifySession();
-        }
-    };
-
-    function verifySession() {
-        const overlay = document.getElementById('siteAuthOverlay');
-        if (localStorage.getItem('site_access_granted') === 'true') {
-            overlay.style.display = 'none';
-            updateSidebarUser();
-            // Если пользователь уже авторизован, загружаем модуль
-            if (!document.querySelector('#moduleWorkspace > *')) {
-                switchModule('dashboard');
-            }
-        } else {
-            overlay.style.display = 'flex';
-        }
-    }
-
-    
-    // Старт
-    document.addEventListener('DOMContentLoaded', () => {
-        verifySession();
-        renderMenu();
-        // Если уже авторизован, загружаем дашборд
-        if (localStorage.getItem('site_access_granted') === 'true') {
-            switchModule('dashboard');
-        }
-    });
-</script>
-
 <script>
-    // Управление видимостью кнопки меню при скролле
+    // ===== Управление кнопкой меню =====
     (function() {
         const menuBtn = document.getElementById('menuToggle');
-        let lastScrollY = window.scrollY;
-        let hideTimeout;
+        let ticking = false;
 
-        function handleScroll() {
-            const currentScrollY = window.scrollY;
-            // Если прокрутили вниз более чем на 50px, скрываем кнопку
-            if (currentScrollY > 80) {
-                menuBtn.style.opacity = '0';
-                menuBtn.style.pointerEvents = 'none';
-                menuBtn.style.transform = 'translateY(-20px)';
-            } else {
-                // Если вверху, показываем
-                menuBtn.style.opacity = '1';
-                menuBtn.style.pointerEvents = 'auto';
-                menuBtn.style.transform = 'translateY(0)';
+        function updateButtonVisibility() {
+            const scrollY = window.scrollY;
+            const sidebar = document.getElementById('sidebar');
+            const isOpen = sidebar.classList.contains('open');
+
+            if (isOpen) {
+                menuBtn.classList.add('hidden-btn');
+                return;
             }
-            lastScrollY = currentScrollY;
+
+            if (scrollY > 100) {
+                menuBtn.classList.add('hidden-btn');
+            } else {
+                menuBtn.classList.remove('hidden-btn');
+            }
         }
 
-        // Запускаем при скролле, но с задержкой для плавности (throttle)
-        let ticking = false;
         window.addEventListener('scroll', () => {
             if (!ticking) {
                 window.requestAnimationFrame(() => {
-                    handleScroll();
+                    updateButtonVisibility();
                     ticking = false;
                 });
                 ticking = true;
             }
         });
 
-        // Также проверить при загрузке страницы
-        window.addEventListener('load', () => {
-            handleScroll();
+        // Перехватываем открытие/закрытие меню
+        const origToggle = window.toggleSidebar;
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            updateButtonVisibility();
+        };
+
+        window.closeSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            updateButtonVisibility();
+        };
+
+        window.addEventListener('load', updateButtonVisibility);
+    })();
+
+    // ===== Основной код (модули, аутентификация) =====
+    (function() {
+        const SUPABASE_URL = "https://eaiitxfoqlkmykyqqapg.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm";
+        window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const APP_MODULES = [
+            { id: 'dashboard', name: '🏠 Главная', file: './js/dashboard.js' },
+            { id: 'orders', name: '📄 Документы', file: './js/orders.js' },
+            { id: 'fleet', name: '🚜 Автопарк', file: './js/fleet.js' },
+            { id: 'links', name: '🔗 Ссылки', file: './js/links.js' }
+        ];
+
+        let currentModuleId = 'dashboard';
+
+        window.switchModule = async (moduleId) => {
+            currentModuleId = moduleId;
+            renderMenu();
+            const workspace = document.getElementById('moduleWorkspace');
+            workspace.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400">Загрузка модуля...</div>';
+            const target = APP_MODULES.find(m => m.id === moduleId);
+            if (target) {
+                try {
+                    const module = await import(`${target.file}?v=${Date.now()}`);
+                    workspace.innerHTML = module.template;
+                    if (module.init) module.init();
+                    closeSidebar();
+                } catch (err) {
+                    workspace.innerHTML = `<div class="text-red-500 p-4 bg-red-50 border rounded-xl">Ошибка загрузки: ${err.message}</div>`;
+                }
+            }
+        };
+
+        function renderMenu() {
+            const container = document.getElementById('menuContainer');
+            if (!container) return;
+            container.innerHTML = APP_MODULES.map(mod => {
+                const isActive = mod.id === currentModuleId;
+                return `<button onclick="switchModule('${mod.id}')" class="nav-item ${isActive ? 'active' : ''}">
+                    <span class="text-lg">${mod.name}</span>
+                </button>`;
+            }).join('');
+        }
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => reg.update())
+                    .catch(err => console.error('SW error:', err));
+            });
+        }
+
+        // PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('pwaInstallBtn').classList.remove('hidden');
+        });
+
+        window.installPWA = async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                document.getElementById('pwaInstallBtn').classList.add('hidden');
+            }
+            deferredPrompt = null;
+        };
+
+        // Аутентификация
+        const USER_PROFILES = {
+            "Директор": { name: "Рунцевич Д.С.", pin: "1111" },
+            "Инженер по ЭМТП": { name: "Волчек А.А.", pin: "2174" },
+            "Техник": { name: "Ладутько И.И.", pin: "1987" }
+        };
+
+        window.checkSiteAccess = () => {
+            const input = document.getElementById('sitePinInput');
+            const error = document.getElementById('authErrorMsg');
+            const roleSelect = document.getElementById('authRoleSelect');
+            if (!input || !roleSelect) return;
+            const role = roleSelect.value;
+            const profile = USER_PROFILES[role];
+            if (profile && input.value === profile.pin) {
+                localStorage.setItem('user_role', role);
+                localStorage.setItem('user_name', profile.name);
+                localStorage.setItem('site_access_granted', 'true');
+                document.getElementById('siteAuthOverlay').style.display = 'none';
+                updateSidebarUser();
+            } else {
+                if (error) error.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        };
+
+        function updateSidebarUser() {
+            const role = localStorage.getItem('user_role') || 'Сотрудник';
+            const name = localStorage.getItem('user_name') || 'Неизвестный';
+            document.getElementById('userBoxRole').innerText = role;
+            document.getElementById('userBoxName').innerText = name;
+            const avatar = document.getElementById('userAvatar');
+            if (avatar) {
+                const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2);
+                avatar.textContent = initials || '?';
+            }
+        }
+
+        window.logoutSystemUser = () => {
+            if (confirm("Выйти из учётной записи?")) {
+                localStorage.removeItem('site_access_granted');
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('user_name');
+                verifySession();
+            }
+        };
+
+        function verifySession() {
+            const overlay = document.getElementById('siteAuthOverlay');
+            if (localStorage.getItem('site_access_granted') === 'true') {
+                overlay.style.display = 'none';
+                updateSidebarUser();
+                if (!document.querySelector('#moduleWorkspace > *')) {
+                    switchModule('dashboard');
+                }
+            } else {
+                overlay.style.display = 'flex';
+            }
+        }
+
+        // Старт
+        document.addEventListener('DOMContentLoaded', () => {
+            verifySession();
+            renderMenu();
+            if (localStorage.getItem('site_access_granted') === 'true') {
+                switchModule('dashboard');
+            }
         });
     })();
 </script>
-
 </body>
 </html>
