@@ -34,8 +34,10 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-    // Пропускаем запросы не-GET
-    if (event.request.method !== 'GET') {
+    // Отвечаем только на GET-запросы и только на свои URL
+    const url = new URL(event.request.url);
+    if (event.request.method !== 'GET' || url.origin !== location.origin) {
+        // Пропускаем POST и запросы к другим доменам (Supabase)
         return;
     }
 
@@ -50,7 +52,7 @@ self.addEventListener('fetch', event => {
                         if (!networkResponse || networkResponse.status !== 200) {
                             return networkResponse;
                         }
-                        // Кешируем только GET и успешные ответы
+                        // Клонируем только успешные GET-ответы
                         const responseToCache = networkResponse.clone();
                         caches.open(CACHE_NAME)
                             .then(cache => {

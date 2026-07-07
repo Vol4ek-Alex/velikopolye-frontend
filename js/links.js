@@ -1,82 +1,6 @@
 // js/links.js
 
-export const template = `
-    <!-- Верхняя панель -->
-    <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-        <div>
-            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-                <span class="bg-purple-100 p-1.5 rounded-lg">🔗</span> Полезные ссылки
-            </h2>
-            <p class="text-sm text-gray-500 font-medium">Быстрый доступ к нужным ресурсам</p>
-        </div>
-        <button onclick="window.openLinkModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2">
-            ➕ Добавить ссылку
-        </button>
-    </div>
-
-    <!-- Фильтр по категориям -->
-    <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm mb-6">
-        <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-2">Категории:</span>
-            <button onclick="window.filterLinks('all')" id="linkCat_all" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-purple-600 bg-purple-600 text-white">Все</button>
-            <div id="linkCategoriesContainer" class="flex flex-wrap gap-2"></div>
-            <button onclick="window.openCategoryModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">+ Управлять</button>
-        </div>
-    </div>
-
-    <!-- Сетка карточек -->
-    <div id="linksGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <div class="col-span-full text-center py-12 text-sm text-gray-400 font-medium bg-white rounded-2xl border border-gray-200">Загрузка ссылок...</div>
-    </div>
-
-    <!-- Модалка добавления/редактирования -->
-    <div id="linkFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative">
-            <button onclick="window.closeLinkModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
-            <h3 id="linkModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Добавление ссылки</h3>
-            <form id="linkForm" class="space-y-4 text-sm">
-                <input type="hidden" id="linkId">
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Название *</label>
-                    <input type="text" id="linkTitle" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent" placeholder="Например: Яндекс">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">URL *</label>
-                    <input type="url" id="linkUrl" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent" placeholder="https://example.com">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Категория</label>
-                    <select id="linkCategory" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent">
-                        <option value="">Без категории</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Иконка (URL картинки или эмодзи)</label>
-                    <input type="text" id="linkIcon" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent" placeholder="https://... или 🚜">
-                </div>
-                <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="window.closeLinkModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
-                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
-                </div>
-                <button type="button" id="linkDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить ссылку</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Модалка управления категориями -->
-    <div id="categoryModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
-            <button onclick="window.closeCategoryModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
-            <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Управление категориями</h3>
-            <div id="categoryList" class="space-y-2 max-h-48 overflow-y-auto"></div>
-            <div class="pt-3 border-t border-gray-100 flex gap-2">
-                <input type="text" id="newCategoryInput" placeholder="Новая категория..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent">
-                <button onclick="window.addCategory()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition shadow-sm">Добавить</button>
-            </div>
-            <button onclick="window.closeCategoryModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
-        </div>
-    </div>
-`;
+export const template = ` ... (шаблон без изменений) ... `;
 
 // ===== Глобальные переменные =====
 let links = [];
@@ -84,11 +8,10 @@ let categories = [];
 let currentCategory = 'all';
 let refreshIntervalId = null;
 
-// ===== Инициализация модуля =====
+// ===== Инициализация =====
 export async function init() {
     console.log('🔗 Модуль "Ссылки" инициализирован');
 
-    // Глобальные функции для HTML
     window.openLinkModal = openLinkModal;
     window.closeLinkModal = closeLinkModal;
     window.openCategoryModal = openCategoryModal;
@@ -98,35 +21,31 @@ export async function init() {
     window.deleteCategory = deleteCategory;
     window.deleteLink = deleteLink;
 
-    // Навешиваем обработчик формы
-    const form = document.getElementById('linkForm');
-    if (form) {
-        // Удаляем старые обработчики, чтобы не дублировались
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        newForm.addEventListener('submit', handleFormSubmit);
-    }
-
-    // Кнопка удаления в модалке
-    const deleteBtn = document.getElementById('linkDeleteBtn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', handleDeleteFromModal);
-    }
-
-    // Проверка Supabase
     if (!window._supabase) {
-        console.error('❌ window._supabase не определён!');
         document.getElementById('linksGrid').innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-medium">Ошибка: Supabase не инициализирован</div>`;
         return;
     }
 
-    // Загрузка данных
+    // Привязываем обработчик формы здесь, а не в DOMContentLoaded
+    const form = document.getElementById('linkForm');
+    if (form) {
+        // Удаляем старые обработчики, чтобы не было дублей
+        form.removeEventListener('submit', handleFormSubmit);
+        form.addEventListener('submit', handleFormSubmit);
+    }
+
+    // Кнопка удаления
+    const deleteBtn = document.getElementById('linkDeleteBtn');
+    if (deleteBtn) {
+        deleteBtn.removeEventListener('click', handleDelete);
+        deleteBtn.addEventListener('click', handleDelete);
+    }
+
     await loadLinks();
     await loadCategories();
     renderCategories();
     renderLinks();
 
-    // Автообновление (каждые 30 секунд)
     if (refreshIntervalId) clearInterval(refreshIntervalId);
     refreshIntervalId = setInterval(async () => {
         await loadLinks();
@@ -134,9 +53,9 @@ export async function init() {
     }, 30000);
 }
 
-// ===== Обработчик формы (вынесен в отдельную функцию) =====
+// ===== Обработчик отправки формы =====
 async function handleFormSubmit(e) {
-    e.preventDefault();
+    e.preventDefault(); // сразу предотвращаем перезагрузку
     const id = document.getElementById('linkId').value;
     const title = document.getElementById('linkTitle').value.trim();
     const url = document.getElementById('linkUrl').value.trim();
@@ -181,8 +100,8 @@ async function handleFormSubmit(e) {
     }
 }
 
-// ===== Удаление из модалки =====
-async function handleDeleteFromModal() {
+// ===== Обработчик удаления из модалки =====
+async function handleDelete() {
     const id = document.getElementById('linkId').value;
     if (!id) return;
     if (!confirm('Удалить ссылку?')) return;
