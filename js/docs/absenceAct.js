@@ -2,91 +2,49 @@
 
 export const absenceTemplate = `
 <div id="subModule_absence_act" class="hidden space-y-4 fade-in-sub">
-    <style>
-        @media print {
-            /* Прячем весь интерфейс сайта, кроме блока печати */
-            body * {
-                visibility: hidden;
-            }
-            #tripPrintBlock, #tripPrintBlock * {
-                visibility: visible;
-            }
-            #tripPrintBlock {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
-            /* Превращаем каждую карточку в полноценную страницу А4 */
-            .print-page-a4 {
-                visibility: visible !important;
-                page-break-after: always !important;
-                page-break-inside: avoid !important;
-                font-family: "Times New Roman", serif !important;
-                font-size: 14pt !important;
-                line-height: 1.5 !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                border: none !important;
-                box-shadow: none !important;
-                background: transparent !important;
-            }
-            /* Настройки полей страницы */
-            @page {
-                size: A4 portrait;
-                margin: 2.5cm 2cm 2.5cm 2.5cm;
-            }
-            .no-print {
-                display: none !important;
-            }
-        }
-    </style>
-
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs space-y-4 no-print">
-            <h3 class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">📋 Параметры актов (Подневный расчет)</h3>
-            
+        <!-- Левая панель -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <h3 class="text-sm font-extrabold text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-3">
+                <span>🛑</span> Параметры актов о прогуле
+            </h3>
             <div class="border-t border-gray-200 pt-3 space-y-3">
-                <span class="text-[10px] font-black text-gray-500 uppercase tracking-wider">Период отсутствия</span>
-                <div class="grid grid-cols-2 gap-2">
+                <span class="text-xs font-extrabold text-gray-600 uppercase tracking-wider">Период отсутствия</span>
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[9px] font-bold text-gray-600 mb-0.5">С какого числа</label>
-                        <input type="date" id="absenceStartDate" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
+                        <label class="block text-[10px] font-bold text-gray-600 mb-0.5">С какого числа</label>
+                        <input type="date" id="absenceStartDate" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                     </div>
                     <div>
-                        <label class="block text-[9px] font-bold text-gray-600 mb-0.5">По какое число</label>
-                        <input type="date" id="absenceEndDate" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
+                        <label class="block text-[10px] font-bold text-gray-600 mb-0.5">По какое число</label>
+                        <input type="date" id="absenceEndDate" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                     </div>
                 </div>
-                <p class="text-[10px] text-amber-600 font-bold">💡 Будет автоматически сгенерировано по одному акту на каждый день из этого диапазона!</p>
+                <p class="text-[10px] text-amber-600 font-bold">💡 Будет сгенерирован отдельный акт на каждый день диапазона.</p>
             </div>
-
             <div class="border-t border-gray-200 pt-3 space-y-3">
-                <span class="text-[10px] font-black text-gray-500 uppercase tracking-wider">Данные сотрудника</span>
+                <span class="text-xs font-extrabold text-gray-600 uppercase tracking-wider">Данные сотрудника</span>
                 <div>
-                    <label class="block text-[9px] font-bold text-gray-600 mb-0.5">ФИО (в род. падеже) — для Актов</label>
-                    <input type="text" id="absenceEmployeeName" value="Пустельникова А.Ю." oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Пример: Пустельникова А.Ю.">
+                    <label class="block text-[10px] font-bold text-gray-600 mb-0.5">ФИО (род. падеж) — для Актов</label>
+                    <input type="text" id="absenceEmployeeName" value="Пустельникова А.Ю." oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                 </div>
                 <div>
-                    <label class="block text-[9px] font-bold text-gray-600 mb-0.5">ФИО (в им. падеже) — для Докладной</label>
-                    <input type="text" id="absenceEmployeeNameIm" value="Алексей Юрьевич" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Имя Отчество (или Фамилия И.О.)">
+                    <label class="block text-[10px] font-bold text-gray-600 mb-0.5">ФИО (им. падеж) — для Докладной</label>
+                    <input type="text" id="absenceEmployeeNameIm" value="Алексей Юрьевич" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                 </div>
                 <div>
-                    <label class="block text-[9px] font-bold text-gray-600 mb-0.5">Должность / Профессия</label>
-                    <input type="text" id="absenceEmployeeJob" value="тракторист-машинист" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Пример: тракторист-машинист">
+                    <label class="block text-[10px] font-bold text-gray-600 mb-0.5">Должность</label>
+                    <input type="text" id="absenceEmployeeJob" value="тракторист-машинист" oninput="window.updateAbsencePreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                 </div>
             </div>
-
-            <button onclick="window.printAndSaveAbsence()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-bold transition shadow-xs text-xs flex items-center justify-center gap-2">
+            <button onclick="window.printAndSaveAbsence()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
                 🖨️ Печать пакета документов
             </button>
         </div>
 
-        <div class="lg:col-span-2 bg-gray-100 p-4 rounded-xl border-2 border-gray-300 flex flex-col justify-between max-h-[80vh] overflow-y-auto no-print">
-            <div id="absenceLivePreview" class="space-y-6">
-                </div>
+        <!-- Правая панель – превью -->
+        <div class="lg:col-span-2 bg-gray-50 rounded-2xl p-4 border border-gray-200 flex flex-col">
+            <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex-1 overflow-auto" id="absenceLivePreview" style="font-family: 'Times New Roman', serif; min-height: 400px;"></div>
         </div>
     </div>
 </div>
@@ -96,12 +54,9 @@ export function initAbsenceAct() {
     function getDatesInRange(startStr, endStr) {
         const dates = [];
         if (!startStr || !endStr) return dates;
-        
         let current = new Date(startStr);
         const end = new Date(endStr);
-        
         if (current > end) return dates;
-        
         while (current <= end) {
             dates.push(new Date(current).toISOString().split('T')[0]);
             current.setDate(current.getDate() + 1);
@@ -130,16 +85,13 @@ export function initAbsenceAct() {
 
         const formattedStart = formatRusDate(startRaw);
         const formattedEnd = formatRusDate(endRaw);
+        const separator = isForWord ? '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">' : '';
 
-        const separator = isForWord 
-            ? '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">' 
-            : '';
-
-        // 1. ГЕНЕРИРУЕМ МАССИВ АКТОВ
+        // Генерация актов
         const actsArrayHtml = dateList.map(dateStr => {
             const formattedCurrentDate = formatRusDate(dateStr);
             return `
-            <div class="print-page-a4 bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box;">
+            <div class="print-page-a4" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
                 <div style="text-align: left; margin-bottom: 30px; font-size: 13px;">
                     Филиал СХК «Великополье»<br>ГП «Минсктранс»
                 </div>
@@ -158,7 +110,6 @@ export function initAbsenceAct() {
                 <p style="text-indent: 40px; margin-bottom: 50px;">
                     Мы, нижеподписавшиеся, настоящим актом удостоверяем, что ${empJob} <strong>${empName}</strong> отсутствовал на рабочем месте ${formattedCurrentDate}г.
                 </p>
-                
                 <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 60px; font-family: 'Times New Roman', serif; font-size: 14px;">
                     <tr style="height: 35px;">
                         <td style="width: 40%; text-align: left; border: none; padding: 0;">Волчек А.А.</td>
@@ -180,11 +131,10 @@ export function initAbsenceAct() {
             </div>`;
         });
 
-        // 2. ГЕНЕРИРУЕМ СЛУЖЕБКУ / ДОКЛАДНУЮ (С исправленной шапкой для Директора Рунцевича Д.С. в одну линию)
-        const reportDate = formattedEnd; 
+        // Докладная записка
+        const reportDate = formattedEnd;
         const reportHtml = `
-        <div class="print-page-a4 bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box;">
-            
+        <div class="print-page-a4" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px; margin-top: 20px;">
             <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 40px;">
                 <tr>
                     <td style="width: 45%; border: none;"></td>
@@ -197,17 +147,11 @@ export function initAbsenceAct() {
                     </td>
                 </tr>
             </table>
-
-            <div style="margin-bottom: 15px; font-size: 14px;">
-                ${reportDate}г.
-            </div>
-            <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; uppercase tracking-wide">
-                Докладная записка
-            </div>
+            <div style="margin-bottom: 15px; font-size: 14px;">${reportDate}г.</div>
+            <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; uppercase tracking-wide">Докладная записка</div>
             <p style="text-indent: 40px; margin-bottom: 60px;">
                 Довожу до Вашего сведения, что тракторист-машинист Пустельников ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
             </p>
-            
             <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 50px; font-family: 'Times New Roman', serif; font-size: 14px;">
                 <tr>
                     <td style="width: 50%; text-align: left; border: none; padding: 0;">Инженер по ЭМТП</td>
@@ -218,14 +162,12 @@ export function initAbsenceAct() {
 
         const allActsCombined = actsArrayHtml.join(separator);
         const finalContent = allActsCombined + separator + reportHtml;
-
         return isForWord ? finalContent : { combinedHtml: finalContent };
     };
 
     window.updateAbsencePreview = () => {
         const previewBlock = document.getElementById('absenceLivePreview');
         if (!previewBlock) return;
-        
         const { combinedHtml } = window.generateAbsenceHtmlContent(false);
         previewBlock.innerHTML = combinedHtml;
     };
@@ -233,7 +175,7 @@ export function initAbsenceAct() {
     window.printAndSaveAbsence = async () => {
         const fullWordHtml = window.generateAbsenceHtmlContent(true);
         if (!fullWordHtml) return alert('Нет данных для печати.');
-        
+
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
             printBlock.innerHTML = window.generateAbsenceHtmlContent(false).combinedHtml;
@@ -248,36 +190,27 @@ export function initAbsenceAct() {
         const fileName = 'absence_packet_' + startRaw + '.doc';
 
         try {
-            const wordContent = 
-                '<html xmlns:o="urn:schemas-microsoft-com:office:office" \n' +
-                'xmlns:w="urn:schemas-microsoft-com:office:word" \n' +
-                'xmlns="http://www.w3.org/TR/REC-html40">\n' +
-                '<head>\n' +
-                '<meta charset="utf-8">\n' +
-                '\n' +
-                '<style>\n' +
-                '@page { size: 21cm 29.7cm; margin: 2.5cm 2cm 2.5cm 2.5cm; }\n' +
-                'body { font-family: "Times New Roman", serif; font-size: 14pt; }\n' +
-                'p { text-align: justify; text-indent: 40px; }\n' +
-                '</style>\n' +
-                '</head>\n' +
-                '<body>\n' + 
-                fullWordHtml + 
-                '\n</body>\n</html>';
-
+            const wordContent = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta charset="utf-8"></head>
+                <body>${fullWordHtml}</body>
+                </html>
+            `;
             const fileBlob = new Blob([wordContent], { type: 'application/msword;charset=utf-8' });
-            
-            const { error } = await supabase.storage
-                .from('documents-history')
-                .upload(fileName, fileBlob, { cacheControl: '3600', upsert: true });
-
+            const { error } = await supabase.storage.from('documents-history').upload(fileName, fileBlob, { cacheControl: '3600', upsert: true });
             if (error) throw error;
-
-            alert('Подневный пакет документов успешно сформирован и сохранен в архив!');
+            alert('Пакет документов успешно сохранён в архив!');
             if (typeof window.loadTripStorageHistory === 'function') window.loadTripStorageHistory();
-
         } catch (err) {
-            alert('Ошибка архивации: ' + err.message);
+            alert('Ошибка сохранения: ' + err.message);
         }
     };
+
+    // Установка значений по умолчанию
+    setTimeout(() => {
+        const today = new Date().toISOString().split('T')[0];
+        if (document.getElementById('absenceStartDate')) document.getElementById('absenceStartDate').value = today;
+        if (document.getElementById('absenceEndDate')) document.getElementById('absenceEndDate').value = today;
+        window.updateAbsencePreview();
+    }, 50);
 }

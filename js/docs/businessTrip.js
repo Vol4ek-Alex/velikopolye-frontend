@@ -21,60 +21,58 @@ const TRIP_DESTINATIONS = [
     "город Фаниполь"
 ];
 
-// Генерируем опции для селектов
 const driverOptionsHtml = DRIVERS_DATABASE.map(d => '<option value="' + d + '">' + d + '</option>').join('') + '<option value="CUSTOM">-- Ввести вручную (Новый сотрудник) --</option>';
 const destinationsHtml = TRIP_DESTINATIONS.map(dest => '<option value="' + dest + '">').join('');
 const purposesHtml = TRIP_PURPOSES.map(p => '<option value="' + p + '">').join('');
 
-// Экспортируем HTML-шаблон подмодуля
 export const tripTemplate = `
 <div id="subModule_business_trip" class="hidden space-y-4 fade-in-sub">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs space-y-4">
-            <div class="grid grid-cols-2 gap-2">
+        <!-- Левая панель -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <h3 class="text-sm font-extrabold text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-3">
+                <span>✏️</span> Параметры служебной записки
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-700 mb-1">Дата документа</label>
-                    <input type="date" id="tripDocDate" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Дата документа</label>
+                    <input type="date" id="tripDocDate" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-700 mb-1">Дата поездки</label>
-                    <input type="date" id="tripTargetDate" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Дата поездки</label>
+                    <input type="date" id="tripTargetDate" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
                 </div>
             </div>
-
             <div>
-                <label class="block text-[10px] font-bold text-gray-700 mb-1">Водитель автомобиля</label>
-                <select id="tripDriverSelect" onchange="window.handleTripDriverSelect()" class="w-full bg-white border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                    ` + driverOptionsHtml + `
+                <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Водитель</label>
+                <select id="tripDriverSelect" onchange="window.handleTripDriverSelect()" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+                    ${driverOptionsHtml}
                 </select>
-                <input type="text" id="tripDriverCustomInput" oninput="window.updateTripPreview()" class="hidden mt-2 w-full bg-gray-50 border-2 border-blue-400 rounded-lg p-2 text-xs font-bold focus:border-blue-600" placeholder="Введите ФИО">
+                <input type="text" id="tripDriverCustomInput" oninput="window.updateTripPreview()" class="hidden mt-2 w-full bg-gray-50 border border-indigo-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent" placeholder="Введите ФИО">
             </div>
-
             <div>
-                <label class="block text-[10px] font-bold text-gray-700 mb-1">Куда (Пункт назначения)</label>
-                <input type="text" id="tripDestinationInput" list="destinationsList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                <datalist id="destinationsList">` + destinationsHtml + `</datalist>
+                <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Пункт назначения</label>
+                <input type="text" id="tripDestinationInput" list="destinationsList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent" placeholder="Начните ввод...">
+                <datalist id="destinationsList">${destinationsHtml}</datalist>
             </div>
-
             <div>
-                <label class="block text-[10px] font-bold text-gray-700 mb-1">Для чего (Цель)</label>
-                <input type="text" id="tripPurposeInput" list="purposesList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs font-bold focus:border-blue-600">
-                <datalist id="purposesList">` + purposesHtml + `</datalist>
+                <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Цель</label>
+                <input type="text" id="tripPurposeInput" list="purposesList" oninput="window.updateTripPreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent" placeholder="Начните ввод...">
+                <datalist id="purposesList">${purposesHtml}</datalist>
             </div>
-
-            <button onclick="window.printAndSaveTrip()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold transition shadow-xs text-xs flex items-center justify-center gap-2">
-                🖨️ Печать и сохранение в архив
+            <button onclick="window.printAndSaveTrip()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
+                🖨️ Печать и сохранение
             </button>
         </div>
 
-        <div class="lg:col-span-2 bg-gray-100 p-4 rounded-xl border-2 border-gray-300 flex flex-col justify-between">
-            <div id="tripLivePreview" class="bg-white p-8 border border-gray-300 shadow-xs rounded-lg font-serif text-black leading-relaxed" style="font-family: 'Times New Roman', serif; min-height: 400px;"></div>
+        <!-- Правая панель – превью -->
+        <div class="lg:col-span-2 bg-gray-50 rounded-2xl p-4 border border-gray-200 flex flex-col">
+            <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex-1 overflow-auto" id="tripLivePreview" style="font-family: 'Times New Roman', serif; min-height: 400px;"></div>
         </div>
     </div>
 </div>
 `;
 
-// Экспортируем функции инициализации и работы подмодуля
 export function initBusinessTrip() {
     window.handleTripDriverSelect = () => {
         const select = document.getElementById('tripDriverSelect');
@@ -90,7 +88,7 @@ export function initBusinessTrip() {
         }
         window.updateTripPreview();
     };
-    
+
     function formatTripDate(dateStr) {
         if (!dateStr) return '';
         const parts = dateStr.split('-');
@@ -101,31 +99,31 @@ export function initBusinessTrip() {
     window.generateTripHtmlContent = () => {
         const docDate = formatTripDate(document.getElementById('tripDocDate')?.value);
         const targetDate = formatTripDate(document.getElementById('tripTargetDate')?.value);
-        
         const selectVal = document.getElementById('tripDriverSelect')?.value;
         const customVal = document.getElementById('tripDriverCustomInput')?.value.trim();
         const driverName = selectVal === 'CUSTOM' ? (customVal || '') : selectVal;
-
         const destination = document.getElementById('tripDestinationInput')?.value.trim() || '';
         const purpose = document.getElementById('tripPurposeInput')?.value.trim() || '';
 
-        return '<div style="font-family: \'Times New Roman\', serif; color: black; font-size: 15px; line-height: 1.6; max-width: 650px; margin: 0 auto; padding: 10px;">' +
-                '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 60px; font-family: \'Times New Roman\', serif; font-size: 15px;">' +
-                    '<div style="padding-top: 0px; font-weight: normal; color: black;">' + docDate + '</div>' +
-                    '<div style="width: 280px; text-align: left; line-height: 1.4; padding-left: 15px;">' +
-                        'Директору филиала<br>СХК «Великополье»<br>Рунцевичу Д.С.<br>' +
-                        'Заместителя директора –<br>главного инженера<br>Маковича М.П.' +
-                    '</div>' +
-                '</div>' +
-                '<h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 35px; font-family: \'Times New Roman\', serif; letter-spacing: 0.5px;">Служебная записка</h1>' +
-                '<p style="text-align: justify; text-indent: 40px; margin-bottom: 70px; font-family: \'Times New Roman\', serif; font-size: 15px;">' +
-                    'Прошу вас, командировать водителя автомобиля ' + driverName + ' в ' + destination + ', по вопросу ' + purpose + ' ' + targetDate + 'г.' +
-                '</p>' +
-                '<div style="margin-top: 70px; display: flex; justify-content: space-between; font-family: \'Times New Roman\', serif; font-size: 15px;">' +
-                    '<div style="text-align: left; width: 60%; line-height: 1.4;">Заместитель директора –<br>Главный инженер</div>' +
-                    '<div style="text-align: right; width: 40%; display: flex; align-items: flex-end; justify-content: flex-end;">Макович М.П.</div>' +
-                '</div>' +
-            '</div>';
+        return `
+            <div style="font-family: 'Times New Roman', serif; color: black; font-size: 15px; line-height: 1.6; max-width: 650px; margin: 0 auto; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 60px;">
+                    <div style="padding-top: 0px; font-weight: normal; color: black;">${docDate}</div>
+                    <div style="width: 280px; text-align: left; line-height: 1.4; padding-left: 15px;">
+                        Директору филиала<br>СХК «Великополье»<br>Рунцевичу Д.С.<br>
+                        Заместителя директора –<br>главного инженера<br>Маковича М.П.
+                    </div>
+                </div>
+                <h1 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 35px; letter-spacing: 0.5px;">Служебная записка</h1>
+                <p style="text-align: justify; text-indent: 40px; margin-bottom: 70px; font-size: 15px;">
+                    Прошу вас, командировать водителя автомобиля ${driverName} в ${destination}, по вопросу ${purpose} ${targetDate}г.
+                </p>
+                <div style="margin-top: 70px; display: flex; justify-content: space-between; font-size: 15px;">
+                    <div style="text-align: left; width: 60%; line-height: 1.4;">Заместитель директора –<br>Главный инженер</div>
+                    <div style="text-align: right; width: 40%; display: flex; align-items: flex-end; justify-content: flex-end;">Макович М.П.</div>
+                </div>
+            </div>
+        `;
     };
 
     window.updateTripPreview = () => {
@@ -135,7 +133,6 @@ export function initBusinessTrip() {
 
     window.printAndSaveTrip = async () => {
         const htmlContent = window.generateTripHtmlContent();
-        
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
             printBlock.innerHTML = htmlContent;
@@ -153,10 +150,10 @@ export function initBusinessTrip() {
         
         const translit = (str) => {
             const ru = {
-                'а':'a', 'б':'b', 'в':'v', 'г':'g', 'д':'d', 'е':'e', 'ё':'e', 'ж':'zh', 'з':'z',
-                'и':'i', 'й':'y', 'к':'k', 'л':'l', 'м':'m', 'н':'n', 'о':'o', 'п':'p', 'р':'r',
-                'с':'s', 'т':'t', 'у':'u', 'ф':'f', 'х':'h', 'ц':'c', 'ч':'ch', 'ш':'sh', 'щ':'shch',
-                'ы':'y', 'э':'e', 'ю':'yu', 'я':'ya', ' ': '_', '.': ''
+                'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z',
+                'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+                'с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'shch',
+                'ы':'y','э':'e','ю':'yu','я':'ya',' ':'_','.':''
             };
             return str.toLowerCase().split('').map(c => ru[c] || (/[a-z0-9_-]/.test(c) ? c : '')).join('');
         };
@@ -165,40 +162,29 @@ export function initBusinessTrip() {
         const fileName = 'trip_' + docDate + '_' + driverSafe + '.doc';
 
         try {
-            const wordContent = 
-                'xmlns:o="urn:schemas-microsoft-com:office:office"\n' +
-                'xmlns:w="urn:schemas-microsoft-com:office:word"\n' +
-                'xmlns="http://www.w3.org/TR/REC-html40">\n' +
-                '<head>\n' +
-                '\n' +
-                '<meta charset="utf-8">\n' +
-                '</head>\n' +
-                '<body>\n' + 
-                htmlContent + 
-                '\n</body>\n</html>';
-
+            const wordContent = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta charset="utf-8"></head>
+                <body>${htmlContent}</body>
+                </html>
+            `;
             const fileBlob = new Blob([wordContent], { type: 'application/msword;charset=utf-8' });
-            
-            const { error } = await supabase.storage
-                .from('documents-history')
-                .upload(fileName, fileBlob, { cacheControl: '3600', upsert: true });
-
+            const { error } = await supabase.storage.from('documents-history').upload(fileName, fileBlob, { cacheControl: '3600', upsert: true });
             if (error) throw error;
-
-            alert('Документ успешно распечатан и сохранен в общий архив как WORD (.doc)!');
+            alert('Документ успешно распечатан и сохранён в архив!');
             if (typeof window.loadTripStorageHistory === 'function') window.loadTripStorageHistory();
-
         } catch (err) {
-            console.error('Ошибка архивации:', err);
-            alert('Печать выполнена, но не удалось сохранить в Storage: ' + err.message);
+            alert('Ошибка сохранения в архив: ' + err.message);
         }
     };
 
-    window.resetTripFormFields = () => {
+    // Установка значений по умолчанию
+    setTimeout(() => {
         const today = new Date().toISOString().split('T')[0];
         if (document.getElementById('tripDocDate')) document.getElementById('tripDocDate').value = today;
         if (document.getElementById('tripTargetDate')) document.getElementById('tripTargetDate').value = today;
         if (document.getElementById('tripDestinationInput')) document.getElementById('tripDestinationInput').value = "город Дзержинск";
         if (document.getElementById('tripPurposeInput')) document.getElementById('tripPurposeInput').value = "получения запчастей";
-    };
+        window.updateTripPreview();
+    }, 50);
 }
