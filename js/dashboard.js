@@ -528,25 +528,20 @@ function renderSeparatedAlerts(list, activeTasks) {
             const zeroHours = v.zero_hours || 0;
             const stepHours = v.step_hours || 125;
             const relativeHours = hours - zeroHours;
+            // Следующее ТО — это ближайшее значение, кратное stepHours, большее relativeHours
             const nextTO = zeroHours + (Math.ceil((relativeHours + 1) / stepHours) * stepHours);
             const hoursLeft = nextTO - hours;
 
-            let toType = "ТО-1";
-            if ((nextTO - zeroHours) % (stepHours * 8) === 0) {
-                toType = "ТО-3";
-            } else if ((nextTO - zeroHours) % (stepHours * 2) === 0) {
-                toType = "ТО-2";
-            }
-
+            // Без определения типа ТО — просто "ТО"
             let status = 'info';
-            let statusText = `⚙️ Наработка ${hours} м/ч. До ${toType} (${nextTO}) ещё <b>${hoursLeft} м/ч</b>.`;
+            let statusText = `⚙️ Наработка ${hours} м/ч. До ТО (${nextTO}) ещё <b>${hoursLeft} м/ч</b>.`;
             if (hoursLeft <= 50) {
-                status = 'danger'; // Станет красным, если осталось 50 м/ч или меньше
-                statusText = `🚨 <span class="text-red-700 font-black">Срочно ${toType} (${nextTO})!</span> Осталось <b>${hoursLeft} м/ч</b>.`;
+                status = 'danger';
+                statusText = `🚨 <span class="text-red-700 font-black">Срочно ТО (${nextTO})!</span> Осталось <b>${hoursLeft} м/ч</b>.`;
             } else if (hoursLeft <= 100) {
-                status = 'warning'; // Станет жёлтым, если осталось от 51 до 100 м/ч
-                statusText = `⚠️ Срок ${toType} (${nextTO}). Осталось <b>${hoursLeft} м/ч</b>.`;
-}
+                status = 'warning';
+                statusText = `⚠️ Срок ТО (${nextTO}). Осталось <b>${hoursLeft} м/ч</b>.`;
+            }
 
             warrantyAlerts.push({
                 id: v.id,
