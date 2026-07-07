@@ -394,7 +394,6 @@ function renderCategoriesBar() {
     // (остальные обработчики toggleCategoryDropdown и filterCategory остаются без изменений)
     // Они уже объявлены ниже, но чтобы не дублировать, убедитесь, что они есть.
     // Если вы не переносили их, они останутся из предыдущего кода.
-    }
 
     window.toggleCategoryDropdown = (e) => {
         e.stopPropagation();
