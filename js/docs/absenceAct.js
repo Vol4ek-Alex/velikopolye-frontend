@@ -228,24 +228,25 @@ export function initAbsenceAct() {
     };
 
     window.printAndSaveAbsence = async () => {
-        const fullWordHtml = window.generateAbsenceHtmlContent(true);
+        const fullWordHtml = window.generateAbsenceHtmlContent(true); // HTML с разрывами страниц
         if (!fullWordHtml) return alert('Нет данных для печати.');
-
+        
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
-            printBlock.innerHTML = window.generateAbsenceHtmlContent(false).combinedHtml;
+            // Вставляем контент с разрывами страниц для печати
+            printBlock.innerHTML = fullWordHtml;
             window.print();
             printBlock.innerHTML = '';
         }
-
+    
         const supabase = window._supabase || window.supabase;
         if (!supabase) return alert('Ошибка: Клиент Supabase не найден.');
-
+    
         const startRaw = document.getElementById('absenceStartDate')?.value || 'date';
         const empNameIm = document.getElementById('absenceEmployeeNameIm')?.value || 'сотрудник';
         const safeName = translitForFilename(empNameIm);
         const fileName = `progul_${startRaw}_${safeName}.doc`;
-
+    
         try {
             const wordContent = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
