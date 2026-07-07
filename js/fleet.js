@@ -15,6 +15,9 @@ export const template = `
         <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
             Категории
         </button>
+        <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 border-2 border-blue-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap">
+        ⏱️ Добавить часы
+        </button>
         <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap">
             + карта
         </button>
@@ -163,6 +166,29 @@ export const template = `
                 <button onclick="window.addVehicleTask()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold transition shadow-xs">Добавить задачу</button>
             </div>
             <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Модалка для добавления часов -->
+    <div id="hoursModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-sm p-5 border-2 border-gray-400 shadow-2xl space-y-4">
+            <h3 class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">⏱️ Добавить наработку</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Выберите технику</label>
+                    <select id="hoursVehicleSelect" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs font-bold focus:outline-none focus:border-emerald-600">
+                        <option value="">-- Загрузка техники --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Количество часов</label>
+                    <input type="number" id="hoursInput" min="0" step="0.5" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Например, 8.5">
+                </div>
+            </div>
+            <div class="flex gap-2.5 pt-2 border-t border-gray-200">
+                <button onclick="window.closeHoursModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-bold transition border border-gray-300 text-xs">Отмена</button>
+                <button onclick="window.submitHours()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold transition shadow-xs text-xs">Добавить</button>
+            </div>
         </div>
     </div>
 `;
@@ -457,12 +483,6 @@ function renderFleet() {
                                         <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[11px] text-center font-bold text-emerald-800 bg-emerald-50 border-2 border-emerald-400 rounded-md hover:bg-emerald-100 transition py-1">
                                             Задачи (${vTasks.length})
                                         </button>
-                                    </div>
-                                    <!-- НОВЫЙ БЛОК: добавление часов -->
-                                    <div class="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-gray-200">
-                                        <span class="text-[10px] text-gray-500 font-bold whitespace-nowrap">➕ часы:</span>
-                                        <input type="number" id="addHours_${v.id}" min="0" step="0.5" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-md p-1 text-xs font-bold focus:border-emerald-600" placeholder="0.5">
-                                        <button onclick="window.addHoursToVehicle(${v.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-md text-xs font-bold transition">Добавить</button>
                                     </div>
 
                                     <div class="space-y-1">
@@ -798,14 +818,43 @@ window.completeTask = async (taskId) => {
     } catch (e) { console.error(e); }
 };
 
-window.addHoursToVehicle = async (vehicleId) => {
-    const input = document.getElementById(`addHours_${vehicleId}`);
-    if (!input) return;
-    const hours = parseFloat(input.value);
-    if (isNaN(hours) || hours <= 0) {
-        alert("Введите положительное число часов (например, 8.5)");
-        return;
+// Открыть модалку с загрузкой списка техники
+window.openHoursModal = async () => {
+    const modal = document.getElementById('hoursModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    
+    // Заполняем выпадающий список
+    const select = document.getElementById('hoursVehicleSelect');
+    if (!select) return;
+    
+    // Если данные еще не загружены, подгружаем их
+    if (vehicles.length === 0) {
+        await loadAllData(false);
     }
+    // Сортируем по модели
+    const sorted = [...vehicles].sort((a, b) => a.model.localeCompare(b.model));
+    select.innerHTML = sorted.map(v => `
+        <option value="${v.id}">${v.model} ${v.plate ? '['+v.plate+']' : '[б/н]'} (${v.current_hours || 0} м/ч)</option>
+    `).join('');
+    // Очищаем поле ввода
+    document.getElementById('hoursInput').value = '';
+};
+
+// Закрыть модалку
+window.closeHoursModal = () => {
+    document.getElementById('hoursModal').classList.add('hidden');
+};
+
+// Отправить часы
+window.submitHours = async () => {
+    const select = document.getElementById('hoursVehicleSelect');
+    const input = document.getElementById('hoursInput');
+    const vehicleId = select.value;
+    const hours = parseFloat(input.value);
+    if (!vehicleId) { alert('Выберите технику'); return; }
+    if (isNaN(hours) || hours <= 0) { alert('Введите положительное число часов'); return; }
+    
     if (!window._supabase) return;
     try {
         // Получаем текущие часы
@@ -823,9 +872,11 @@ window.addHoursToVehicle = async (vehicleId) => {
             .update({ current_hours: newHours })
             .eq('id', vehicleId);
         if (updateError) throw updateError;
-        input.value = ''; // очищаем поле
-        await loadAllData(false); // перезагружаем данные (без сброса фильтров)
+        
+        // Закрываем модалку и обновляем данные
+        window.closeHoursModal();
+        await loadAllData(false);
     } catch (err) {
-        alert("Ошибка добавления часов: " + err.message);
+        alert('Ошибка: ' + err.message);
     }
 };
