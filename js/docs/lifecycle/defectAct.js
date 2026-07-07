@@ -1,51 +1,67 @@
 // js/docs/lifecycle/defectAct.js
 
-export const defectTemplate = '\n' +
-'<div id="form_block_defect" class="space-y-4 pt-4 fade-in-sub">\n' +
-'    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">\n' +
-'        <div>\n' +
-'            <label class="block text-[10px] font-bold text-gray-700 uppercase">Номер акта</label>\n' +
-'            <input type="text" id="defect_num" value="1" class="w-full border-2 border-gray-900 rounded-xl p-2 text-xs font-semibold mt-1">\n' +
-'        </div>\n' +
-'        <div>\n' +
-'            <label class="block text-[10px] font-bold text-gray-700 uppercase">Дата осмотра</label>\n' +
-'            <input type="date" id="defect_date" class="w-full border-2 border-gray-900 rounded-xl p-2 text-xs font-semibold mt-1">\n' +
-'        </div>\n' +
-'        <div>\n' +
-'            <label class="block text-[10px] font-bold text-gray-700 uppercase">Механизатор / Водитель</label>\n' +
-'            <input type="text" id="defect_driver" class="w-full border-2 border-gray-900 rounded-xl p-2 text-xs font-semibold mt-1">\n' +
-'        </div>\n' +
-'    </div>\n' +
-'    <div>\n' +
-'        <label class="block text-[10px] font-bold text-gray-700 uppercase">Выявленные неисправности</label>\n' +
-'        <textarea id="defect_faults" rows="3" placeholder="Описание поломок..." class="w-full border-2 border-gray-900 rounded-xl p-2 text-xs font-semibold mt-1"></textarea>\n' +
-'    </div>\n' +
-'    <div class="flex justify-end">\n' +
-'        <button onclick="window.generateDefectDoc()" class="bg-purple-600 hover:bg-purple-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-xs transition">💾 Сгенерировать Дефектный Акт Word</button>\n' +
-'    </div>\n' +
-'</div>\n' +
-'';
+export const defectTemplate = `
+<div id="form_block_defect" class="hidden space-y-4 fade-in-sub">
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-[10px] font-bold text-gray-700 uppercase">Номер акта</label>
+            <input type="text" id="defect_num" value="1" class="w-full border-2 border-gray-900 rounded-xl p-2 text-xs font-semibold mt-1">
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-700 uppercase">Дата дефектации</label>
+            <input type="date" id="defect_date" class="w-full border-2 border-gray-900 rounded-xl p-2 text-xs font-semibold mt-1">
+        </div>
+    </div>
+    <div>
+        <label class="block text-[10px] font-bold text-gray-700 uppercase">Выявленные дефекты и неисправности</label>
+        <textarea id="defect_faults" class="w-full border-2 border-gray-900 rounded-xl p-2 text-xs font-semibold mt-1 h-16">Критический износ рабочих органов, течь масла соединений гидросистемы.</textarea>
+    </div>
+    <div class="grid grid-cols-2 gap-2 pt-2">
+        <button onclick="window.printDefectAct()" class="bg-gray-900 hover:bg-gray-800 text-white font-black text-xs py-2.5 rounded-xl transition">🖨️ Распечатать (А4)</button>
+        <button onclick="window.generateDefectDoc()" class="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs py-2.5 rounded-xl transition">💾 В архив (.DOC)</button>
+    </div>
+</div>
+`;
 
-window.generateDefectDoc = async () => {
-    const vehicle = window.getActiveVehicle();
-    if (!vehicle) return alert('Сначала выберите машину из таблицы!');
+export function initDefectAct() {
+    const today = new Date().toISOString().split('T')[0];
+    const dInput = document.getElementById('defect_date');
+    if (dInput) dInput.value = today;
 
-    const num = document.getElementById('defect_num').value;
-    const date = document.getElementById('defect_date').value;
-    const driver = document.getElementById('defect_driver').value;
-    const faults = document.getElementById('defect_faults').value;
-
-    const htmlContent = '<div class="print-page-a4">' +
-        '<p align="right">УТВЕРЖДАЮ<br>Директор филиала СХК «Великополье»<br>________________ Д.С. Рунцевич</p>' +
-        '<h2 align="center">ДЕФЕКТНЫЙ АКТ № ' + num + '</h2>' +
-        '<p align="center">от ' + date + '</p>' +
-        '<p>Комиссия в составе председателя главного инженера Маковича М.П., инженера по ЭМТП Волчка А.А., составила настоящий акт о том, что в ходе осмотра техники <b>' + vehicle.brand + ' ' + vehicle.model + '</b>, инв. № <b>' + vehicle.inv_num + '</b> под управлением <b>' + driver + '</b> выявлено:</p>' +
-        '<p style="border:1px solid black; padding:10px; min-height:100px;">' + (faults || 'Неисправностей не обнаружено.') + '</p>' +
-        '<br><p>Председатель комиссии: _________ М.П. Макович</p>' +
-        '<p>Член комиссии: _________ А.А. Волчёк</p>' +
-        '</div>';
-
-    if (typeof window.uploadLifecycleToStorage === 'function') {
-        window.uploadLifecycleToStorage('defect_' + num + '_' + vehicle.inv_num + '.doc', htmlContent);
+    function buildHtml(v, num, faults, date) {
+        return `
+        <div style="font-family: 'Times New Roman', serif; font-size: 13px; line-height: 1.4; padding: 20mm 15mm 20mm 25mm; max-height: 250mm; box-sizing: border-box;">
+            <table style="width: 100%; margin-bottom: 40px;">
+                <tr>
+                    <td style="font-size: 13px;">Филиал СХК «Великополье»<br>ГП «Минсктранс»</td>
+                    <td style="text-align: right; font-size: 13px;"><b>УТВЕРЖДАЮ</b><br>Директор филиала<br>___________ Д.С. Рунцевич<br>«___» ________ 2026 г.</td>
+                </tr>
+            </table>
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h3 style="margin: 0; font-size: 16px;">ДЕФЕКТНЫЙ АКТ № ${num}</h3>
+                <span>от ${date}</span>
+            </div>
+            <p style="text-indent: 25px; text-align: justify;">Комиссия в составе председателя главного инженера Маковича М.П., инженера по ЭМТП Волчка А.А., составила настоящий акт о том, что в ходе технического осмотра узлов машины <b>${v.model}</b>, инвентарный номер <b>${v.inv_number || 'б/н'}</b>, обнаружены следующие неисправности:</p>
+            <div style="border: 1px solid black; padding: 10px; margin: 20px 0; min-height: 60px; text-align: left; font-family: 'Times New Roman'; font-size: 13px;">${faults}</div>
+            <p>Заключение комиссии: Направить технику в ремонтную мастерскую филиала для устранения дефектов собственными силами.</p>
+            <table style="width: 100%; margin-top: 65px; line-height: 2;">
+                <tr><td>Председатель комиссии:</td><td style="text-align: right;">___________ / М.П. Макович /</td></tr>
+                <tr><td>Член комиссии (инженер по ЭМТП):</td><td style="text-align: right;">___________ / А.А. Волчек /</td></tr>
+            </table>
+        </div>`;
     }
-};
+
+    window.printDefectAct = () => {
+        const v = window.getActiveVehicle(); if (!v) return;
+        const html = buildHtml(v, document.getElementById('defect_num').value, document.getElementById('defect_faults').value, document.getElementById('defect_date').value);
+        window.printLifecycleHtml(html);
+    };
+
+    window.generateDefectDoc = () => {
+        const v = window.getActiveVehicle(); if (!v) return;
+        const num = document.getElementById('defect_num').value;
+        const fName = `defect_act_№${num}_инв_${v.inv_number || 'бн'}.doc`;
+        const html = buildHtml(v, num, document.getElementById('defect_faults').value, document.getElementById('defect_date').value);
+        window.uploadLifecycleWord(fName, html);
+    };
+}
