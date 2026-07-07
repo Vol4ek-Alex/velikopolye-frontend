@@ -29,7 +29,7 @@ export const template = `
         <div class="col-span-full text-center py-12 text-sm text-gray-400 font-medium bg-white rounded-2xl border border-gray-200">Загрузка ссылок...</div>
     </div>
 
-    <!-- Модалка добавления/редактирования ссылки -->
+    <!-- Модалка добавления/редактирования -->
     <div id="linkFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative">
             <button onclick="window.closeLinkModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
@@ -86,6 +86,8 @@ let refreshIntervalId = null;
 
 // ===== Инициализация модуля =====
 export async function init() {
+    console.log('🔗 Модуль "Ссылки" инициализирован');
+
     // Глобальные функции для HTML
     window.openLinkModal = openLinkModal;
     window.closeLinkModal = closeLinkModal;
@@ -95,13 +97,20 @@ export async function init() {
     window.addCategory = addCategory;
     window.deleteCategory = deleteCategory;
 
+    // Проверка Supabase
+    if (!window._supabase) {
+        console.error('❌ window._supabase не определён!');
+        document.getElementById('linksGrid').innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-medium">Ошибка: Supabase не инициализирован</div>`;
+        return;
+    }
+
     // Загрузка данных
     await loadLinks();
     await loadCategories();
     renderCategories();
     renderLinks();
 
-    // Автообновление (каждые 30 секунд – редко, но для синхронизации)
+    // Автообновление (каждые 30 секунд)
     if (refreshIntervalId) clearInterval(refreshIntervalId);
     refreshIntervalId = setInterval(async () => {
         await loadLinks();
@@ -112,31 +121,35 @@ export async function init() {
 // ===== Загрузка ссылок =====
 async function loadLinks() {
     if (!window._supabase) return;
-    const { data, error } = await window._supabase
-        .from('links')
-        .select('*')
-        .order('created_at', { ascending: false });
-    if (error) {
-        console.error('Ошибка загрузки ссылок:', error);
-        return;
+    try {
+        const { data, error } = await window._supabase
+            .from('links')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        links = data || [];
+        console.log(`✅ Загружено ${links.length} ссылок`);
+    } catch (err) {
+        console.error('❌ Ошибка загрузки ссылок:', err);
+        alert('Ошибка загрузки ссылок: ' + err.message);
     }
-    links = data || [];
 }
 
 // ===== Загрузка категорий =====
 async function loadCategories() {
     if (!window._supabase) return;
-    // Получаем уникальные категории из ссылок
-    const { data, error } = await window._supabase
-        .from('links')
-        .select('category')
-        .not('category', 'is', null);
-    if (error) {
-        console.error('Ошибка загрузки категорий:', error);
-        return;
+    try {
+        const { data, error } = await window._supabase
+            .from('links')
+            .select('category')
+            .not('category', 'is', null);
+        if (error) throw error;
+        const cats = data.map(item => item.category).filter(Boolean);
+        categories = [...new Set(cats)].sort();
+        console.log(`✅ Загружено ${categories.length} категорий`);
+    } catch (err) {
+        console.error('Ошибка загрузки категорий:', err);
     }
-    const cats = data.map(item => item.category).filter(Boolean);
-    categories = [...new Set(cats)].sort();
 }
 
 // ===== Рендеринг категорий =====
@@ -146,7 +159,6 @@ function renderCategories() {
     container.innerHTML = categories.map(cat =>
         `<button onclick="window.filterLinks('${cat}')" id="linkCat_${cat}" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-gray-300 text-gray-700 hover:border-purple-400">${cat}</button>`
     ).join('');
-    // Обновить активную кнопку
     updateActiveCategory();
 }
 
@@ -185,21 +197,17 @@ function renderLinks() {
     }
 
     grid.innerHTML = filtered.map(link => {
-        // Получаем иконку: если есть link.icon – используем её, иначе пытаемся получить favicon
         let iconHtml = '';
         if (link.icon) {
             if (link.icon.startsWith('http') || link.icon.startsWith('data:')) {
                 iconHtml = `<img src="${link.icon}" class="w-8 h-8 rounded-lg object-contain" onerror="this.style.display='none'" alt="">`;
             } else {
-                // Эмодзи или текст
                 iconHtml = `<span class="text-2xl">${link.icon}</span>`;
             }
         } else {
-            // Пытаемся получить favicon через Google сервис
             try {
                 const url = new URL(link.url);
                 const domain = url.hostname;
-                // Используем Google Favicon service (работает, но может блокироваться)
                 const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
                 iconHtml = `<img src="${faviconUrl}" class="w-8 h-8 rounded-lg object-contain" onerror="this.style.display='none'" alt="">`;
             } catch (e) {
@@ -237,16 +245,14 @@ let editingLinkId = null;
 function openLinkModal(id = null) {
     const modal = document.getElementById('linkFormModal');
     const title = document.getElementById('linkModalTitle');
-    const form = document.getElementById('linkForm');
     const deleteBtn = document.getElementById('linkDeleteBtn');
     const categorySelect = document.getElementById('linkCategory');
 
-    // Заполняем категории в селекте
+    // Заполняем категории
     const allCats = ['', ...categories];
     categorySelect.innerHTML = allCats.map(c => `<option value="${c}">${c || 'Без категории'}</option>`).join('');
 
     if (id) {
-        // Режим редактирования
         const link = links.find(l => l.id === id);
         if (!link) return;
         editingLinkId = id;
@@ -258,10 +264,9 @@ function openLinkModal(id = null) {
         document.getElementById('linkIcon').value = link.icon || '';
         deleteBtn.classList.remove('hidden');
     } else {
-        // Режим добавления
         editingLinkId = null;
         title.textContent = 'Добавление ссылки';
-        form.reset();
+        document.getElementById('linkForm').reset();
         document.getElementById('linkId').value = '';
         deleteBtn.classList.add('hidden');
     }
@@ -294,35 +299,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            if (!window._supabase) {
+                alert('Ошибка: Supabase не инициализирован');
+                return;
+            }
+
             const payload = { title, url, category, icon };
 
             try {
+                let result;
                 if (id) {
-                    // Обновление
-                    const { error } = await window._supabase
+                    result = await window._supabase
                         .from('links')
                         .update(payload)
                         .eq('id', id);
-                    if (error) throw error;
                 } else {
-                    // Добавление
-                    const { error } = await window._supabase
+                    result = await window._supabase
                         .from('links')
                         .insert([payload]);
-                    if (error) throw error;
                 }
+                if (result.error) throw result.error;
+
+                console.log('✅ Ссылка сохранена');
                 closeLinkModal();
                 await loadLinks();
                 await loadCategories();
                 renderCategories();
                 renderLinks();
             } catch (err) {
+                console.error('❌ Ошибка сохранения:', err);
                 alert('Ошибка сохранения: ' + err.message);
             }
         });
     }
 
-    // Кнопка удаления в модалке
+    // Удаление из модалки
     const deleteBtn = document.getElementById('linkDeleteBtn');
     if (deleteBtn) {
         deleteBtn.addEventListener('click', async () => {
@@ -397,19 +408,15 @@ window.addCategory = async () => {
     const input = document.getElementById('newCategoryInput');
     const newCat = input.value.trim();
     if (!newCat) return;
-    // Проверяем, нет ли уже такой категории
     if (categories.includes(newCat)) {
         alert('Такая категория уже существует');
         return;
     }
-    // Добавляем просто в список (она появится при следующей загрузке)
-    // Чтобы сохранить, нужно присвоить категорию какой-то ссылке, либо хранить отдельно.
-    // Мы просто добавим её в массив и перерендерим.
     categories.push(newCat);
     input.value = '';
     renderCategoryList();
     renderCategories();
-    // Также обновим селект в модалке
+    // Обновить селект в модалке
     const select = document.getElementById('linkCategory');
     if (select) {
         const option = document.createElement('option');
@@ -417,21 +424,16 @@ window.addCategory = async () => {
         option.textContent = newCat;
         select.appendChild(option);
     }
-    // Сохранять категории отдельно не будем, они будут браться из ссылок при загрузке.
-    // Но чтобы категория сохранилась, нужно хотя бы одной ссылке её присвоить.
-    // Поэтому просто обновим интерфейс, а при перезагрузке они подгрузятся.
 };
 
 window.deleteCategory = async (cat) => {
     if (!confirm(`Удалить категорию "${cat}"? Все ссылки с этой категорией станут без категории.`)) return;
     try {
-        // Обновляем все ссылки, у которых категория = cat, устанавливаем null
         const { error } = await window._supabase
             .from('links')
             .update({ category: null })
             .eq('category', cat);
         if (error) throw error;
-        // Перезагружаем данные
         await loadLinks();
         await loadCategories();
         renderCategories();
