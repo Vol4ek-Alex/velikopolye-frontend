@@ -1,29 +1,32 @@
 export const template = `
+    <!-- Верхняя панель управления -->
     <div class="mb-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs">
-    <div class="space-y-0.5">
-        <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
-        <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, механизаторов, контроль документов и логов ремонта</p>
+        <div class="space-y-0.5">
+            <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
+            <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, механизаторов, контроль документов и логов ремонта</p>
+        </div>
+        
+        <!-- Гибкий контейнер для кнопок: переносятся при сужении -->
+        <div class="flex flex-wrap gap-2 w-full xl:w-auto">
+            <button onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap flex-1 sm:flex-none">
+                👤 Вод/Мех
+            </button>
+            <button onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap flex-1 sm:flex-none">
+                🏷️ Теги
+            </button>
+            <button onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap flex-1 sm:flex-none">
+                Категории
+            </button>
+            <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 border-2 border-blue-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap flex-1 sm:flex-none">
+                ⏱️ Добавить часы
+            </button>
+            <button onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap flex-1 sm:flex-none">
+                + карта
+            </button>
+        </div>
     </div>
-    
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full xl:w-auto">
-        <button id="manageDriversBtn" onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
-            👤 Вод/Мех
-        </button>
-        <button id="manageTagsBtn" onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
-            🏷️ Теги
-        </button>
-        <button id="manageCatsBtn" onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap">
-            Категории
-        </button>
-        <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 border-2 border-blue-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap">
-        ⏱️ Добавить часы
-        </button>
-        <button id="addVehicleBtn" onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap">
-            + карта
-        </button>
-    </div>
-</div>
 
+    <!-- Поиск и сортировка -->
     <div class="bg-white p-4 rounded-xl border-2 border-gray-400/80 shadow-xs space-y-3 mb-5">
         <div class="flex flex-col sm:flex-row gap-3">
             <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs text-gray-950 placeholder-gray-500 focus:outline-none focus:border-emerald-600 focus:bg-white font-bold transition" placeholder="Поиск по модели, госномеру, инвентарному, VIN, водителю или тегу...">
@@ -39,10 +42,12 @@ export const template = `
         </div>
     </div>
 
+    <!-- Сетка карточек техники -->
     <div id="fleetGridContainer" class="space-y-6">
         <div class="text-center text-gray-500 py-10 text-xs font-bold">Загрузка данных автопарка...</div>
     </div>
 
+    <!-- Модалка редактирования техники -->
     <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-md p-6 border-2 border-gray-400 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 id="vModalTitle" class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-2">Карточка техники</h3>
@@ -112,6 +117,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- Модалка управления водителями -->
     <div id="driversManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">👤 Список водителей, механизаторов предприятия</h3>
@@ -124,6 +130,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- Модалка управления тегами -->
     <div id="tagsManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">🏷️ Управление тегами статусов</h3>
@@ -140,6 +147,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- Модалка управления категориями -->
     <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">Настройка категорий</h3>
@@ -152,6 +160,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- Модалка задач по технике -->
     <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-sm p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <div class="space-y-0.5">
@@ -169,7 +178,7 @@ export const template = `
         </div>
     </div>
 
-    <!-- Модалка для добавления часов -->
+    <!-- Модалка добавления часов -->
     <div id="hoursModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-sm p-5 border-2 border-gray-400 shadow-2xl space-y-4">
             <h3 class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">⏱️ Добавить наработку</h3>
@@ -193,12 +202,11 @@ export const template = `
     </div>
 `;
 
-// Безопасная инициализация флага кастомного выпадающего списка во избежание Block-scope ошибок повторного объявления
+// ===== Глобальные переменные и настройки =====
 if (typeof window._isCategoriesDropdownOpen === 'undefined') {
     window._isCategoriesDropdownOpen = false;
 }
 
-// Динамические массивы данных синхронизируются напрямую с Supabase
 let vehicles = [];
 let tasks = [];
 let categories = [];
@@ -210,7 +218,9 @@ let selectedCategory = "all";
 let currentSort = "name_asc";
 let refreshIntervalId = null;
 
+// ===== Инициализация модуля =====
 export async function init() {
+    // Поиск
     const searchInput = document.getElementById('vehicleSearchInput');
     if (searchInput) {
         searchInput.value = searchQuery;
@@ -220,6 +230,7 @@ export async function init() {
         };
     }
 
+    // Форма редактирования
     const form = document.getElementById('vForm');
     if (form) {
         form.onsubmit = async (e) => {
@@ -228,32 +239,45 @@ export async function init() {
         };
     }
 
+    // Кнопка удаления
     const delBtn = document.getElementById('vDeleteBtn');
     if (delBtn) delBtn.onclick = handleDeleteVehicle;
 
+    // Глобальные функции для доступа из HTML
     window.openVehicleModalForm = (v = null) => openVehicleModal(v);
     window.closeVModal = () => document.getElementById('vFormModal').classList.add('hidden');
     window.openCategoriesModal = () => renderCategoriesModalList();
     window.openTagsModal = () => renderTagsModalList();
     window.openDriversModal = () => renderDriversModalList();
-    
     window.handleSortChange = (val) => {
         currentSort = val;
         renderFleet();
     };
+    window.openHoursModal = openHoursModal;
+    window.closeHoursModal = closeHoursModal;
+    window.submitHours = submitHours;
+    window.addCustomDriver = addCustomDriver;
+    window.deleteCustomDriver = deleteCustomDriver;
+    window.addCustomTag = addCustomTag;
+    window.deleteCustomTag = deleteCustomTag;
+    window.addCustomCategory = addCustomCategory;
+    window.deleteCustomCategory = deleteCustomCategory;
+    window.openTasksModalForm = openTasksModalForm;
+    window.addVehicleTask = addVehicleTask;
+    window.completeTask = completeTask;
 
-    // Первая жесткая загрузка данных
+    // Первая загрузка данных
     await loadAllData(true);
 
-    // Полный цикл синхронизации каждые 5 секунд
+    // Автообновление каждые 5 секунд
     if (refreshIntervalId) clearInterval(refreshIntervalId);
     refreshIntervalId = setInterval(() => loadAllData(false), 5000);
 }
 
+// ===== Загрузка данных из Supabase =====
 async function loadAllData(isFirstLoad = false) {
     if (!window._supabase) return;
     try {
-        // Запрашиваем все связанные таблицы параллельно (быстрее и эффективнее)
         const [resVehicles, resTasks, resDrivers, resCategories, resTags] = await Promise.all([
             window._supabase.from('vehicles').select('*'),
             window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false),
@@ -264,18 +288,16 @@ async function loadAllData(isFirstLoad = false) {
 
         if (!resVehicles.error && resVehicles.data) vehicles = resVehicles.data;
         if (!resTasks.error && resTasks.data) tasks = resTasks.data;
-        
+
         let categoriesChanged = false;
-        
-        // Маппинг данных из новых таблиц
+
         if (!resDrivers.error && resDrivers.data) {
             drivers = resDrivers.data.map(d => d.name);
         }
-        
+
         if (!resCategories.error && resCategories.data) {
             const newCategories = resCategories.data.map(c => c.name);
             if (!newCategories.includes("Без категории")) newCategories.push("Без категории");
-            
             if (JSON.stringify(categories) !== JSON.stringify(newCategories)) {
                 categories = newCategories;
                 categoriesChanged = true;
@@ -286,7 +308,7 @@ async function loadAllData(isFirstLoad = false) {
             baseTags = resTags.data.map(t => ({ id: t.id, name: t.name, color: t.color || '#e2e8f0' }));
         }
 
-        // Если в процессе работы у ТС в БД прописана категория, которой нет в списке, добавляем её
+        // Автоматическое добавление категорий, которых нет в списке, но есть у техники
         vehicles.forEach(v => {
             const typeName = v.type || "Без категории";
             if (!categories.map(c => c.toLowerCase()).includes(typeName.toLowerCase())) {
@@ -295,24 +317,24 @@ async function loadAllData(isFirstLoad = false) {
             }
         });
 
-        // Панель категорий перерисовываем только если они реально изменились, либо при первой загрузке
         if (isFirstLoad || categoriesChanged) {
             renderCategoriesBar();
         }
 
-        // Мягко обновляем открытые модалки, чтобы не сбивать фокус пользователя
+        // Обновление открытых модалок, если они видны
         if (!isFirstLoad) {
             if (!document.getElementById('driversManagementModal').classList.contains('hidden')) updateDriversDOMList();
             if (!document.getElementById('tagsManagementModal').classList.contains('hidden')) updateTagsDOMList();
             if (!document.getElementById('categoriesModal').classList.contains('hidden')) updateCategoriesDOMList();
         }
-        
+
         renderFleet();
     } catch (e) {
         console.error("Ошибка синхронизации данных автопарка:", e);
     }
 }
 
+// ===== Рендеринг панели категорий =====
 function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
     if (!bar) return;
@@ -348,11 +370,8 @@ function renderCategoriesBar() {
     window.toggleCategoryDropdown = (e) => {
         e.stopPropagation();
         window._isCategoriesDropdownOpen = !window._isCategoriesDropdownOpen;
-        
         const menu = document.getElementById('customCategoryDropdownMenu');
-        if (menu) {
-            menu.classList.toggle('hidden', !window._isCategoriesDropdownOpen);
-        }
+        if (menu) menu.classList.toggle('hidden', !window._isCategoriesDropdownOpen);
         const svg = e.currentTarget.querySelector('svg');
         if (svg) svg.classList.toggle('rotate-180', window._isCategoriesDropdownOpen);
     };
@@ -366,7 +385,7 @@ function renderCategoriesBar() {
     };
 }
 
-// Глобальный обработчик закрытия кастомного списка по клику вовне
+// Закрытие дропдауна по клику вне его
 if (!window._categoryDropdownClickSetup) {
     document.addEventListener('click', () => {
         if (window._isCategoriesDropdownOpen) {
@@ -378,11 +397,11 @@ if (!window._categoryDropdownClickSetup) {
     window._categoryDropdownClickSetup = true;
 }
 
+// ===== Рендеринг карточек =====
 function renderFleet() {
     const container = document.getElementById('fleetGridContainer');
     if (!container) return;
 
-    // Фиксация текущей позиции скролла перед рендером
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
 
     const searchInput = document.getElementById('vehicleSearchInput');
@@ -476,15 +495,6 @@ function renderFleet() {
                                         </div>
                                     </div>
                                     
-                                    <div class="grid grid-cols-2 gap-2 pt-0.5">
-                                        <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[11px] text-center font-bold text-gray-800 bg-gray-50 border-2 border-gray-400 rounded-md hover:bg-gray-100 transition py-1">
-                                            Изменить
-                                        </button>
-                                        <button onclick="window.openTasksModalForm(${v.id}, '${v.model.replace(/'/g, "\\'")}')" class="w-full text-[11px] text-center font-bold text-emerald-800 bg-emerald-50 border-2 border-emerald-400 rounded-md hover:bg-emerald-100 transition py-1">
-                                            Задачи (${vTasks.length})
-                                        </button>
-                                    </div>
-
                                     <div class="space-y-1">
                                         <div class="text-sm font-mono font-black text-gray-950 bg-gray-50 border-2 border-gray-900 inline-block px-3 py-1 rounded-md tracking-wider">
                                             ${v.plate || 'БЕЗ ГОСНОМЕРА'}
@@ -513,6 +523,7 @@ function renderFleet() {
                                         </div>
                                     </div>
 
+                                    <!-- Только ОДИН блок с кнопками Изменить и Задачи -->
                                     <div class="grid grid-cols-2 gap-2 pt-0.5">
                                         <button onclick="window.openVehicleModalForm(${safeVehicleJson})" class="w-full text-[11px] text-center font-bold text-gray-800 bg-gray-50 border-2 border-gray-400 rounded-md hover:bg-gray-100 transition py-1">
                                             Изменить
@@ -522,7 +533,6 @@ function renderFleet() {
                                         </button>
                                     </div>
                                 </div>
-
                             </div>
                         `;
                     }).join('')}
@@ -532,11 +542,10 @@ function renderFleet() {
     });
 
     container.innerHTML = html || `<div class="text-center text-gray-500 py-10 text-xs font-bold">Техника не найдена</div>`;
-
-    // Мгновенное восстановление скролла на прежнее место после апдейта HTML
     window.scrollTo(window.scrollX, scrollTop);
 }
 
+// ===== Модалка редактирования техники =====
 function openVehicleModal(vehicle = null) {
     const modal = document.getElementById('vFormModal');
     const title = document.getElementById('vModalTitle');
@@ -639,36 +648,47 @@ async function handleDeleteVehicle() {
     }
 }
 
-// === УПРАВЛЕНИЕ СТАТУСНЫМИ ТЕГАМИ (SUPABASE) ===
+// ===== Управление водителями =====
+function renderDriversModalList() {
+    document.getElementById('driversManagementModal').classList.remove('hidden');
+    updateDriversDOMList();
+}
+
+function updateDriversDOMList() {
+    const list = document.getElementById('modalDriversList');
+    if (!list) return;
+    list.innerHTML = drivers.map(d => `
+        <div class="flex items-center justify-between p-2 rounded-lg border-2 border-gray-300 text-xs font-bold bg-white shadow-3xs">
+            <span class="text-gray-900">👤 ${d}</span>
+            <button onclick="window.deleteCustomDriver('${d.replace(/'/g, "\\'")}')" class="text-red-600 hover:underline">Удалить</button>
+        </div>
+    `).join('');
+}
+
+async function addCustomDriver() {
+    const input = document.getElementById('newDriverNameInput');
+    if (!window._supabase || !input || !input.value.trim()) return;
+    try {
+        await window._supabase.from('fleet_drivers').insert([{ name: input.value.trim() }]);
+        input.value = "";
+        await loadAllData(false);
+    } catch (e) { console.error(e); }
+}
+
+async function deleteCustomDriver(driverName) {
+    if (!window._supabase) return;
+    if (confirm(`Удалить вод/мех-а "${driverName}" из базы данных?`)) {
+        try {
+            await window._supabase.from('fleet_drivers').delete().eq('name', driverName);
+            await loadAllData(false);
+        } catch (e) { console.error(e); }
+    }
+}
+
+// ===== Управление тегами =====
 function renderTagsModalList() {
     document.getElementById('tagsManagementModal').classList.remove('hidden');
     updateTagsDOMList();
-
-    window.addCustomTag = async () => {
-        const nameInput = document.getElementById('newTagNameInput');
-        const colorInput = document.getElementById('newTagColorInput');
-        if (!window._supabase || !nameInput || !nameInput.value.trim()) return;
-
-        try {
-            await window._supabase.from('fleet_tags').insert([{
-                name: nameInput.value.trim(),
-                color: colorInput.value
-            }]);
-            nameInput.value = "";
-            await loadAllData(false);
-        } catch (e) { console.error(e); }
-    };
-
-    window.deleteCustomTag = async (tagId) => {
-        if (!window._supabase) return;
-        const target = baseTags.find(t => t.id === tagId);
-        if (target && confirm(`Удалить тег "${target.name}" из базы данных?`)) {
-            try {
-                await window._supabase.from('fleet_tags').delete().eq('id', tagId);
-                await loadAllData(false);
-            } catch (e) { console.error(e); }
-        }
-    };
 }
 
 function updateTagsDOMList() {
@@ -685,73 +705,35 @@ function updateTagsDOMList() {
     `).join('');
 }
 
+async function addCustomTag() {
+    const nameInput = document.getElementById('newTagNameInput');
+    const colorInput = document.getElementById('newTagColorInput');
+    if (!window._supabase || !nameInput || !nameInput.value.trim()) return;
+    try {
+        await window._supabase.from('fleet_tags').insert([{
+            name: nameInput.value.trim(),
+            color: colorInput.value
+        }]);
+        nameInput.value = "";
+        await loadAllData(false);
+    } catch (e) { console.error(e); }
+}
 
-// === УПРАВЛЕНИЕ ВОДИТЕЛЯМИ (SUPABASE) ===
-function renderDriversModalList() {
-    document.getElementById('driversManagementModal').classList.remove('hidden');
-    updateDriversDOMList();
-
-    window.addCustomDriver = async () => {
-        const input = document.getElementById('newDriverNameInput');
-        if (!window._supabase || !input || !input.value.trim()) return;
-
+async function deleteCustomTag(tagId) {
+    if (!window._supabase) return;
+    const target = baseTags.find(t => t.id === tagId);
+    if (target && confirm(`Удалить тег "${target.name}" из базы данных?`)) {
         try {
-            await window._supabase.from('fleet_drivers').insert([{ name: input.value.trim() }]);
-            input.value = "";
+            await window._supabase.from('fleet_tags').delete().eq('id', tagId);
             await loadAllData(false);
         } catch (e) { console.error(e); }
-    };
-
-    window.deleteCustomDriver = async (driverName) => {
-        if (!window._supabase) return;
-        if (confirm(`Удалить вод/мех-а "${driverName}" из базы данных?`)) {
-            try {
-                await window._supabase.from('fleet_drivers').delete().eq('name', driverName);
-                await loadAllData(false);
-            } catch (e) { console.error(e); }
-        }
-    };
+    }
 }
 
-function updateDriversDOMList() {
-    const list = document.getElementById('modalDriversList');
-    if (!list) return;
-    list.innerHTML = drivers.map(d => `
-        <div class="flex items-center justify-between p-2 rounded-lg border-2 border-gray-300 text-xs font-bold bg-white shadow-3xs">
-            <span class="text-gray-900">👤 ${d}</span>
-            <button onclick="window.deleteCustomDriver('${d.replace(/'/g, "\\'")}')" class="text-red-600 hover:underline">Удалить</button>
-        </div>
-    `).join('');
-}
-
-
-// === УПРАВЛЕНИЕ КАТЕГОРИЯМИ (SUPABASE) ===
+// ===== Управление категориями =====
 function renderCategoriesModalList() {
     document.getElementById('categoriesModal').classList.remove('hidden');
     updateCategoriesDOMList();
-
-    window.addCustomCategory = async () => {
-        const input = document.getElementById('newCatInput');
-        if (!window._supabase || !input || !input.value.trim()) return;
-
-        try {
-            await window._supabase.from('fleet_categories').insert([{ name: input.value.trim() }]);
-            input.value = "";
-            await loadAllData(false);
-        } catch (e) { console.error(e); }
-    };
-
-    window.deleteCustomCategory = async (catName) => {
-        if (!window._supabase) return;
-        if (confirm(`Удалить категорию "${catName}"? Все машины из неё будут переведены в "Без категории".`)) {
-            try {
-                // Переводим технику каскадом, затем удаляем саму категорию
-                await window._supabase.from('vehicles').update({ type: 'Без категории' }).eq('type', catName);
-                await window._supabase.from('fleet_categories').delete().eq('name', catName);
-                await loadAllData(false);
-            } catch(err) { console.error("Ошибка удаления категории:", err); }
-        }
-    };
 }
 
 function updateCategoriesDOMList() {
@@ -765,9 +747,29 @@ function updateCategoriesDOMList() {
     `).join('');
 }
 
+async function addCustomCategory() {
+    const input = document.getElementById('newCatInput');
+    if (!window._supabase || !input || !input.value.trim()) return;
+    try {
+        await window._supabase.from('fleet_categories').insert([{ name: input.value.trim() }]);
+        input.value = "";
+        await loadAllData(false);
+    } catch (e) { console.error(e); }
+}
 
-// === РАБОТА С ЗАДАЧАМИ ===
-window.openTasksModalForm = (vehicleId, vehicleName) => {
+async function deleteCustomCategory(catName) {
+    if (!window._supabase) return;
+    if (confirm(`Удалить категорию "${catName}"? Все машины из неё будут переведены в "Без категории".`)) {
+        try {
+            await window._supabase.from('vehicles').update({ type: 'Без категории' }).eq('type', catName);
+            await window._supabase.from('fleet_categories').delete().eq('name', catName);
+            await loadAllData(false);
+        } catch(err) { console.error("Ошибка удаления категории:", err); }
+    }
+}
+
+// ===== Задачи по технике =====
+function openTasksModalForm(vehicleId, vehicleName) {
     const modal = document.getElementById('tasksModal');
     if (!modal) return;
     modal.classList.remove('hidden');
@@ -776,7 +778,7 @@ window.openTasksModalForm = (vehicleId, vehicleName) => {
     document.getElementById('tasksModalSubtitle').innerText = `Техника: ${vehicleName}`;
     document.getElementById('newTaskText').value = "";
     renderTasksListInsideModal();
-};
+}
 
 function renderTasksListInsideModal() {
     const vId = parseInt(document.getElementById('taskVehicleId').value);
@@ -795,7 +797,7 @@ function renderTasksListInsideModal() {
     `).join('');
 }
 
-window.addVehicleTask = async () => {
+async function addVehicleTask() {
     const vId = document.getElementById('taskVehicleId').value;
     const vName = document.getElementById('taskVehicleName').value;
     const textInput = document.getElementById('newTaskText');
@@ -806,9 +808,9 @@ window.addVehicleTask = async () => {
         await loadAllData(true);
         renderTasksListInsideModal();
     } catch (e) { console.error(e); }
-};
+}
 
-window.completeTask = async (taskId) => {
+async function completeTask(taskId) {
     if (!window._supabase) return;
     try {
         await window._supabase.from('vehicle_tasks').update({ is_completed: true }).eq('id', taskId);
@@ -816,48 +818,37 @@ window.completeTask = async (taskId) => {
         const modal = document.getElementById('tasksModal');
         if (modal && !modal.classList.contains('hidden')) renderTasksListInsideModal();
     } catch (e) { console.error(e); }
-};
+}
 
-// Открыть модалку с загрузкой списка техники
-window.openHoursModal = async () => {
+// ===== Добавление часов через модалку =====
+async function openHoursModal() {
     const modal = document.getElementById('hoursModal');
     if (!modal) return;
     modal.classList.remove('hidden');
     
-    // Заполняем выпадающий список
     const select = document.getElementById('hoursVehicleSelect');
     if (!select) return;
-    
-    // Если данные еще не загружены, подгружаем их
-    if (vehicles.length === 0) {
-        await loadAllData(false);
-    }
-    // Сортируем по модели
+    if (vehicles.length === 0) await loadAllData(false);
     const sorted = [...vehicles].sort((a, b) => a.model.localeCompare(b.model));
     select.innerHTML = sorted.map(v => `
         <option value="${v.id}">${v.model} ${v.plate ? '['+v.plate+']' : '[б/н]'} (${v.current_hours || 0} м/ч)</option>
     `).join('');
-    // Очищаем поле ввода
     document.getElementById('hoursInput').value = '';
-};
+}
 
-// Закрыть модалку
-window.closeHoursModal = () => {
+function closeHoursModal() {
     document.getElementById('hoursModal').classList.add('hidden');
-};
+}
 
-// Отправить часы
-window.submitHours = async () => {
+async function submitHours() {
     const select = document.getElementById('hoursVehicleSelect');
     const input = document.getElementById('hoursInput');
     const vehicleId = select.value;
     const hours = parseFloat(input.value);
     if (!vehicleId) { alert('Выберите технику'); return; }
     if (isNaN(hours) || hours <= 0) { alert('Введите положительное число часов'); return; }
-    
     if (!window._supabase) return;
     try {
-        // Получаем текущие часы
         const { data, error } = await window._supabase
             .from('vehicles')
             .select('current_hours')
@@ -866,17 +857,14 @@ window.submitHours = async () => {
         if (error) throw error;
         const current = data.current_hours || 0;
         const newHours = current + hours;
-        // Обновляем
         const { error: updateError } = await window._supabase
             .from('vehicles')
             .update({ current_hours: newHours })
             .eq('id', vehicleId);
         if (updateError) throw updateError;
-        
-        // Закрываем модалку и обновляем данные
-        window.closeHoursModal();
+        closeHoursModal();
         await loadAllData(false);
     } catch (err) {
         alert('Ошибка: ' + err.message);
     }
-};
+}
