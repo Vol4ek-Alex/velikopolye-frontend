@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>АРМ «Великополье»</title>
-    <!-- Google Fonts (Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
@@ -18,24 +17,12 @@
             background: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
             min-height: 100vh;
         }
-        .fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .mobile-menu-enter {
-            animation: slideIn 0.3s ease-out forwards;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0); }
-        }
         .nav-active {
             background: #eef2ff;
             color: #4f46e5;
@@ -55,38 +42,27 @@
             text-transform: uppercase;
             flex-shrink: 0;
         }
-        .logout-btn {
-            transition: all 0.2s;
-        }
         .logout-btn:hover {
             background: #fee2e2;
             color: #dc2626;
             border-color: #fca5a5;
         }
-        /* Анимация для карточек модулей */
-        .module-enter {
-            animation: moduleFadeIn 0.4s ease-out forwards;
-        }
-        @keyframes moduleFadeIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
+        #moduleWorkspace {
+            animation: fadeIn 0.4s ease-out;
         }
     </style>
 </head>
 <body>
 
-    <!-- Оверлей аутентификации -->
+    <!-- Оверлей входа -->
     <div id="siteAuthOverlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl border border-gray-100/50 text-center space-y-6">
-            <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl border border-indigo-100 shadow-sm flex items-center justify-center text-4xl mx-auto">
-                🔐
-            </div>
+            <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl border border-indigo-100 shadow-sm flex items-center justify-center text-4xl mx-auto">🔐</div>
             <div>
                 <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">филиал СХК «Великополье»</p>
                 <h2 class="text-2xl font-black text-gray-800">Вход в систему АРМ</h2>
                 <p class="text-sm text-gray-500 mt-1 font-medium">Выберите должность и введите ПИН-код</p>
             </div>
-
             <div class="space-y-5 text-left">
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-1.5">Должность</label>
@@ -109,7 +85,7 @@
         </div>
     </div>
 
-    <!-- Шапка для мобильных -->
+    <!-- Мобильная шапка -->
     <header class="md:hidden bg-white/80 backdrop-blur-sm border-b border-gray-200/80 p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
         <div class="flex items-center gap-2">
             <span class="text-2xl">🚜</span>
@@ -124,7 +100,6 @@
     <!-- Боковое меню -->
     <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white/95 backdrop-blur-sm border-r border-gray-200/80 flex flex-col justify-between p-4 transition-transform -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
         <div>
-            <!-- Логотип -->
             <div class="hidden md:flex items-center gap-3 mb-8 px-2 border-b border-gray-100/80 pb-5">
                 <span class="text-3xl bg-indigo-50 p-2.5 rounded-2xl border border-indigo-100 shadow-sm flex items-center justify-center">🚜</span>
                 <div class="flex flex-col justify-center">
@@ -133,11 +108,8 @@
                     <span class="text-[11px] font-medium text-gray-400 leading-none mt-1 block">ГП «Минсктранс»</span>
                 </div>
             </div>
-            <!-- Меню навигации -->
             <nav id="menuContainer" class="space-y-1"></nav>
         </div>
-
-        <!-- Блок пользователя -->
         <div class="space-y-4 border-t border-gray-100/80 pt-4 mt-auto">
             <div class="bg-gray-50/80 border border-gray-200/80 rounded-2xl p-3 flex items-center justify-between shadow-sm gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -147,23 +119,16 @@
                         <p id="userBoxRole" class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mt-0.5 truncate">Загрузка...</p>
                     </div>
                 </div>
-                <button onclick="window.logoutSystemUser()" title="Выйти из аккаунта" class="logout-btn flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white text-gray-500 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded-xl transition shadow-sm text-sm">
-                    🚪
-                </button>
+                <button onclick="window.logoutSystemUser()" title="Выйти" class="logout-btn flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white text-gray-500 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded-xl transition shadow-sm text-sm">🚪</button>
             </div>
-
-            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-2xl transition text-center shadow-sm">
-                📱 Установить на телефон
-            </button>
-
+            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-2xl transition text-center shadow-sm">📱 Установить на телефон</button>
             <div class="text-[10px] text-gray-400 text-center pt-1 pb-2 font-medium">АРМ v1.0.1 • by Vol4ek</div>
         </div>
     </aside>
 
-    <!-- Оверлей для мобильного меню -->
     <div id="menuOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden"></div>
 
-    <!-- Основная рабочая область -->
+    <!-- Основная область -->
     <main id="moduleWorkspace" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full relative z-10"></main>
 
     <script type="module">
@@ -194,7 +159,7 @@
                     workspace.innerHTML = module.template;
                     if (module.init) module.init();
                 } catch (err) {
-                    workspace.innerHTML = `<div class="text-red-500 p-4 bg-red-50 border rounded-xl">Ошибка загрузки файла модуля: ${err.message}</div>`;
+                    workspace.innerHTML = `<div class="text-red-500 p-4 bg-red-50 border rounded-xl">Ошибка загрузки: ${err.message}</div>`;
                 }
             }
         };
@@ -210,8 +175,8 @@
                 return `
                     <button onclick="switchModule('${mod.id}'); if(window.innerWidth < 768) toggleMobileMenu();" 
                             class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-3 ${activeClasses}">
-                        <span class="text-lg">${mod.name}</span>
-                        ${isActive ? '<span class="w-1.5 h-1.5 bg-indigo-600 rounded-full ml-auto"></span>' : ''}
+                        <span class="text-lg flex-1">${mod.name}</span>
+                        ${isActive ? '<span class="w-1.5 h-1.5 bg-indigo-600 rounded-full flex-shrink-0"></span>' : ''}
                     </button>
                 `;
             }).join('');
@@ -228,7 +193,7 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => { reg.update(); })
-                    .catch(err => console.error('❌ Ошибка SW:', err));
+                    .catch(err => console.error('SW error:', err));
             });
         }
 
@@ -236,8 +201,7 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            const btn = document.getElementById('pwaInstallBtn');
-            if (btn) btn.classList.remove('hidden');
+            document.getElementById('pwaInstallBtn').classList.remove('hidden');
         });
 
         window.installPWA = async () => {
@@ -260,17 +224,13 @@
             const input = document.getElementById('sitePinInput');
             const error = document.getElementById('authErrorMsg');
             const roleSelect = document.getElementById('authRoleSelect');
-
             if (!input || !roleSelect) return;
-
             const selectedRole = roleSelect.value;
             const profile = USER_PROFILES[selectedRole];
-
             if (profile && input.value === profile.pin) {
                 localStorage.setItem('user_role', selectedRole);
                 localStorage.setItem('user_name', profile.name);
                 localStorage.setItem('site_access_granted', 'true');
-
                 document.getElementById('siteAuthOverlay').classList.add('hidden');
                 updateSidebarUser();
             } else {
@@ -282,21 +242,17 @@
         function updateSidebarUser() {
             const role = localStorage.getItem('user_role') || 'Сотрудник';
             const name = localStorage.getItem('user_name') || 'Неизвестный';
-
-            const roleEl = document.getElementById('userBoxRole');
-            const nameEl = document.getElementById('userBoxName');
-            const avatarEl = document.getElementById('userAvatar');
-
-            if (roleEl) roleEl.innerText = role;
-            if (nameEl) nameEl.innerText = name;
-            if (avatarEl) {
+            document.getElementById('userBoxRole').innerText = role;
+            document.getElementById('userBoxName').innerText = name;
+            const avatar = document.getElementById('userAvatar');
+            if (avatar) {
                 const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2);
-                avatarEl.textContent = initials || '?';
+                avatar.textContent = initials || '?';
             }
         }
 
         window.logoutSystemUser = () => {
-            if (confirm("Выйти из текущей учётной записи?")) {
+            if (confirm("Выйти из учётной записи?")) {
                 localStorage.removeItem('site_access_granted');
                 localStorage.removeItem('user_role');
                 localStorage.removeItem('user_name');
