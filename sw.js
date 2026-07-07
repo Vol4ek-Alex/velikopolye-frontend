@@ -11,7 +11,6 @@ const urlsToCache = [
     '/js/links.js'
 ];
 
-// Установка
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -23,7 +22,6 @@ self.addEventListener('install', event => {
     );
 });
 
-// Активация
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
@@ -35,22 +33,24 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Перехват fetch – исправленная версия
 self.addEventListener('fetch', event => {
+    // Пропускаем запросы не-GET
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(cachedResponse => {
                 if (cachedResponse) {
                     return cachedResponse;
                 }
-                // Если нет в кеше, идём в сеть
                 return fetch(event.request)
                     .then(networkResponse => {
-                        // Клонируем только если ответ успешный
                         if (!networkResponse || networkResponse.status !== 200) {
                             return networkResponse;
                         }
-                        // Клонируем для кеширования
+                        // Кешируем только GET и успешные ответы
                         const responseToCache = networkResponse.clone();
                         caches.open(CACHE_NAME)
                             .then(cache => {
@@ -60,7 +60,6 @@ self.addEventListener('fetch', event => {
                         return networkResponse;
                     })
                     .catch(() => {
-                        // Если сеть недоступна, можно вернуть fallback
                         return new Response('Офлайн-режим: ресурс не доступен', { status: 503 });
                     });
             })
