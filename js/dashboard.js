@@ -98,15 +98,14 @@ export const template = `
             </div>
 
             <!-- Фильтр -->
-            <div id="dashFilterDropdown" class="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-2xl shadow-xl p-4 z-50 space-y-2 hidden max-h-[300px] overflow-y-auto">
-                <p class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-100 pb-2">Отображать технику:</p>
+            <div id="dashFilterDropdown" class="absolute left-0 top-full mt-1 w-72 max-w-[90vw] bg-white border border-gray-200 rounded-2xl shadow-xl p-4 z-50 space-y-3 hidden max-h-[350px] overflow-y-auto">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                    <p class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Отображать технику</p>
+                    <button onclick="window.dashResetFilter()" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 transition">Показать все</button>
+                </div>
                 <div id="dashFilterCheckboxes" class="space-y-1.5 text-sm"></div>
+                <div id="dashFilterStats" class="text-[10px] text-gray-400 border-t border-gray-100 pt-2 mt-1 text-center"></div>
             </div>
-
-            <div id="containerWarranty" class="space-y-2.5 overflow-y-auto flex-1 max-h-[420px] pr-1">
-                <div class="text-gray-400 text-sm py-6 text-center bg-white border border-gray-200 rounded-2xl">Загрузка...</div>
-            </div>
-        </div>
 
         <!-- Документы -->
         <div class="flex flex-col">
