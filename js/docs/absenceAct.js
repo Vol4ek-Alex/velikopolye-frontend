@@ -71,12 +71,14 @@ export function initAbsenceAct() {
         return dateStr;
     }
 
-    // Извлечение фамилии (первое слово)
-    function extractSurname(fullName) {
-        if (!fullName) return 'unknown';
-        const trimmed = fullName.trim();
-        const firstWord = trimmed.split(/\s+/)[0].replace(/\.$/, '');
-        return firstWord || 'unknown';
+    function translitForFilename(str) {
+        const ru = {
+            'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z',
+            'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+            'с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'shch',
+            'ы':'y','э':'e','ю':'yu','я':'ya',' ':'_','.':''
+        };
+        return str.toLowerCase().split('').map(c => ru[c] || (/[a-z0-9_-]/.test(c) ? c : '')).join('');
     }
 
     window.generateAbsenceHtmlContent = (isForWord = false) => {
@@ -139,9 +141,8 @@ export function initAbsenceAct() {
             </div>`;
         });
 
-        // Докладная записка
+        // Докладная записка – теперь используем empNameIm (без жёсткого "Пустельников")
         const reportDate = formattedEnd;
-        // Используем empNameIm (им. падеж) в докладной
         const reportHtml = `
         <div class="print-page-a4" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px; margin-top: 20px;">
             <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 40px;">
@@ -195,10 +196,10 @@ export function initAbsenceAct() {
         const supabase = window._supabase || window.supabase;
         if (!supabase) return alert('Ошибка: Клиент Supabase не найден.');
 
-        const startRaw = document.getElementById('absenceStartDate')?.value || 'unknown-date';
-        const empName = document.getElementById('absenceEmployeeName')?.value || '';
-        const surname = extractSurname(empName);
-        const fileName = `Прогул_${surname}_${startRaw}.doc`;
+        const startRaw = document.getElementById('absenceStartDate')?.value || 'date';
+        const empNameIm = document.getElementById('absenceEmployeeNameIm')?.value || 'сотрудник';
+        const safeName = translitForFilename(empNameIm);
+        const fileName = `Прогул_${startRaw}_${safeName}.doc`;
 
         try {
             const wordContent = `

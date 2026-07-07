@@ -43,12 +43,13 @@ export const batteryTemplate = `
 `;
 
 export function initBatteryAct() {
+    // Каждый элемент: { id, name, count, period, weightPerOne } – вес одной АКБ
     let batteryItems = [
-        { id: Date.now(), name: "6СТ-190 АБ-3 URA6AH", count: 2, period: 30, weightOne: 80 }
+        { id: Date.now(), name: "6СТ-190 АБ-3 URA6AH", count: 2, period: 30, weightPerOne: 40 }
     ];
 
     window.addBatteryRow = () => {
-        batteryItems.push({ id: Date.now(), name: "6СТ-190", count: 1, period: 24, weightOne: 40 });
+        batteryItems.push({ id: Date.now(), name: "6СТ-190", count: 1, period: 24, weightPerOne: 40 });
         window.renderBatteryInputs();
         window.updateBatteryPreview();
     };
@@ -69,7 +70,7 @@ export function initBatteryAct() {
             if (field === 'name') item.name = value;
             if (field === 'count') item.count = parseInt(value) || 0;
             if (field === 'period') item.period = value;
-            if (field === 'weightOne') item.weightOne = parseFloat(value) || 0;
+            if (field === 'weightPerOne') item.weightPerOne = parseFloat(value) || 0;
         }
         window.updateBatteryPreview();
     };
@@ -77,7 +78,10 @@ export function initBatteryAct() {
     window.renderBatteryInputs = () => {
         const container = document.getElementById('batteryRowsContainer');
         if (!container) return;
-        container.innerHTML = batteryItems.map((item, index) => `
+        container.innerHTML = batteryItems.map((item, index) => {
+            // Общий вес = вес_одной * количество
+            const totalWeight = (item.weightPerOne || 0) * (item.count || 0);
+            return `
             <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2 relative">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold text-gray-500">АКБ #${index + 1}</span>
@@ -98,12 +102,12 @@ export function initBatteryAct() {
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-gray-600 mb-0.5">Вес 1 шт (кг)</label>
-                        <input type="number" value="${item.weightOne}" step="0.1" oninput="window.handleBatteryInputChange(${item.id}, 'weightOne', this.value)" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold focus:ring-2 focus:ring-amber-400 focus:border-transparent">
+                        <input type="number" value="${item.weightPerOne}" step="0.1" oninput="window.handleBatteryInputChange(${item.id}, 'weightPerOne', this.value)" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold focus:ring-2 focus:ring-amber-400 focus:border-transparent">
                     </div>
                 </div>
-                <div class="text-[10px] text-gray-500">Общий вес: ${(item.weightOne * item.count).toFixed(1)} кг</div>
-            </div>
-        `).join('');
+                <div class="text-xs text-gray-500 font-bold">Общий вес: ${totalWeight.toFixed(1)} кг</div>
+            </div>`;
+        }).join('');
     };
 
     function formatBatteryDate(dateStr) {
@@ -113,26 +117,33 @@ export function initBatteryAct() {
         return dateStr;
     }
 
+    function translitForFilename(str) {
+        const ru = {
+            'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z',
+            'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+            'с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'shch',
+            'ы':'y','э':'e','ю':'yu','я':'ya',' ':'_','.':''
+        };
+        return str.toLowerCase().split('').map(c => ru[c] || (/[a-z0-9_-]/.test(c) ? c : '')).join('');
+    }
+
     window.generateBatteryHtmlContent = () => {
         const actDate = formatBatteryDate(document.getElementById('batteryDocDate')?.value);
         const car = document.getElementById('batteryCarDoc')?.value || '';
         const invNo = document.getElementById('batteryInvNo')?.value || '';
 
-        // Вычисляем общий вес по каждой позиции и суммарный
+        // Рассчитываем общий вес для каждой АКБ и суммарный
         let totalWeightAll = 0;
-        const itemsWithTotal = batteryItems.map(item => {
-            const total = item.count * item.weightOne;
-            totalWeightAll += total;
-            return { ...item, totalWeight: total };
-        });
+        const linesHtml = batteryItems.map(item => {
+            const totalWeight = (item.weightPerOne || 0) * (item.count || 0);
+            totalWeightAll += totalWeight;
+            return `<strong>${item.name}</strong> в количестве ${item.count} шт. в процессе эксплуатации (${item.period} месяцев) пришла в негодность (общий вес ${totalWeight.toFixed(1)} кг)`;
+        }).join(', а также ');
 
-        const linesHtml = itemsWithTotal.map(item => 
-            `<strong>${item.name}</strong> в количестве ${item.count} шт. (общий вес ${item.totalWeight.toFixed(1)} кг) в процессе эксплуатации (${item.period} месяцев) пришла в негодность`
-        ).join(', а также ');
-
-        const listDetailsHtml = itemsWithTotal.map(item =>
-            `• ${item.name} - ${item.count} шт. (${item.weightOne} кг/шт, общий вес ${item.totalWeight.toFixed(1)} кг);`
-        ).join('<br>');
+        const listDetailsHtml = batteryItems.map(item => {
+            const totalWeight = (item.weightPerOne || 0) * (item.count || 0);
+            return `• ${item.name} - ${item.count} шт. (общий вес ${totalWeight.toFixed(1)} кг);`;
+        }).join('<br>');
 
         return `
             <div style="font-family: 'Times New Roman', serif; color: black; font-size: 14px; line-height: 1.5; max-width: 650px; margin: 0 auto; padding: 10px;">
@@ -152,7 +163,7 @@ export function initBatteryAct() {
                     <span style="padding-left: 82px;">Ладутько И.И. - Техник</span>
                 </div>
                 <p style="text-align: justify; text-indent: 40px; margin-bottom: 20px;">
-                    Мы, <u>нижеподписавшиеся</u>, настоящим актом удостоверяем, что следующие аккумуляторные батареи: ${linesHtml} и подлежат списанию с последующим <u>оприходованием</u> на склад в качестве лома свинца суммарным весом ${totalWeightAll.toFixed(1)} кг:
+                    Мы, <u>нижеподписавшиеся</u>, настоящим актом удостоверяем, что следующие аккумуляторная батарея: ${linesHtml} и подлежит списанию с последующим <u>оприходованием</u> на склад в качестве лома свинца суммарным весом ${totalWeightAll.toFixed(1)} кг:
                 </p>
                 <div style="margin-bottom: 40px; padding-left: 40px; font-weight: bold; line-height: 1.6;">
                     ${listDetailsHtml}<br>
@@ -186,8 +197,9 @@ export function initBatteryAct() {
         if (!supabase) return alert('Ошибка: Клиент Supabase не найден.');
 
         const docDate = document.getElementById('batteryDocDate')?.value || 'unknown-date';
-        const car = document.getElementById('batteryCarDoc')?.value || 'unknown-car';
-        const fileName = `СписаниеАКБ_${car.replace(/\s+/g, '_')}_${docDate}.doc`;
+        const car = document.getElementById('batteryCarDoc')?.value || 'unknown';
+        const safeCar = translitForFilename(car);
+        const fileName = `СписаниеАКБ_${docDate}_${safeCar}.doc`;
 
         try {
             const wordContent = `
