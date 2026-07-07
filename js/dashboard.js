@@ -1,5 +1,8 @@
-// dashboard.js
+// ============================================================
+// dashboard.js – Панель управления (главная страница)
+// ============================================================
 
+// ---------- Шаблон ----------
 export const template = `
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -15,6 +18,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- Статистика -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 relative z-10">
         <div class="md:col-span-1 bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-950 rounded-2xl p-5 shadow-sm text-white flex flex-col justify-between min-h-[115px]">
             <div class="flex items-center justify-between">
@@ -51,9 +55,10 @@ export const template = `
         </div>
     </div>
 
+    <!-- Основные блоки: Задачи, Гарантийный контроль, Документы -->
     <div class="grid gap-6 lg:grid-cols-3 mb-6 relative z-10">
         
-        <!-- Блок: Активные задачи и заметки (улучшенный дизайн) -->
+        <!-- Блок Задачи / Заметки -->
         <div class="space-y-2.5 flex flex-col">
             <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
                 📋 Активные задачи и заметки
@@ -69,12 +74,12 @@ export const template = `
                 </div>
             </div>
 
-            <div id="containerTasks" class="space-y-2 max-h-[380px] overflow-y-auto pr-1 flex-1 mt-1 custom-scrollbar">
+            <div id="containerTasks" class="space-y-2 max-h-[380px] overflow-y-auto pr-1 flex-1 mt-1">
                 <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
             </div>
         </div>
 
-        <!-- Блок: Гарантийный контроль (ТО) улучшенный -->
+        <!-- Блок Гарантийный контроль (ТО) -->
         <div class="space-y-2.5 relative">
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
@@ -85,22 +90,23 @@ export const template = `
                 </button>
             </div>
 
+            <!-- Фильтр -->
             <div id="dashFilterDropdown" class="absolute right-0 top-8 w-64 bg-white border border-gray-300 rounded-xl shadow-xl p-3 z-50 space-y-2 hidden max-h-[350px] overflow-y-auto">
                 <p class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b pb-1">Отображать технику:</p>
                 <div id="dashFilterCheckboxes" class="space-y-1.5 text-xs"></div>
             </div>
 
-            <div id="containerWarranty" class="space-y-2 max-h-[430px] overflow-y-auto pr-1 custom-scrollbar">
+            <div id="containerWarranty" class="space-y-2 max-h-[430px] overflow-y-auto pr-1">
                 <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
             </div>
         </div>
 
-        <!-- Блок: Сроки документов (ТО и Страховка) улучшенный -->
+        <!-- Блок Сроки документов -->
         <div class="space-y-2.5">
             <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
                 ⚙️ Сроки документов (ТО и Страховка)
             </h3>
-            <div id="containerDocs" class="space-y-2 max-h-[465px] overflow-y-auto pr-1 custom-scrollbar">
+            <div id="containerDocs" class="space-y-2 max-h-[465px] overflow-y-auto pr-1">
                 <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
             </div>
         </div>
@@ -162,12 +168,12 @@ export const template = `
     </div>
 `;
 
-// ===== Глобальные переменные =====
+// ---------- Глобальные переменные ----------
 let refreshIntervalId = null;
 let clockIntervalId = null;
 let activeModalVehicleId = null;
 
-// ===== Функция определения единиц =====
+// ---------- Вспомогательная функция для единиц измерения ----------
 function getUnitByCategory(type) {
     if (!type) return 'м/ч';
     const lower = type.toLowerCase();
@@ -178,9 +184,9 @@ function getUnitByCategory(type) {
     return 'м/ч';
 }
 
-// ===== Инициализация =====
+// ---------- Инициализация ----------
 export async function init() {
-    // Привязываем глобальные функции
+    // Делаем функции глобальными
     window.dashCompleteTask = dashCompleteTask;
     window.dashAddRepairTask = dashAddRepairTask;
     window.dashToggleFilterDropdown = dashToggleFilterDropdown;
@@ -190,7 +196,7 @@ export async function init() {
     window.dashCloseModal = dashCloseModal;
     window.dashSaveModalData = dashSaveModalData;
 
-    // Закрытие дропдауна по клику вне
+    // Закрытие фильтра по клику вне
     document.addEventListener('click', function(e) {
         const drop = document.getElementById('dashFilterDropdown');
         if (drop && !drop.contains(e.target) && !e.target.closest('button')) {
@@ -198,19 +204,15 @@ export async function init() {
         }
     });
 
-    // Часы
     if (clockIntervalId) clearInterval(clockIntervalId);
     startLiveClock();
 
-    // Первая загрузка данных
     await loadDashboardData();
-
-    // Автообновление каждые 5 секунд
     if (refreshIntervalId) clearInterval(refreshIntervalId);
     refreshIntervalId = setInterval(loadDashboardData, 5000);
 }
 
-// ===== Часы =====
+// ---------- Часы ----------
 function startLiveClock() {
     const updateClock = () => {
         const now = new Date();
@@ -226,18 +228,10 @@ function startLiveClock() {
     clockIntervalId = setInterval(updateClock, 1000);
 }
 
-// ===== Загрузка данных с сохранением скролла =====
+// ---------- Загрузка данных ----------
 async function loadDashboardData() {
     if (!window._supabase) return;
     try {
-        // Сохраняем позиции прокрутки контейнеров
-        const containers = ['containerTasks', 'containerWarranty', 'containerDocs'];
-        const scrollPositions = {};
-        containers.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) scrollPositions[id] = el.scrollTop;
-        });
-
         const [vehiclesRes, tasksRes] = await Promise.all([
             window._supabase.from('vehicles').select('*'),
             window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false)
@@ -256,21 +250,12 @@ async function loadDashboardData() {
         populateVehicleDropdown(vehiclesList);
         renderFilterCheckboxes(vehiclesList);
         renderSeparatedAlerts(vehiclesList, activeTasks);
-
-        // Восстанавливаем прокрутку после рендера
-        containers.forEach(id => {
-            const el = document.getElementById(id);
-            if (el && scrollPositions[id] !== undefined) {
-                el.scrollTop = scrollPositions[id];
-            }
-        });
-
     } catch (err) {
         console.error("Ошибка обновления Dashboard:", err.message);
     }
 }
 
-// ===== Статистика =====
+// ---------- Статистика ----------
 function renderStats(list) {
     const stats = {
         'dashTotal': list.length,
@@ -284,7 +269,7 @@ function renderStats(list) {
     }
 }
 
-// ===== Выпадающий список для задач =====
+// ---------- Выпадающий список для задач ----------
 function populateVehicleDropdown(vehicles) {
     const select = document.getElementById('taskVehicleSelect');
     if (!select || select.options.length > 1) return;
@@ -297,7 +282,7 @@ function populateVehicleDropdown(vehicles) {
     });
 }
 
-// ===== Фильтр =====
+// ---------- Фильтр ----------
 function dashToggleFilterDropdown(e) {
     e.stopPropagation();
     const drop = document.getElementById('dashFilterDropdown');
@@ -341,11 +326,12 @@ function dashToggleLocalVisibility(vehicleId, isChecked) {
     }
 }
 
-// ===== Модалки =====
+// ---------- Модалки ----------
 function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDate, insDate) {
     activeModalVehicleId = id;
     const setInner = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
     const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
     setInner('modalVehicleTitle', model);
     setInner('modalVehiclePlate', plate ? `[${plate}]` : '[б/н]');
     setVal('inputModalCurrentHours', current);
@@ -353,18 +339,19 @@ function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDat
     setVal('inputModalStepHours', step);
     setVal('inputModalInspectionDate', inspectDate || '');
     setVal('inputModalInsuranceDate', insDate || '');
+
     const warrantySec = document.getElementById('modalWarrantySection');
     if (warrantySec) warrantySec.classList.remove('hidden');
     const docsSec = document.getElementById('modalDocsSection');
     if (docsSec) docsSec.classList.add('hidden');
-    const editModal = document.getElementById('dashEditModal');
-    if (editModal) editModal.classList.remove('hidden');
+    document.getElementById('dashEditModal').classList.remove('hidden');
 }
 
 function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero, step) {
     activeModalVehicleId = id;
     const setInner = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
     const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
     setInner('modalVehicleTitle', model);
     setInner('modalVehiclePlate', plate ? `[${plate}]` : '[б/н]');
     setVal('inputModalInspectionDate', inspectDate || '');
@@ -372,27 +359,27 @@ function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero
     setVal('inputModalCurrentHours', current);
     setVal('inputModalZeroHours', zero);
     setVal('inputModalStepHours', step);
+
     const docsSec = document.getElementById('modalDocsSection');
     if (docsSec) docsSec.classList.remove('hidden');
     const warrantySec = document.getElementById('modalWarrantySection');
     if (warrantySec) warrantySec.classList.add('hidden');
-    const editModal = document.getElementById('dashEditModal');
-    if (editModal) editModal.classList.remove('hidden');
+    document.getElementById('dashEditModal').classList.remove('hidden');
 }
 
 function dashCloseModal() {
-    const modal = document.getElementById('dashEditModal');
-    if (modal) modal.classList.add('hidden');
+    document.getElementById('dashEditModal').classList.add('hidden');
     activeModalVehicleId = null;
 }
 
 async function dashSaveModalData() {
     if (!activeModalVehicleId) return;
-    const curHrs = parseFloat(document.getElementById('inputModalCurrentHours').value) || 0;
-    const zeroHrs = parseFloat(document.getElementById('inputModalZeroHours').value) || 0;
-    const stepHrs = parseFloat(document.getElementById('inputModalStepHours').value) || 125;
+    const curHrs = parseInt(document.getElementById('inputModalCurrentHours').value) || 0;
+    const zeroHrs = parseInt(document.getElementById('inputModalZeroHours').value) || 0;
+    const stepHrs = parseInt(document.getElementById('inputModalStepHours').value) || 125;
     const inspectDt = document.getElementById('inputModalInspectionDate').value || null;
     const insDt = document.getElementById('inputModalInsuranceDate').value || null;
+
     try {
         const { error } = await window._supabase
             .from('vehicles')
@@ -412,7 +399,7 @@ async function dashSaveModalData() {
     }
 }
 
-// ===== Задачи =====
+// ---------- Задачи ----------
 async function dashAddRepairTask() {
     const select = document.getElementById('taskVehicleSelect');
     const input = document.getElementById('taskTextInput');
@@ -452,48 +439,48 @@ async function dashCompleteTask(taskId) {
     }
 }
 
-// ===== Основной рендеринг алертов (улучшенный дизайн) =====
+// ---------- Основная отрисовка блоков (Заметки, Гарантия, Документы) ----------
 function renderSeparatedAlerts(list, activeTasks) {
     const today = new Date();
     const plateMap = {};
     list.forEach(v => { plateMap[v.id] = v.plate ? `[${v.plate}]` : '[б/н]'; });
-
-    // Скрытые для гарантии
     const hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
 
-    // --- Рендеринг задач (улучшенный вид) ---
+    // ---- Блок задач ----
     const containerTasks = document.getElementById('containerTasks');
     if (containerTasks) {
         if (activeTasks.length > 0) {
             containerTasks.innerHTML = activeTasks.map(task => {
                 const plateStr = plateMap[task.vehicle_id] || '';
                 return `
-                    <div class="p-3 bg-gradient-to-r from-amber-50 to-white border-l-4 border-amber-500 rounded-lg shadow-sm flex items-start justify-between gap-2">
-                        <div>
-                            <span class="text-[10px] font-black uppercase tracking-wider text-amber-800">${task.vehicle_id ? '🚜 ' + task.vehicle_name : '📝 Заметка'}</span>
-                            <span class="text-gray-500 font-mono text-[9px] ml-1">${plateStr}</span>
-                            <p class="text-sm text-gray-900 font-semibold leading-tight mt-0.5">${task.text}</p>
+                    <div class="p-2 bg-amber-50 border border-amber-300 rounded-lg text-[11px] flex flex-col justify-between gap-1.5 shadow-3xs hover:shadow-md transition">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <span class="font-extrabold text-[9px] uppercase tracking-wider text-amber-800">${task.vehicle_id ? '🚜 ' + task.vehicle_name : '📝 Заметка'}</span>
+                                <span class="text-gray-500 font-mono text-[9px]">${plateStr}</span>
+                                <p class="text-gray-900 font-semibold leading-tight mt-0.5">${task.text}</p>
+                            </div>
+                            <button onclick="window.dashCompleteTask('${task.id}')" class="bg-amber-600 hover:bg-emerald-700 text-white text-[9px] font-bold px-2 py-0.5 rounded transition shadow-3xs">Готово</button>
                         </div>
-                        <button onclick="window.dashCompleteTask('${task.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-3 py-1 rounded-full transition shadow-sm flex-shrink-0">
-                            ✓ Готово
-                        </button>
                     </div>
                 `;
             }).join('');
         } else {
-            containerTasks.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center text-emerald-800 text-sm font-bold shadow-sm">✅ Все задачи выполнены</div>`;
+            containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">✅ Нет активных задач</div>`;
         }
     }
 
-    // --- Сбор данных для гарантии и документов ---
+    // ---- Сбор данных для гарантии и документов ----
     const warrantyAlerts = [];
     const docAlerts = [];
 
     list.forEach(v => {
         const cleanPlate = v.plate || '';
         const plateStr = v.plate ? ` [${v.plate}]` : ' [б/н]';
+        const unit = getUnitByCategory(v.type);
+        const label = unit === 'км' ? 'Пробег' : 'Наработка';
 
-        // Документы: техосмотр и страховка
+        // Документы
         if (v.inspection_date) {
             const diff = Math.ceil((new Date(v.inspection_date) - today) / (1000 * 60 * 60 * 24));
             if (diff <= 30) {
@@ -533,7 +520,7 @@ function renderSeparatedAlerts(list, activeTasks) {
             }
         }
 
-        // Гарантия (ТО)
+        // Гарантийный контроль (ТО)
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         if (vehicleTagsArray.includes('Гарантия') && !hiddenVehicles.includes(v.id)) {
             const hours = v.current_hours || 0;
@@ -542,16 +529,15 @@ function renderSeparatedAlerts(list, activeTasks) {
             const relativeHours = hours - zeroHours;
             const nextTO = zeroHours + (Math.ceil((relativeHours + 1) / stepHours) * stepHours);
             const hoursLeft = nextTO - hours;
-            const unit = getUnitByCategory(v.type);
 
             let status = 'info';
-            let statusText = `⚙️ ${unit === 'км' ? 'Пробег' : 'Наработка'} ${hours} ${unit}. До ТО (${nextTO}) ещё <b>${hoursLeft} ${unit}</b>.`;
+            let statusText = `⚙️ ${label} ${hours} ${unit}. До ТО (${nextTO} ${unit}) ещё <b>${hoursLeft} ${unit}</b>.`;
             if (hoursLeft <= 50) {
                 status = 'danger';
-                statusText = `🚨 <span class="text-red-700 font-black">Срочно ТО (${nextTO})!</span> Осталось <b>${hoursLeft} ${unit}</b>.`;
+                statusText = `🚨 <span class="text-red-700 font-black">Срочно ТО (${nextTO} ${unit})!</span> Осталось <b>${hoursLeft} ${unit}</b>.`;
             } else if (hoursLeft <= 100) {
                 status = 'warning';
-                statusText = `⚠️ Срок ТО (${nextTO}). Осталось <b>${hoursLeft} ${unit}</b>.`;
+                statusText = `⚠️ Срок ТО (${nextTO} ${unit}). Осталось <b>${hoursLeft} ${unit}</b>.`;
             }
 
             warrantyAlerts.push({
@@ -566,7 +552,9 @@ function renderSeparatedAlerts(list, activeTasks) {
                 stepHours: stepHours,
                 inspectDate: v.inspection_date,
                 insDate: v.insurance_date,
-                text: statusText
+                text: statusText,
+                unit: unit,
+                label: label
             });
         }
     });
@@ -575,50 +563,49 @@ function renderSeparatedAlerts(list, activeTasks) {
     warrantyAlerts.sort((a, b) => a.hoursLeft - b.hoursLeft);
     docAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
 
-    // --- Рендеринг гарантии (улучшенный дизайн) ---
+    // ---- Блок Гарантийный контроль ----
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
-            containerWarranty.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center text-emerald-800 text-sm font-bold shadow-sm">✅ Все ТО в норме</div>`;
+            containerWarranty.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">✅ Нет техники на контроле</div>`;
         } else {
             containerWarranty.innerHTML = warrantyAlerts.map(a => {
-                let cardClass = "bg-blue-50 border-l-4 border-blue-400";
-                if (a.status === 'danger') cardClass = "bg-red-50 border-l-4 border-red-500";
-                if (a.status === 'warning') cardClass = "bg-amber-50 border-l-4 border-amber-500";
+                let cardClass = "bg-blue-50/40 border-blue-200 text-blue-950";
+                if (a.status === 'danger') cardClass = "bg-red-50/50 border-red-200 text-red-950";
+                if (a.status === 'warning') cardClass = "bg-amber-50/50 border-amber-200 text-amber-950";
+                
                 return `
-                    <div class="p-3 rounded-lg shadow-sm flex items-center justify-between ${cardClass}">
-                        <div>
-                            <span class="font-extrabold text-sm">${a.model}</span>
-                            <span class="font-mono text-[10px] text-gray-500">${a.plateLabel}</span>
-                            <p class="text-sm text-gray-900 mt-0.5">${a.text}</p>
+                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col ${cardClass} hover:shadow-md transition">
+                        <div class="flex items-center justify-between gap-1">
+                            <div class="truncate">
+                                <span class="font-extrabold">${a.model}</span> <span class="font-mono text-[9px] text-gray-500">${a.plateLabel}</span>
+                                <p class="text-gray-900 mt-0.5">${a.text}</p>
+                            </div>
+                            <button onclick="window.dashOpenWarrantyModal(${a.id}, '${a.model}', '${a.plate}', ${a.hours}, ${a.zeroHours}, ${a.stepHours}, '${a.inspectDate || ''}', '${a.insDate || ''}')" class="p-1 hover:bg-black/5 rounded text-xs" title="Изменить параметры">✏️</button>
                         </div>
-                        <button onclick="window.dashOpenWarrantyModal(${a.id}, '${a.model}', '${a.plate}', ${a.hours}, ${a.zeroHours}, ${a.stepHours}, '${a.inspectDate || ''}', '${a.insDate || ''}')" class="bg-white hover:bg-gray-100 border border-gray-300 rounded-full p-1.5 text-xs shadow-sm" title="Изменить параметры">
-                            ✏️
-                        </button>
                     </div>
                 `;
             }).join('');
         }
     }
 
-    // --- Рендеринг документов (улучшенный дизайн) ---
+    // ---- Блок Сроки документов ----
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
         if (docAlerts.length === 0) {
-            containerDocs.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center text-emerald-800 text-sm font-bold shadow-sm">📋 Все документы в порядке</div>`;
+            containerDocs.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-900 p-3 rounded-lg text-center text-[11px] font-bold">✅ Все документы в порядке!</div>`;
         } else {
             containerDocs.innerHTML = docAlerts.map(d => {
-                const cardClass = d.isCritical ? "bg-red-50 border-l-4 border-red-500" : "bg-amber-50 border-l-4 border-amber-500";
+                const cardClass = d.isCritical ? "bg-red-50/50 border-red-200 text-red-950" : "bg-amber-50/50 border-amber-200 text-amber-950";
                 return `
-                    <div class="p-3 rounded-lg shadow-sm flex items-center justify-between ${cardClass}">
-                        <div>
-                            <span class="font-extrabold text-sm">${d.model}</span>
-                            <span class="font-mono text-[10px] text-gray-500">${d.plateLabel}</span>
-                            <p class="text-sm text-gray-900 mt-0.5">${d.statusText}</p>
+                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col ${cardClass} hover:shadow-md transition">
+                        <div class="flex items-center justify-between gap-1">
+                            <div class="truncate">
+                                <span class="font-extrabold">${d.model}</span> <span class="font-mono text-[9px] text-gray-500">${d.plateLabel}</span>
+                                <p class="mt-0.5 text-gray-900 font-medium">${d.statusText}</p>
+                            </div>
+                            <button onclick="window.dashOpenDocsModal(${d.id}, '${d.model}', '${d.plate}', '${d.inspectDate || ''}', '${d.insDate || ''}', ${d.current}, ${d.zero}, ${d.step})" class="p-1 hover:bg-black/5 rounded text-xs" title="Изменить даты">✏️</button>
                         </div>
-                        <button onclick="window.dashOpenDocsModal(${d.id}, '${d.model}', '${d.plate}', '${d.inspectDate || ''}', '${d.insDate || ''}', ${d.current}, ${d.zero}, ${d.step})" class="bg-white hover:bg-gray-100 border border-gray-300 rounded-full p-1.5 text-xs shadow-sm" title="Изменить даты">
-                            ✏️
-                        </button>
                     </div>
                 `;
             }).join('');
