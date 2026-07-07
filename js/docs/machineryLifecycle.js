@@ -6,7 +6,7 @@ import { repairOutTemplate } from './lifecycle/repairOutAct.js';
 import { toTemplate } from './lifecycle/toReport.js';
 
 let allVehicles = [];
-let allDrivers = []; // Массив для хранения водителей из fleet_drivers
+let allDrivers = []; 
 let selectedVehicle = null;
 
 export const machineryLifecycleTemplate = '<div id="subModule_machinery_lifecycle" class="hidden space-y-6 fade-in-sub">' +
@@ -82,16 +82,14 @@ export async function initMachineryLifecycle(storageFiles) {
 
     async function loadData() {
         try {
-            // 1. Загружаем технику с твоими точными колонками
             const { data: vData, error: vError } = await supabase.from('vehicles').select('id, model, plate, inv_number, type');
             if (vError) throw vError;
             allVehicles = vData || [];
 
-            // 2. Загружаем водителей из таблицы fleet_drivers (колонка name)
             const { data: dData, error: dError } = await supabase.from('fleet_drivers').select('id, name');
             if (!dError && dData) {
                 allDrivers = dData;
-                populateDriversDropdowns(); // Заполняем выпадающие списки водителей в формах, если они заменены на select
+                window.getFleetDriversList = function() { return allDrivers; };
             }
 
             renderTable(allVehicles);
@@ -117,6 +115,7 @@ export async function initMachineryLifecycle(storageFiles) {
             const hasRepair = storageFiles.some(f => f.name.includes('repair_out_') && f.name.includes(inv));
             const hasStorage = storageFiles.some(f => f.name.includes('storage_') && f.name.includes(inv));
 
+            // Кнопка обращается строго к window.selectVehicleForLifecycle
             return '<tr class="border-b border-gray-200 hover:bg-gray-50 transition text-xs font-medium text-gray-800">' +
                 '<td class="p-3 font-bold text-gray-900">' + vehicleTitle + ' <span class="block text-[10px] text-gray-400 font-mono">Инв: ' + inv + '</span></td>' +
                 '<td class="p-3 text-[11px] text-gray-500">' + (v.type || '—') + '</td>' +
@@ -131,14 +130,6 @@ export async function initMachineryLifecycle(storageFiles) {
         }).join('');
     }
 
-    // Автозаполнение текстовых полей водителей первыми попавшимися или настройка списков
-    function populateDriversDropdowns() {
-        // Если в подмодулях (defectAct.js и др.) элементы 'defect_driver' это текстовые инпуты,
-        // мы можем превратить их в подсказки или оставить ввод ручным. 
-        // Но для удобства можно передавать массив всех водителей наружу:
-        window.getFleetDriversList = () => allDrivers;
-    }
-
     searchInput?.addEventListener('input', function(e) {
         const query = e.target.value.toLowerCase();
         const filtered = allVehicles.filter(function(v) {
@@ -151,6 +142,7 @@ export async function initMachineryLifecycle(storageFiles) {
 
     document.getElementById('btnRefreshLifecycle')?.addEventListener('click', loadData);
 
+    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно регистрируем функцию в глобальном окне (window)
     window.selectVehicleForLifecycle = function(id) {
         selectedVehicle = allVehicles.find(v => v.id == id);
         if (!selectedVehicle) return;
@@ -158,10 +150,18 @@ export async function initMachineryLifecycle(storageFiles) {
         const plateStr = selectedVehicle.plate ? ' [' + selectedVehicle.plate + ']' : '';
         const vehicleTitle = (selectedVehicle.model || 'Техника') + plateStr;
 
-        document.getElementById('lifecycleFormsBlock').classList.remove('hidden');
-        document.getElementById('selectedVehicleTitle').innerText = '🚜 Выбрана машина: ' + vehicleTitle + ' (Инв. № ' + (selectedVehicle.inv_number || 'б/н') + ')';
+        // Показываем блок с формой генерации документов
+        const formsBlock = document.getElementById('lifecycleFormsBlock');
+        if (formsBlock) {
+            formsBlock.classList.remove('hidden');
+        }
         
-        // Так как прямой связи driver_name в технике больше нет, очищаем инпуты или ставим пустые значения для заполнения вручную
+        const titleElem = document.getElementById('selectedVehicleTitle');
+        if (titleElem) {
+            titleElem.innerText = '🚜 Выбрана машина: ' + vehicleTitle + ' (Инв. № ' + (selectedVehicle.inv_number || 'б/н') + ')';
+        }
+        
+        // Очищаем инпуты водителей для ручного заполнения или подсказок
         const driverInputs = ['defect_driver', 'to_driver', 'repair_driver', 'storage_driver'];
         driverInputs.forEach(function(i) {
             const input = document.getElementById(i);
