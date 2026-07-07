@@ -1,202 +1,185 @@
 export const template = `
-    <!-- Верхняя панель управления -->
-    <div class="mb-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-xl border-2 border-gray-400/80 shadow-xs">
-        <div class="space-y-0.5">
-            <h2 class="text-xl font-bold text-gray-950 tracking-tight">Управление автопарком</h2>
-            <p class="text-xs text-gray-600 font-medium">Учет техники, закрепление водителей, механизаторов, контроль документов и логов ремонта</p>
+    <!-- Верхняя панель -->
+    <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+                <span class="bg-blue-100 p-1.5 rounded-lg">🚜</span> Управление автопарком
+            </h2>
+            <p class="text-sm text-gray-500 font-medium">Учет техники, закрепление водителей, контроль документов и ремонтов</p>
         </div>
-        
-        <!-- Гибкий контейнер для кнопок: переносятся при сужении -->
-        <div class="flex flex-wrap gap-2 w-full xl:w-auto">
-            <button onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap flex-1 sm:flex-none">
-                👤 Вод/Мех
-            </button>
-            <button onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap flex-1 sm:flex-none">
-                🏷️ Теги
-            </button>
-            <button onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border-2 border-gray-400 text-gray-800 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-2xs whitespace-nowrap flex-1 sm:flex-none">
-                Категории
-            </button>
-            <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 border-2 border-blue-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap flex-1 sm:flex-none">
-                ⏱️ Добавить часы
-            </button>
-            <button onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-700 text-white px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap flex-1 sm:flex-none">
-                + карта
-            </button>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">👤 Вод/Мех</button>
+            <button onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">🏷️ Теги</button>
+            <button onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">📂 Категории</button>
+            <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">⏱️ Добавить часы</button>
+            <button onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">➕ Карта</button>
         </div>
     </div>
 
     <!-- Поиск и сортировка -->
-    <div class="bg-white p-4 rounded-xl border-2 border-gray-400/80 shadow-xs space-y-3 mb-5">
+    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4 mb-6">
         <div class="flex flex-col sm:flex-row gap-3">
-            <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs text-gray-950 placeholder-gray-500 focus:outline-none focus:border-emerald-600 focus:bg-white font-bold transition" placeholder="Поиск по модели, госномеру, инвентарному, VIN, водителю или тегу...">
-            <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="bg-white border-2 border-gray-400 rounded-lg p-2.5 text-xs font-bold text-gray-800 focus:outline-none focus:border-emerald-600">
-                <option value="name_asc">По названию (А-Я)</option>
-                <option value="name_desc">По названию (Я-А)</option>
+            <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-emerald-400 focus:border-transparent focus:bg-white font-medium transition" placeholder="🔍 Поиск по модели, номеру, VIN, водителю или тегу...">
+            <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-emerald-400 focus:border-transparent">
+                <option value="name_asc">По названию (А–Я)</option>
+                <option value="name_desc">По названию (Я–А)</option>
                 <option value="hours_desc">По наработке (сначала max)</option>
             </select>
         </div>
-        
-        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200" id="fleetCategoriesBar">
-            <div class="text-xs text-gray-400 font-bold">Загрузка категорий...</div>
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100" id="fleetCategoriesBar">
+            <span class="text-xs text-gray-400 font-bold">Категории:</span>
+            <div class="flex flex-wrap items-center gap-1.5" id="categoriesInner"></div>
         </div>
     </div>
 
-    <!-- Сетка карточек техники -->
+    <!-- Сетка карточек -->
     <div id="fleetGridContainer" class="space-y-6">
-        <div class="text-center text-gray-500 py-10 text-xs font-bold">Загрузка данных автопарка...</div>
+        <div class="text-center text-gray-400 py-12 text-sm font-medium bg-white rounded-2xl border border-gray-200">Загрузка данных...</div>
     </div>
 
     <!-- Модалка редактирования техники -->
-    <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-md p-6 border-2 border-gray-400 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 id="vModalTitle" class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-2">Карточка техники</h3>
-            <form id="vForm" class="space-y-3.5 text-xs">
+    <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <h3 id="vModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Карточка техники</h3>
+            <form id="vForm" class="space-y-4 text-sm">
                 <input type="hidden" id="vId">
-                
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Категория</label>
-                        <select id="vCategory" required class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600"></select>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Категория</label>
+                        <select id="vCategory" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent"></select>
                     </div>
                     <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Модель / Название</label>
-                        <input type="text" id="vName" required class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600" placeholder="МТЗ-3522">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Закрепленный вод/мех</label>
-                        <select id="vDriver" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600"></select>
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Наработка (м/ч)</label>
-                        <input type="number" id="vHours" required class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:outline-none focus:border-emerald-600" placeholder="0">
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Модель</label>
+                        <input type="text" id="vName" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="МТЗ-3522">
                     </div>
                 </div>
-
-                <div class="grid grid-cols-2 gap-2.5">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Госномер</label>
-                        <input type="text" id="vPlate" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="1234 AB-7">
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Вод/Мех</label>
+                        <select id="vDriver" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent"></select>
                     </div>
                     <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Инвентарный №</label>
-                        <input type="text" id="vInv" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="00125">
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Наработка (м/ч)</label>
+                        <input type="number" id="vHours" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="0">
                     </div>
                 </div>
-
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Госномер</label>
+                        <input type="text" id="vPlate" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-mono font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="1234 AB-7">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Инв. №</label>
+                        <input type="text" id="vInv" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-mono font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="00125">
+                    </div>
+                </div>
                 <div>
-                    <label class="block text-gray-700 mb-1 font-bold">VIN / Заводской номер</label>
-                    <input type="text" id="vVin" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-mono font-bold focus:border-emerald-600" placeholder="Номер рамы или кузова">
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">VIN / Заводской номер</label>
+                    <input type="text" id="vVin" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-mono font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="Номер рамы">
                 </div>
-
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Техосмотр (до)</label>
-                        <input type="date" id="vToDate" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:border-emerald-600">
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Техосмотр до</label>
+                        <input type="date" id="vToDate" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent">
                     </div>
                     <div>
-                        <label class="block text-gray-700 mb-1 font-bold">Страховка (до)</label>
-                        <input type="date" id="vInsuranceDate" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 font-bold focus:border-emerald-600">
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Страховка до</label>
+                        <input type="date" id="vInsuranceDate" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent">
                     </div>
                 </div>
-
                 <div>
-                    <label class="block text-gray-700 mb-1 font-bold">Теги статусов (Неограниченно)</label>
-                    <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border-2 border-gray-300 max-h-32 overflow-y-auto"></div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Теги статусов</label>
+                    <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200 max-h-32 overflow-y-auto"></div>
                 </div>
-
-                <div class="flex gap-2.5 pt-3 border-t border-gray-200">
-                    <button type="button" onclick="window.closeVModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-bold transition border border-gray-300">Отмена</button>
-                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold transition shadow-xs">Сохранить</button>
+                <div class="flex gap-3 pt-3 border-t border-gray-100">
+                    <button type="button" onclick="window.closeVModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
+                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
                 </div>
-                <button type="button" id="vDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg font-bold transition hidden border border-red-300">Удалить из базы данных</button>
+                <button type="button" id="vDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить из базы</button>
             </form>
         </div>
     </div>
 
-    <!-- Модалка управления водителями -->
-    <div id="driversManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
-            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">👤 Список водителей, механизаторов предприятия</h3>
-            <div class="space-y-1.5 max-h-44 overflow-y-auto" id="modalDriversList"></div>
-            <div class="pt-2 border-t border-gray-200 space-y-2">
-                <input type="text" id="newDriverNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="ФИО вод/мех (например, Ладутько И.И.)...">
-                <button onclick="window.addCustomDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Добавить вод/мех-а</button>
+    <!-- Модалка водителей -->
+    <div id="driversManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4">
+            <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">👤 Водители и механизаторы</h3>
+            <div class="space-y-2 max-h-48 overflow-y-auto" id="modalDriversList"></div>
+            <div class="pt-3 border-t border-gray-100 space-y-3">
+                <input type="text" id="newDriverNameInput" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="ФИО...">
+                <button onclick="window.addCustomDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm">Добавить</button>
             </div>
-            <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
         </div>
     </div>
 
-    <!-- Модалка управления тегами -->
-    <div id="tagsManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
-            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">🏷️ Управление тегами статусов</h3>
-            <div class="space-y-1.5 max-h-44 overflow-y-auto" id="modalTagsList"></div>
-            <div class="pt-2 border-t border-gray-200 space-y-2">
-                <input type="text" id="newTagNameInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Название статуса (например, В ремонте)...">
-                <div class="flex items-center gap-2">
-                    <label class="text-[10px] text-gray-500 font-bold uppercase">Цвет метки:</label>
-                    <input type="color" id="newTagColorInput" value="#e2e8f0" class="w-8 h-8 rounded border border-gray-300 cursor-pointer">
+    <!-- Модалка тегов -->
+    <div id="tagsManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4">
+            <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">🏷️ Управление тегами</h3>
+            <div class="space-y-2 max-h-48 overflow-y-auto" id="modalTagsList"></div>
+            <div class="pt-3 border-t border-gray-100 space-y-3">
+                <input type="text" id="newTagNameInput" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="Название статуса...">
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Цвет:</label>
+                    <input type="color" id="newTagColorInput" value="#e2e8f0" class="w-10 h-10 rounded-xl border border-gray-300 cursor-pointer">
                 </div>
-                <button onclick="window.addCustomTag()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Создать тег</button>
+                <button onclick="window.addCustomTag()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm">Создать тег</button>
             </div>
-            <button onclick="document.getElementById('tagsManagementModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="document.getElementById('tagsManagementModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
         </div>
     </div>
 
-    <!-- Модалка управления категориями -->
-    <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-xs p-5 border-2 border-gray-400 shadow-2xl space-y-4">
-            <h3 class="text-xs font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">Настройка категорий</h3>
-            <div class="space-y-1.5 max-h-40 overflow-y-auto" id="modalCategoriesList"></div>
-            <div class="pt-2 border-t border-gray-200 space-y-1.5">
-                <input type="text" id="newCatInput" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Новая категория...">
-                <button onclick="window.addCustomCategory()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition">Добавить</button>
+    <!-- Модалка категорий -->
+    <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4">
+            <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">📂 Категории</h3>
+            <div class="space-y-2 max-h-48 overflow-y-auto" id="modalCategoriesList"></div>
+            <div class="pt-3 border-t border-gray-100 space-y-3">
+                <input type="text" id="newCatInput" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="Новая категория...">
+                <button onclick="window.addCustomCategory()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm">Добавить</button>
             </div>
-            <button onclick="document.getElementById('categoriesModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="document.getElementById('categoriesModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
         </div>
     </div>
 
-    <!-- Модалка задач по технике -->
-    <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-sm p-5 border-2 border-gray-400 shadow-2xl space-y-4">
-            <div class="space-y-0.5">
-                <h3 id="tasksModalTitle" class="text-sm font-bold text-gray-950">Задачи по технике</h3>
-                <p class="text-xs text-gray-600 font-medium" id="tasksModalSubtitle"></p>
+    <!-- Модалка задач -->
+    <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-4">
+            <div>
+                <h3 id="tasksModalTitle" class="text-lg font-extrabold text-gray-900">Задачи по технике</h3>
+                <p class="text-sm text-gray-500 font-medium" id="tasksModalSubtitle"></p>
             </div>
             <input type="hidden" id="taskVehicleId">
             <input type="hidden" id="taskVehicleName">
-            <div class="space-y-2 max-h-44 overflow-y-auto" id="vehicleTasksList"></div>
-            <div class="pt-2 border-t border-gray-200 space-y-1.5">
-                <textarea id="newTaskText" rows="2" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Записать задачу..."></textarea>
-                <button onclick="window.addVehicleTask()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold transition shadow-xs">Добавить задачу</button>
+            <div class="space-y-2 max-h-48 overflow-y-auto" id="vehicleTasksList"></div>
+            <div class="pt-3 border-t border-gray-100 space-y-3">
+                <textarea id="newTaskText" rows="2" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="Текст задачи..."></textarea>
+                <button onclick="window.addVehicleTask()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm">Добавить задачу</button>
             </div>
-            <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
         </div>
     </div>
 
     <!-- Модалка добавления часов -->
-    <div id="hoursModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-sm p-5 border-2 border-gray-400 shadow-2xl space-y-4">
-            <h3 class="text-sm font-bold text-gray-950 border-b-2 border-gray-200 pb-1.5">⏱️ Добавить наработку</h3>
-            <div class="space-y-3">
+    <div id="hoursModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4">
+            <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">⏱️ Добавить наработку</h3>
+            <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Выберите технику</label>
-                    <select id="hoursVehicleSelect" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs font-bold focus:outline-none focus:border-emerald-600">
-                        <option value="">-- Загрузка техники --</option>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Выберите технику</label>
+                    <select id="hoursVehicleSelect" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent">
+                        <option value="">-- Загрузка --</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Количество часов</label>
-                    <input type="number" id="hoursInput" min="0" step="0.5" class="w-full bg-gray-50 border-2 border-gray-400 rounded-lg p-2.5 text-xs font-bold focus:outline-none focus:border-emerald-600" placeholder="Например, 8.5">
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Количество часов</label>
+                    <input type="number" id="hoursInput" min="0" step="0.5" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="Например, 8.5">
                 </div>
             </div>
-            <div class="flex gap-2.5 pt-2 border-t border-gray-200">
-                <button onclick="window.closeHoursModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-bold transition border border-gray-300 text-xs">Отмена</button>
-                <button onclick="window.submitHours()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold transition shadow-xs text-xs">Добавить</button>
+            <div class="flex gap-3 pt-3 border-t border-gray-100">
+                <button onclick="window.closeHoursModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
+                <button onclick="window.submitHours()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Добавить</button>
             </div>
         </div>
     </div>
