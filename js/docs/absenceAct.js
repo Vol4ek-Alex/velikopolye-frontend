@@ -2,7 +2,6 @@
 
 export const absenceTemplate = `
 <div id="subModule_absence_act" class="hidden space-y-4 fade-in-sub">
-    <!-- Добавляем изолированные стили для правильной подневной печати на А4 -->
     <style>
         @media print {
             /* Прячем весь интерфейс сайта, кроме блока печати */
@@ -46,7 +45,6 @@ export const absenceTemplate = `
     </style>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Ввод параметров -->
         <div class="bg-white border-2 border-gray-400 p-5 rounded-xl shadow-xs space-y-4 no-print">
             <h3 class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">📋 Параметры актов (Подневный расчет)</h3>
             
@@ -86,11 +84,9 @@ export const absenceTemplate = `
             </button>
         </div>
 
-        <!-- Предпросмотр на экране -->
         <div class="lg:col-span-2 bg-gray-100 p-4 rounded-xl border-2 border-gray-300 flex flex-col justify-between max-h-[80vh] overflow-y-auto no-print">
             <div id="absenceLivePreview" class="space-y-6">
-                <!-- Сюда сгенерируются Акты по дням + Докладная -->
-            </div>
+                </div>
         </div>
     </div>
 </div>
@@ -135,16 +131,15 @@ export function initAbsenceAct() {
         const formattedStart = formatRusDate(startRaw);
         const formattedEnd = formatRusDate(endRaw);
 
-        // Для Word используем XML-разрыв секции, для браузера — пустую строку (так как разрывы страниц теперь регулирует CSS класс .print-page-a4)
         const separator = isForWord 
             ? '<br clear="all" style="page-break-before: always; mso-break-type: section-break;">' 
             : '';
 
-        // 1. ГЕНЕРИРУЕМ МАССИВ АКТОВ (Добавлен класс print-page-a4)
+        // 1. ГЕНЕРИРУЕМ МАССИВ АКТОВ
         const actsArrayHtml = dateList.map(dateStr => {
             const formattedCurrentDate = formatRusDate(dateStr);
             return `
-            <div class="print-page-a4 bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5;">
+            <div class="print-page-a4 bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box;">
                 <div style="text-align: left; margin-bottom: 30px; font-size: 13px;">
                     Филиал СХК «Великополье»<br>ГП «Минсктранс»
                 </div>
@@ -163,27 +158,47 @@ export function initAbsenceAct() {
                 <p style="text-indent: 40px; margin-bottom: 50px;">
                     Мы, нижеподписавшиеся, настоящим актом удостоверяем, что ${empJob} <strong>${empName}</strong> отсутствовал на рабочем месте ${formattedCurrentDate}г.
                 </p>
-                <div style="margin-top: 60px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><div>Волчек А.А.</div><div>___________________________</div></div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><div>Макович М.П.</div><div>___________________________</div></div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><div>Миколенко Ю.С.</div><div>___________________________</div></div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><div>Ладутько И.И.</div><div>___________________________</div></div>
-                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 60px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                    <tr style="height: 35px;">
+                        <td style="width: 40%; text-align: left; border: none; padding: 0;">Волчек А.А.</td>
+                        <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
+                    </tr>
+                    <tr style="height: 35px;">
+                        <td style="width: 40%; text-align: left; border: none; padding: 0;">Макович М.П.</td>
+                        <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
+                    </tr>
+                    <tr style="height: 35px;">
+                        <td style="width: 40%; text-align: left; border: none; padding: 0;">Миколенко Ю.С.</td>
+                        <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
+                    </tr>
+                    <tr style="height: 35px;">
+                        <td style="width: 40%; text-align: left; border: none; padding: 0;">Ладутько И.И.</td>
+                        <td style="width: 60%; text-align: right; border: none; padding: 0;">___________________________</td>
+                    </tr>
+                </table>
             </div>`;
         });
 
-        // 2. ГЕНЕРИРУЕМ СЛУЖЕБКУ / ДОКЛАДНУЮ (Добавлен класс print-page-a4)
+        // 2. ГЕНЕРИРУЕМ СЛУЖЕБКУ / ДОКЛАДНУЮ (С исправленной шапкой для Директора Рунцевича Д.С. в одну линию)
         const reportDate = formattedEnd; 
         const reportHtml = `
-        <div class="print-page-a4 bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5;">
-            <div style="text-align: right; margin-left: auto; width: 280px; margin-bottom: 40px; font-size: 14px; line-height: 1.3;">
-                Зам. директору-<br>гл. инженеру<br>
-                филиала СХК<br>«Великополье»<br>
-                Маковичу М.П.<br>
-                Инженера по ЭМТП<br>
-                Волчка А.А.
-            </div>
-            <div style="margin-bottom: 10px; font-size: 14px;">
+        <div class="print-page-a4 bg-white p-8 border border-gray-300 shadow-xs rounded-lg text-black font-serif text-justify" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box;">
+            
+            <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 40px;">
+                <tr>
+                    <td style="width: 45%; border: none;"></td>
+                    <td style="width: 55%; text-align: left; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.3; border: none; padding: 0;">
+                        Директору филиала СХК<br>
+                        «Великополье»<br>
+                        Рунцевичу Д.С.<br>
+                        Инженера по ЭМТП<br>
+                        Волчка А.А.
+                    </td>
+                </tr>
+            </table>
+
+            <div style="margin-bottom: 15px; font-size: 14px;">
                 ${reportDate}г.
             </div>
             <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; uppercase tracking-wide">
@@ -192,10 +207,13 @@ export function initAbsenceAct() {
             <p style="text-indent: 40px; margin-bottom: 60px;">
                 Довожу до Вашего сведения, что тракторист-машинист Пустельников ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
             </p>
-            <div style="display: flex; justify-content: space-between; margin-top: 50px;">
-                <div>Инженер по ЭМТП</div>
-                <div>Волчек А.А.</div>
-            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 50px; font-family: 'Times New Roman', serif; font-size: 14px;">
+                <tr>
+                    <td style="width: 50%; text-align: left; border: none; padding: 0;">Инженер по ЭМТП</td>
+                    <td style="width: 50%; text-align: right; border: none; padding: 0;">Волчек А.А.</td>
+                </tr>
+            </table>
         </div>`;
 
         const allActsCombined = actsArrayHtml.join(separator);
@@ -216,7 +234,6 @@ export function initAbsenceAct() {
         const fullWordHtml = window.generateAbsenceHtmlContent(true);
         if (!fullWordHtml) return alert('Нет данных для печати.');
         
-        // Рендерим во временный блок печати (стили @media print сделают из этого листы А4)
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
             printBlock.innerHTML = window.generateAbsenceHtmlContent(false).combinedHtml;
@@ -237,7 +254,7 @@ export function initAbsenceAct() {
                 'xmlns="http://www.w3.org/TR/REC-html40">\n' +
                 '<head>\n' +
                 '<meta charset="utf-8">\n' +
-                '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->\n' +
+                '\n' +
                 '<style>\n' +
                 '@page { size: 21cm 29.7cm; margin: 2.5cm 2cm 2.5cm 2.5cm; }\n' +
                 'body { font-family: "Times New Roman", serif; font-size: 14pt; }\n' +
