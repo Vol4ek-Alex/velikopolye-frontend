@@ -1,3 +1,5 @@
+// dashboard.js
+
 export const template = `
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -51,6 +53,7 @@ export const template = `
 
     <div class="grid gap-6 lg:grid-cols-3 mb-6 relative z-10">
         
+        <!-- Блок: Активные задачи и заметки (улучшенный дизайн) -->
         <div class="space-y-2.5 flex flex-col">
             <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
                 📋 Активные задачи и заметки
@@ -66,11 +69,12 @@ export const template = `
                 </div>
             </div>
 
-            <div id="containerTasks" class="space-y-2 max-h-[380px] overflow-y-auto pr-1 flex-1 mt-1">
+            <div id="containerTasks" class="space-y-2 max-h-[380px] overflow-y-auto pr-1 flex-1 mt-1 custom-scrollbar">
                 <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
             </div>
         </div>
 
+        <!-- Блок: Гарантийный контроль (ТО) улучшенный -->
         <div class="space-y-2.5 relative">
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
@@ -86,21 +90,23 @@ export const template = `
                 <div id="dashFilterCheckboxes" class="space-y-1.5 text-xs"></div>
             </div>
 
-            <div id="containerWarranty" class="space-y-2 max-h-[430px] overflow-y-auto pr-1">
+            <div id="containerWarranty" class="space-y-2 max-h-[430px] overflow-y-auto pr-1 custom-scrollbar">
                 <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
             </div>
         </div>
 
+        <!-- Блок: Сроки документов (ТО и Страховка) улучшенный -->
         <div class="space-y-2.5">
             <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
                 ⚙️ Сроки документов (ТО и Страховка)
             </h3>
-            <div id="containerDocs" class="space-y-2 max-h-[465px] overflow-y-auto pr-1">
+            <div id="containerDocs" class="space-y-2 max-h-[465px] overflow-y-auto pr-1 custom-scrollbar">
                 <div class="text-gray-400 text-xs py-4 text-center bg-white border border-gray-200 rounded-lg">Загрузка...</div>
             </div>
         </div>
     </div>
 
+    <!-- Модалка редактирования -->
     <div id="dashEditModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-xs z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white border-2 border-gray-950 p-5 rounded-2xl w-full max-w-sm shadow-2xl space-y-4 relative">
             <button onclick="window.dashCloseModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-900 font-bold text-base">✕</button>
@@ -144,6 +150,7 @@ export const template = `
         </div>
     </div>
 
+    <!-- Нижняя панель -->
     <div class="bg-white border-2 border-gray-400/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between relative z-10">
         <div class="space-y-0.5">
             <p class="text-xs font-bold text-gray-950">Необходимо внести комплексные изменения или записать лог ремонта?</p>
@@ -155,21 +162,35 @@ export const template = `
     </div>
 `;
 
+// ===== Глобальные переменные =====
 let refreshIntervalId = null;
 let clockIntervalId = null;
 let activeModalVehicleId = null;
 
+// ===== Функция определения единиц =====
+function getUnitByCategory(type) {
+    if (!type) return 'м/ч';
+    const lower = type.toLowerCase();
+    const carKeywords = ['легковой', 'грузовой', 'грузопассажирский', 'автобус', 'микроавтобус', 'пикап', 'фургон', 'тягач', 'седельный'];
+    for (let kw of carKeywords) {
+        if (lower.includes(kw)) return 'км';
+    }
+    return 'м/ч';
+}
+
+// ===== Инициализация =====
 export async function init() {
+    // Привязываем глобальные функции
     window.dashCompleteTask = dashCompleteTask;
     window.dashAddRepairTask = dashAddRepairTask;
     window.dashToggleFilterDropdown = dashToggleFilterDropdown;
     window.dashToggleLocalVisibility = dashToggleLocalVisibility;
-    
     window.dashOpenWarrantyModal = dashOpenWarrantyModal;
     window.dashOpenDocsModal = dashOpenDocsModal;
     window.dashCloseModal = dashCloseModal;
     window.dashSaveModalData = dashSaveModalData;
 
+    // Закрытие дропдауна по клику вне
     document.addEventListener('click', function(e) {
         const drop = document.getElementById('dashFilterDropdown');
         if (drop && !drop.contains(e.target) && !e.target.closest('button')) {
@@ -177,14 +198,19 @@ export async function init() {
         }
     });
 
+    // Часы
     if (clockIntervalId) clearInterval(clockIntervalId);
     startLiveClock();
 
+    // Первая загрузка данных
     await loadDashboardData();
+
+    // Автообновление каждые 5 секунд
     if (refreshIntervalId) clearInterval(refreshIntervalId);
     refreshIntervalId = setInterval(loadDashboardData, 5000);
 }
 
+// ===== Часы =====
 function startLiveClock() {
     const updateClock = () => {
         const now = new Date();
@@ -200,9 +226,18 @@ function startLiveClock() {
     clockIntervalId = setInterval(updateClock, 1000);
 }
 
+// ===== Загрузка данных с сохранением скролла =====
 async function loadDashboardData() {
     if (!window._supabase) return;
     try {
+        // Сохраняем позиции прокрутки контейнеров
+        const containers = ['containerTasks', 'containerWarranty', 'containerDocs'];
+        const scrollPositions = {};
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) scrollPositions[id] = el.scrollTop;
+        });
+
         const [vehiclesRes, tasksRes] = await Promise.all([
             window._supabase.from('vehicles').select('*'),
             window._supabase.from('vehicle_tasks').select('*').eq('is_completed', false)
@@ -221,11 +256,21 @@ async function loadDashboardData() {
         populateVehicleDropdown(vehiclesList);
         renderFilterCheckboxes(vehiclesList);
         renderSeparatedAlerts(vehiclesList, activeTasks);
+
+        // Восстанавливаем прокрутку после рендера
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && scrollPositions[id] !== undefined) {
+                el.scrollTop = scrollPositions[id];
+            }
+        });
+
     } catch (err) {
         console.error("Ошибка обновления Dashboard:", err.message);
     }
 }
 
+// ===== Статистика =====
 function renderStats(list) {
     const stats = {
         'dashTotal': list.length,
@@ -233,16 +278,13 @@ function renderStats(list) {
         'dashStorage': list.filter(v => v.tags && v.tags.includes('На хранении')).length,
         'dashInRepair': list.filter(v => v.tags && v.tags.includes('В ремонте')).length
     };
-
-    // Перебираем объект и обновляем только те элементы, которые нашли на странице
     for (const [id, value] of Object.entries(stats)) {
         const el = document.getElementById(id);
-        if (el) {
-            el.innerText = value;
-        }
+        if (el) el.innerText = value;
     }
 }
 
+// ===== Выпадающий список для задач =====
 function populateVehicleDropdown(vehicles) {
     const select = document.getElementById('taskVehicleSelect');
     if (!select || select.options.length > 1) return;
@@ -255,6 +297,7 @@ function populateVehicleDropdown(vehicles) {
     });
 }
 
+// ===== Фильтр =====
 function dashToggleFilterDropdown(e) {
     e.stopPropagation();
     const drop = document.getElementById('dashFilterDropdown');
@@ -298,95 +341,58 @@ function dashToggleLocalVisibility(vehicleId, isChecked) {
     }
 }
 
+// ===== Модалки =====
 function dashOpenWarrantyModal(id, model, plate, current, zero, step, inspectDate, insDate) {
     activeModalVehicleId = id;
-
-    // Безопасная функция для обновления текста
-    const setInner = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = val;
-    };
-
-    // Безопасная функция для обновления значений input
-    const setVal = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val;
-    };
-
+    const setInner = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
     setInner('modalVehicleTitle', model);
     setInner('modalVehiclePlate', plate ? `[${plate}]` : '[б/н]');
-
     setVal('inputModalCurrentHours', current);
     setVal('inputModalZeroHours', zero);
     setVal('inputModalStepHours', step);
-
     setVal('inputModalInspectionDate', inspectDate || '');
     setVal('inputModalInsuranceDate', insDate || '');
-
-    // Безопасная работа с классами
     const warrantySec = document.getElementById('modalWarrantySection');
     if (warrantySec) warrantySec.classList.remove('hidden');
-
     const docsSec = document.getElementById('modalDocsSection');
     if (docsSec) docsSec.classList.add('hidden');
-
     const editModal = document.getElementById('dashEditModal');
     if (editModal) editModal.classList.remove('hidden');
 }
 
 function dashOpenDocsModal(id, model, plate, inspectDate, insDate, current, zero, step) {
     activeModalVehicleId = id;
-
-    // Вспомогательные функции для безопасной работы с DOM
-    const setInner = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = val;
-    };
-
-    const setVal = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val;
-    };
-
-    const toggleClass = (id, className, action) => {
-        const el = document.getElementById(id);
-        if (el) {
-            if (action === 'remove') el.classList.remove(className);
-            else el.classList.add(className);
-        }
-    };
-
-    // Обновление текстовых полей
+    const setInner = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
     setInner('modalVehicleTitle', model);
     setInner('modalVehiclePlate', plate ? `[${plate}]` : '[б/н]');
-    
-    // Обновление значений в полях ввода
     setVal('inputModalInspectionDate', inspectDate || '');
     setVal('inputModalInsuranceDate', insDate || '');
     setVal('inputModalCurrentHours', current);
     setVal('inputModalZeroHours', zero);
     setVal('inputModalStepHours', step);
-
-    // Работа с отображением секций
-    toggleClass('modalDocsSection', 'hidden', 'remove');
-    toggleClass('modalWarrantySection', 'hidden', 'add');
-    toggleClass('dashEditModal', 'hidden', 'remove');
+    const docsSec = document.getElementById('modalDocsSection');
+    if (docsSec) docsSec.classList.remove('hidden');
+    const warrantySec = document.getElementById('modalWarrantySection');
+    if (warrantySec) warrantySec.classList.add('hidden');
+    const editModal = document.getElementById('dashEditModal');
+    if (editModal) editModal.classList.remove('hidden');
 }
 
 function dashCloseModal() {
-    document.getElementById('dashEditModal').classList.add('hidden');
+    const modal = document.getElementById('dashEditModal');
+    if (modal) modal.classList.add('hidden');
     activeModalVehicleId = null;
 }
 
 async function dashSaveModalData() {
     if (!activeModalVehicleId) return;
-    
-    const curHrs = parseInt(document.getElementById('inputModalCurrentHours').value) || 0;
-    const zeroHrs = parseInt(document.getElementById('inputModalZeroHours').value) || 0;
-    const stepHrs = parseInt(document.getElementById('inputModalStepHours').value) || 125;
+    const curHrs = parseFloat(document.getElementById('inputModalCurrentHours').value) || 0;
+    const zeroHrs = parseFloat(document.getElementById('inputModalZeroHours').value) || 0;
+    const stepHrs = parseFloat(document.getElementById('inputModalStepHours').value) || 125;
     const inspectDt = document.getElementById('inputModalInspectionDate').value || null;
     const insDt = document.getElementById('inputModalInsuranceDate').value || null;
-
     try {
         const { error } = await window._supabase
             .from('vehicles')
@@ -398,7 +404,6 @@ async function dashSaveModalData() {
                 insurance_date: insDt
             })
             .eq('id', activeModalVehicleId);
-
         if (error) throw error;
         dashCloseModal();
         await loadDashboardData();
@@ -407,6 +412,7 @@ async function dashSaveModalData() {
     }
 }
 
+// ===== Задачи =====
 async function dashAddRepairTask() {
     const select = document.getElementById('taskVehicleSelect');
     const input = document.getElementById('taskTextInput');
@@ -446,35 +452,40 @@ async function dashCompleteTask(taskId) {
     }
 }
 
+// ===== Основной рендеринг алертов (улучшенный дизайн) =====
 function renderSeparatedAlerts(list, activeTasks) {
     const today = new Date();
     const plateMap = {};
     list.forEach(v => { plateMap[v.id] = v.plate ? `[${v.plate}]` : '[б/н]'; });
+
+    // Скрытые для гарантии
     const hiddenVehicles = JSON.parse(localStorage.getItem('dash_hidden_warranty') || '[]');
 
+    // --- Рендеринг задач (улучшенный вид) ---
     const containerTasks = document.getElementById('containerTasks');
     if (containerTasks) {
         if (activeTasks.length > 0) {
             containerTasks.innerHTML = activeTasks.map(task => {
                 const plateStr = plateMap[task.vehicle_id] || '';
                 return `
-                    <div class="p-2 bg-amber-50 border border-amber-300 rounded-lg text-[11px] flex flex-col justify-between gap-1.5 shadow-3xs">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <span class="font-extrabold text-[9px] uppercase tracking-wider text-amber-800">${task.vehicle_id ? '🚜 ' + task.vehicle_name : '📝 Заметка'}</span>
-                                <span class="text-gray-500 font-mono text-[9px]">${plateStr}</span>
-                                <p class="text-gray-900 font-semibold leading-tight mt-0.5">${task.text}</p>
-                            </div>
-                            <button onclick="window.dashCompleteTask('${task.id}')" class="bg-amber-600 hover:bg-emerald-700 text-white text-[9px] font-bold px-2 py-0.5 rounded transition shadow-3xs">Готово</button>
+                    <div class="p-3 bg-gradient-to-r from-amber-50 to-white border-l-4 border-amber-500 rounded-lg shadow-sm flex items-start justify-between gap-2">
+                        <div>
+                            <span class="text-[10px] font-black uppercase tracking-wider text-amber-800">${task.vehicle_id ? '🚜 ' + task.vehicle_name : '📝 Заметка'}</span>
+                            <span class="text-gray-500 font-mono text-[9px] ml-1">${plateStr}</span>
+                            <p class="text-sm text-gray-900 font-semibold leading-tight mt-0.5">${task.text}</p>
                         </div>
+                        <button onclick="window.dashCompleteTask('${task.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-3 py-1 rounded-full transition shadow-sm flex-shrink-0">
+                            ✓ Готово
+                        </button>
                     </div>
                 `;
             }).join('');
         } else {
-            containerTasks.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет активных задач</div>`;
+            containerTasks.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center text-emerald-800 text-sm font-bold shadow-sm">✅ Все задачи выполнены</div>`;
         }
     }
 
+    // --- Сбор данных для гарантии и документов ---
     const warrantyAlerts = [];
     const docAlerts = [];
 
@@ -482,6 +493,7 @@ function renderSeparatedAlerts(list, activeTasks) {
         const cleanPlate = v.plate || '';
         const plateStr = v.plate ? ` [${v.plate}]` : ' [б/н]';
 
+        // Документы: техосмотр и страховка
         if (v.inspection_date) {
             const diff = Math.ceil((new Date(v.inspection_date) - today) / (1000 * 60 * 60 * 24));
             if (diff <= 30) {
@@ -501,7 +513,6 @@ function renderSeparatedAlerts(list, activeTasks) {
                 });
             }
         }
-
         if (v.insurance_date) {
             const diffIns = Math.ceil((new Date(v.insurance_date) - today) / (1000 * 60 * 60 * 24));
             if (diffIns <= 30) {
@@ -522,25 +533,25 @@ function renderSeparatedAlerts(list, activeTasks) {
             }
         }
 
+        // Гарантия (ТО)
         const vehicleTagsArray = v.tags ? v.tags.split(',').map(t => t.trim()) : [];
         if (vehicleTagsArray.includes('Гарантия') && !hiddenVehicles.includes(v.id)) {
             const hours = v.current_hours || 0;
             const zeroHours = v.zero_hours || 0;
             const stepHours = v.step_hours || 125;
             const relativeHours = hours - zeroHours;
-            // Следующее ТО — это ближайшее значение, кратное stepHours, большее relativeHours
             const nextTO = zeroHours + (Math.ceil((relativeHours + 1) / stepHours) * stepHours);
             const hoursLeft = nextTO - hours;
+            const unit = getUnitByCategory(v.type);
 
-            // Без определения типа ТО — просто "ТО"
             let status = 'info';
-            let statusText = `⚙️ Наработка ${hours} м/ч. До ТО (${nextTO}) ещё <b>${hoursLeft} м/ч</b>.`;
+            let statusText = `⚙️ ${unit === 'км' ? 'Пробег' : 'Наработка'} ${hours} ${unit}. До ТО (${nextTO}) ещё <b>${hoursLeft} ${unit}</b>.`;
             if (hoursLeft <= 50) {
                 status = 'danger';
-                statusText = `🚨 <span class="text-red-700 font-black">Срочно ТО (${nextTO})!</span> Осталось <b>${hoursLeft} м/ч</b>.`;
+                statusText = `🚨 <span class="text-red-700 font-black">Срочно ТО (${nextTO})!</span> Осталось <b>${hoursLeft} ${unit}</b>.`;
             } else if (hoursLeft <= 100) {
                 status = 'warning';
-                statusText = `⚠️ Срок ТО (${nextTO}). Осталось <b>${hoursLeft} м/ч</b>.`;
+                statusText = `⚠️ Срок ТО (${nextTO}). Осталось <b>${hoursLeft} ${unit}</b>.`;
             }
 
             warrantyAlerts.push({
@@ -560,50 +571,54 @@ function renderSeparatedAlerts(list, activeTasks) {
         }
     });
 
+    // Сортировка
     warrantyAlerts.sort((a, b) => a.hoursLeft - b.hoursLeft);
     docAlerts.sort((a, b) => a.daysLeft - b.daysLeft);
 
+    // --- Рендеринг гарантии (улучшенный дизайн) ---
     const containerWarranty = document.getElementById('containerWarranty');
     if (containerWarranty) {
         if (warrantyAlerts.length === 0) {
-            containerWarranty.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-950 p-3 rounded-lg text-center text-[11px] font-bold">Нет техники на контроле</div>`;
+            containerWarranty.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center text-emerald-800 text-sm font-bold shadow-sm">✅ Все ТО в норме</div>`;
         } else {
             containerWarranty.innerHTML = warrantyAlerts.map(a => {
-                let cardClass = "bg-blue-50/40 border-blue-200 text-blue-950";
-                if (a.status === 'danger') cardClass = "bg-red-50/50 border-red-200 text-red-950";
-                if (a.status === 'warning') cardClass = "bg-amber-50/50 border-amber-200 text-amber-950";
-                
+                let cardClass = "bg-blue-50 border-l-4 border-blue-400";
+                if (a.status === 'danger') cardClass = "bg-red-50 border-l-4 border-red-500";
+                if (a.status === 'warning') cardClass = "bg-amber-50 border-l-4 border-amber-500";
                 return `
-                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col ${cardClass}">
-                        <div class="flex items-center justify-between gap-1">
-                            <div class="truncate">
-                                <span class="font-extrabold">${a.model}</span> <span class="font-mono text-[9px] text-gray-500">${a.plateLabel}</span>
-                                <p class="text-gray-900 mt-0.5">${a.text}</p>
-                            </div>
-                            <button onclick="window.dashOpenWarrantyModal(${a.id}, '${a.model}', '${a.plate}', ${a.hours}, ${a.zeroHours}, ${a.stepHours}, '${a.inspectDate || ''}', '${a.insDate || ''}')" class="p-1 hover:bg-black/5 rounded text-xs" title="Изменить параметры">✏️</button>
+                    <div class="p-3 rounded-lg shadow-sm flex items-center justify-between ${cardClass}">
+                        <div>
+                            <span class="font-extrabold text-sm">${a.model}</span>
+                            <span class="font-mono text-[10px] text-gray-500">${a.plateLabel}</span>
+                            <p class="text-sm text-gray-900 mt-0.5">${a.text}</p>
                         </div>
+                        <button onclick="window.dashOpenWarrantyModal(${a.id}, '${a.model}', '${a.plate}', ${a.hours}, ${a.zeroHours}, ${a.stepHours}, '${a.inspectDate || ''}', '${a.insDate || ''}')" class="bg-white hover:bg-gray-100 border border-gray-300 rounded-full p-1.5 text-xs shadow-sm" title="Изменить параметры">
+                            ✏️
+                        </button>
                     </div>
                 `;
             }).join('');
         }
     }
 
+    // --- Рендеринг документов (улучшенный дизайн) ---
     const containerDocs = document.getElementById('containerDocs');
     if (containerDocs) {
         if (docAlerts.length === 0) {
-            containerDocs.innerHTML = `<div class="bg-emerald-50/50 border border-emerald-100 text-emerald-900 p-3 rounded-lg text-center text-[11px] font-bold">Все документы в порядке!</div>`;
+            containerDocs.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center text-emerald-800 text-sm font-bold shadow-sm">📋 Все документы в порядке</div>`;
         } else {
             containerDocs.innerHTML = docAlerts.map(d => {
-                const cardClass = d.isCritical ? "bg-red-50/50 border-red-200 text-red-950" : "bg-amber-50/50 border-amber-200 text-amber-950";
+                const cardClass = d.isCritical ? "bg-red-50 border-l-4 border-red-500" : "bg-amber-50 border-l-4 border-amber-500";
                 return `
-                    <div class="p-2 border rounded-lg text-[11px] shadow-3xs flex flex-col ${cardClass}">
-                        <div class="flex items-center justify-between gap-1">
-                            <div class="truncate">
-                                <span class="font-extrabold">${d.model}</span> <span class="font-mono text-[9px] text-gray-500">${d.plateLabel}</span>
-                                <p class="mt-0.5 text-gray-900 font-medium">${d.statusText}</p>
-                            </div>
-                            <button onclick="window.dashOpenDocsModal(${d.id}, '${d.model}', '${d.plate}', '${d.inspectDate || ''}', '${d.insDate || ''}', ${d.current}, ${d.zero}, ${d.step})" class="p-1 hover:bg-black/5 rounded text-xs" title="Изменить даты">✏️</button>
+                    <div class="p-3 rounded-lg shadow-sm flex items-center justify-between ${cardClass}">
+                        <div>
+                            <span class="font-extrabold text-sm">${d.model}</span>
+                            <span class="font-mono text-[10px] text-gray-500">${d.plateLabel}</span>
+                            <p class="text-sm text-gray-900 mt-0.5">${d.statusText}</p>
                         </div>
+                        <button onclick="window.dashOpenDocsModal(${d.id}, '${d.model}', '${d.plate}', '${d.inspectDate || ''}', '${d.insDate || ''}', ${d.current}, ${d.zero}, ${d.step})" class="bg-white hover:bg-gray-100 border border-gray-300 rounded-full p-1.5 text-xs shadow-sm" title="Изменить даты">
+                            ✏️
+                        </button>
                     </div>
                 `;
             }).join('');

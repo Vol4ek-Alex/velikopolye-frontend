@@ -218,6 +218,17 @@ let selectedCategory = "all";
 let currentSort = "name_asc";
 let refreshIntervalId = null;
 
+// Определение единицы измерения в зависимости от категории
+function getUnitByCategory(type) {
+    if (!type) return 'м/ч'; // по умолчанию
+    const lower = type.toLowerCase();
+    // Список категорий, для которых используем километры (пробег)
+    const carKeywords = ['легковой', 'грузовой', 'грузопассажирский', 'автобус', 'микроавтобус', 'пикап', 'фургон', 'тягач', 'седельный'];
+    for (let kw of carKeywords) {
+        if (lower.includes(kw)) return 'км';
+    }
+    return 'м/ч'; // все остальное — моточасы
+}
 // ===== Инициализация модуля =====
 export async function init() {
     // Поиск
@@ -339,6 +350,13 @@ function renderCategoriesBar() {
     const bar = document.getElementById('fleetCategoriesBar');
     if (!bar) return;
 
+    // Сохраняем позицию прокрутки меню, если оно открыто
+    const menu = document.getElementById('customCategoryDropdownMenu');
+    let savedScrollTop = 0;
+    if (menu && !menu.classList.contains('hidden')) {
+        savedScrollTop = menu.scrollTop;
+    }
+
     const isAllActive = selectedCategory === 'all';
     const isNoCatActive = selectedCategory.toLowerCase() === 'без категории';
     const isOtherActive = !isAllActive && !isNoCatActive;
@@ -366,6 +384,17 @@ function renderCategoriesBar() {
     `;
 
     bar.innerHTML = html;
+
+    // Восстанавливаем прокрутку, если меню было открыто
+    const newMenu = document.getElementById('customCategoryDropdownMenu');
+    if (newMenu && !newMenu.classList.contains('hidden') && savedScrollTop > 0) {
+        newMenu.scrollTop = savedScrollTop;
+    }
+
+    // (остальные обработчики toggleCategoryDropdown и filterCategory остаются без изменений)
+    // Они уже объявлены ниже, но чтобы не дублировать, убедитесь, что они есть.
+    // Если вы не переносили их, они останутся из предыдущего кода.
+    }
 
     window.toggleCategoryDropdown = (e) => {
         e.stopPropagation();
@@ -510,8 +539,8 @@ function renderFleet() {
                                 <div class="pt-3 mt-3 border-t-2 border-gray-200 text-[11px] space-y-2.5">
                                     <div class="space-y-1.5">
                                         <div class="flex justify-between items-center">
-                                            <span class="text-gray-600 font-bold">Наработка:</span>
-                                            <span class="font-black text-gray-950">${v.current_hours || 0} м/ч</span>
+                                            <span class="text-gray-600 font-bold">${getUnitByCategory(v.type) === 'км' ? 'Пробег:' : 'Наработка:'}</span>
+                                            <span class="font-black text-gray-950">${v.current_hours || 0} ${getUnitByCategory(v.type)}</span>
                                         </div>
                                         <div class="flex justify-between items-center">
                                             <span class="text-gray-600 font-bold">Техосмотр:</span>
