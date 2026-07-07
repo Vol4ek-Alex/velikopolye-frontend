@@ -896,3 +896,4 @@ async function submitHours() {
     } catch (err) {
         alert('Ошибка: ' + err.message);
     }
+}
