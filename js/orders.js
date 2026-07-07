@@ -3,14 +3,12 @@
 import { tripTemplate, initBusinessTrip } from './docs/businessTrip.js';
 import { batteryTemplate, initBatteryAct } from './docs/batteryAct.js';
 import { absenceTemplate, initAbsenceAct } from './docs/absenceAct.js';
-// Подключаем наш новый подмодуль со всеми формами для техники
 import { machineryLifecycleTemplate, initMachineryLifecycle } from './docs/machineryLifecycle.js';
 
 const ALL_DOC_CARDS = [
     { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов и служебных записок.', icon: '💼', category: 'personal' },
     { id: 'absence_act', title: 'Акт о прогуле', desc: 'Акт об отсутствии сотрудника на рабочем месте с указанием периода.', icon: '🛑', category: 'acts' },
     { id: 'battery_act', title: 'Списание АКБ', desc: 'Акт на списание аккумуляторных батарей с расчетом лома свинца.', icon: '🔋', category: 'acts' },
-    // Карточка нового подмодуля для учета техники
     { id: 'machinery_lifecycle', title: 'Жизненный цикл техники', desc: 'Акты хранения (ГОСТ), дефектные акты, рапорты ТО (авто/трактора) и выход из ремонта.', icon: '🚜', category: 'acts' },
     { id: 'inventory_act', title: 'Акт инвентаризации', desc: 'Списание, проверка и учет ТМЦ.', icon: '📊', category: 'sklad' }
 ];
@@ -18,7 +16,7 @@ const ALL_DOC_CARDS = [
 let currentCategory = 'all';
 let currentSubModule = "menu";
 
-// Используем чистые переменные без экранирования, чтобы шаблоны встроились корректно
+// Полностью восстановлен оригинальный строгий вид шаблона и интерполяция подмодулей
 export const template = `
 <style>
 .fade-in-sub { animation: fadeInSub 0.25s ease-out forwards; }
@@ -114,19 +112,15 @@ export function init() {
 
         const filtered = ALL_DOC_CARDS.filter(c => currentCategory === 'all' || c.category === currentCategory);
 
-        // Используем обычный цикл и чистую конкатенацию одинарных строк, чтобы избежать конфликтов с TS
-        let html = '';
-        for (let i = 0; i < filtered.length; i++) {
-            const card = filtered[i];
-            html += '<div onclick="window.openDocSubModule(\'' + card.id + '\')" class="bg-white border-2 border-gray-300 hover:border-gray-900 p-4 rounded-xl shadow-2xs hover:shadow-xs transition cursor-pointer flex gap-3 items-start group">' +
-                '<div class="text-2xl bg-gray-50 p-2 rounded-lg group-hover:bg-gray-100 transition">' + card.icon + '</div>' +
-                '<div class="space-y-0.5">' +
-                    '<h3 class="text-xs font-black text-gray-900 group-hover:text-blue-600 transition">' + card.title + '</h3>' +
-                    '<p class="text-[11px] text-gray-500 font-medium leading-relaxed">' + card.desc + '</p>' +
-                '</div>' +
-            '</div>';
-        }
-        grid.innerHTML = html;
+        grid.innerHTML = filtered.map(card => `
+            <div onclick="window.openDocSubModule('${card.id}')" class="bg-white border-2 border-gray-300 hover:border-gray-900 p-4 rounded-xl shadow-2xs hover:shadow-xs transition cursor-pointer flex gap-3 items-start group">
+                <div class="text-2xl bg-gray-50 p-2 rounded-lg group-hover:bg-gray-100 transition">${card.icon}</div>
+                <div class="space-y-0.5">
+                    <h3 class="text-xs font-black text-gray-900 group-hover:text-blue-600 transition">${card.title}</h3>
+                    <p class="text-[11px] text-gray-500 font-medium leading-relaxed">${card.desc}</p>
+                </div>
+            </div>
+        `).join('');
     }
 
     window.openDocSubModule = (id) => {
@@ -134,11 +128,9 @@ export function init() {
         document.getElementById('docMenuBlock').classList.add('hidden');
         document.getElementById('btnBackToMenu').classList.remove('hidden');
 
-        // Скрываем все подмодули
         const subs = ['subModule_trip', 'subModule_battery_act', 'subModule_absence_act', 'subModule_machinery_lifecycle'];
         subs.forEach(s => document.getElementById(s)?.classList.add('hidden'));
 
-        // Инициализируем выбранный подмодуль
         if (id === 'business_trip') {
             document.getElementById('subModule_trip').classList.remove('hidden');
             initBusinessTrip();
@@ -150,7 +142,8 @@ export function init() {
             initAbsenceAct();
         } else if (id === 'machinery_lifecycle') {
             document.getElementById('subModule_machinery_lifecycle').classList.remove('hidden');
-            initMachineryLifecycle(null);
+            // Передаем хук загрузки истории файлов, чтобы при генерации актов модуль мог проверять наличие файлов в хранилище
+            initMachineryLifecycle(window.lastLoadedFilesHistory || []);
         }
     };
 
@@ -183,14 +176,16 @@ export function init() {
             });
 
             if (error) throw error;
+            
+            // Сохраняем историю в глобальный массив для аналитики нехватки документов в подмодуле техники
+            window.lastLoadedFilesHistory = data || [];
+
             if (!data || data.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-xs text-gray-400 font-semibold">История файлов пуста</td></tr>';
                 return;
             }
 
-            let rowsHtml = '';
-            for (let i = 0; i < data.length; i++) {
-                const f = data[i];
+            tableBody.innerHTML = data.map(f => {
                 let catLabel = '📝 Документ';
                 let catColor = 'bg-gray-600 text-white font-black';
 
@@ -217,14 +212,20 @@ export function init() {
                     catColor = 'bg-cyan-600 text-white font-black';
                 }
 
-                rowsHtml += '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
-                    '<td class="p-2.5 font-mono text-gray-900 font-semibold">' + f.name + '</td>' +
-                    '<td class="p-2.5"><span class="px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-wider ' + catColor + '">' + catLabel + '</span></td>' +
-                    '<td class="p-2.5 text-center"><button onclick="window.downloadStorageFile(\'' + f.name + '\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-md transition text-[11px]">Открыть / Скачать</button></td>' +
-                    '<td class="p-2.5 text-right"><button onclick="window.deleteStorageFile(\'' + f.name + '\')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md transition text-[11px]">🗑️ Удалить</button></td>' +
-                    '</tr>';
+                return `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">
+                        <td class="p-2.5 font-mono text-gray-900 font-semibold">${f.name}</td>
+                        <td class="p-2.5"><span class="px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-wider ${catColor}">${catLabel}</span></td>
+                        <td class="p-2.5 text-center"><button onclick="window.downloadStorageFile('${f.name}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-md transition text-[11px]">Открыть / Скачать</button></td>
+                        <td class="p-2.5 text-right"><button onclick="window.deleteStorageFile('${f.name}')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md transition text-[11px]">🗑️ Удалить</button></td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Если мы сейчас находимся внутри подмодуля техники, то при обновлении истории пересчитываем его таблицы
+            if (currentSubModule === 'machinery_lifecycle' && typeof window.reloadLifecycleDashboard === 'font') {
+                window.reloadLifecycleDashboard();
             }
-            tableBody.innerHTML = rowsHtml;
 
         } catch (err) {
             tableBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-xs text-red-500 font-bold">Ошибка загрузки: ' + err.message + '</td></tr>';
