@@ -78,10 +78,10 @@ export const template = `
     </div>
 
     <div id="subModulesContainer">
-        ${tripTemplate}
-        ${batteryTemplate}
-        ${absenceTemplate}
-        ${machineryLifecycleTemplate}
+        \${tripTemplate}
+        \${batteryTemplate}
+        \${absenceTemplate}
+        \${machineryLifecycleTemplate}
     </div>
 </div>
 
@@ -113,15 +113,19 @@ export function init() {
 
         const filtered = ALL_DOC_CARDS.filter(c => currentCategory === 'all' || c.category === currentCategory);
 
-        grid.innerHTML = filtered.map(card => \`
-            <div onclick="window.openDocSubModule('\${card.id}')" class="bg-white border-2 border-gray-300 hover:border-gray-900 p-4 rounded-xl shadow-2xs hover:shadow-xs transition cursor-pointer flex gap-3 items-start group">
-                <div class="text-2xl bg-gray-50 p-2 rounded-lg group-hover:bg-gray-100 transition">\${card.icon}</div>
-                <div class="space-y-0.5">
-                    <h3 class="text-xs font-black text-gray-900 group-hover:text-blue-600 transition">\${card.title}</h3>
-                    <p class="text-[11px] text-gray-500 font-medium leading-relaxed">\${card.desc}</p>
-                </div>
-            </div>
-        \`).join('');
+        // Переписано на чистую конкатенацию строк во избежание конфликтов литералов
+        let html = '';
+        for (let i = 0; i < filtered.length; i++) {
+            const card = filtered[i];
+            html += '<div onclick="window.openDocSubModule(\'' + card.id + '\')" class="bg-white border-2 border-gray-300 hover:border-gray-900 p-4 rounded-xl shadow-2xs hover:shadow-xs transition cursor-pointer flex gap-3 items-start group">' +
+                '<div class="text-2xl bg-gray-50 p-2 rounded-lg group-hover:bg-gray-100 transition">' + card.icon + '</div>' +
+                '<div class="space-y-0.5">' +
+                    '<h3 class="text-xs font-black text-gray-900 group-hover:text-blue-600 transition">' + card.title + '</h3>' +
+                    '<p class="text-[11px] text-gray-500 font-medium leading-relaxed">' + card.desc + '</p>' +
+                '</div>' +
+            '</div>';
+        }
+        grid.innerHTML = html;
     }
 
     window.openDocSubModule = (id) => {
@@ -144,10 +148,7 @@ export function init() {
             document.getElementById('subModule_absence_act').classList.remove('hidden');
             initAbsenceAct();
         } else if (id === 'machinery_lifecycle') {
-            // Открываем наш новый подмодуль со всеми бланками для техники
             document.getElementById('subModule_machinery_lifecycle').classList.remove('hidden');
-            // При вызове из главного меню передаем null (подставится дефолтная заглушка)
-            // Позже, при интеграции с таблицей техники, сюда можно будет передавать реальную строку строки БД машины!
             initMachineryLifecycle(null);
         }
     };
@@ -186,11 +187,12 @@ export function init() {
                 return;
             }
 
-            tableBody.innerHTML = data.map(f => {
+            let rowsHtml = '';
+            for (let i = 0; i < data.length; i++) {
+                const f = data[i];
                 let catLabel = '📝 Документ';
                 let catColor = 'bg-gray-600 text-white font-black';
 
-                // Анализируем имена файлов для распределения тегов и категорий
                 if (f.name.startsWith('trip_')) {
                     catLabel = '💼 Командировка (Word)';
                     catColor = 'bg-gray-900 text-white font-black';
@@ -214,13 +216,14 @@ export function init() {
                     catColor = 'bg-cyan-600 text-white font-black';
                 }
 
-                return '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
+                rowsHtml += '<tr class="border-b border-gray-100 hover:bg-gray-50 transition text-xs">' +
                     '<td class="p-2.5 font-mono text-gray-900 font-semibold">' + f.name + '</td>' +
-                    '<td class="p-2.5"><span class="px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-wider ' + catColor + '\">' + catLabel + '</span></td>' +
-                    '<td class="p-2.5 text-center"><button onclick="window.downloadStorageFile(\'' + f.name + '\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-md transition text-[11px]\">Открыть / Скачать</button></td>' +
-                    '<td class="p-2.5 text-right"><button onclick="window.deleteStorageFile(\'' + f.name + '\')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md transition text-[11px]\">🗑️ Удалить</button></td>' +
+                    '<td class="p-2.5"><span class="px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-wider ' + catColor + '">' + catLabel + '</span></td>' +
+                    '<td class="p-2.5 text-center"><button onclick="window.downloadStorageFile(\'' + f.name + '\')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-md transition text-[11px]">Открыть / Скачать</button></td>' +
+                    '<td class="p-2.5 text-right"><button onclick="window.deleteStorageFile(\'' + f.name + '\')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-md transition text-[11px]">🗑️ Удалить</button></td>' +
                     '</tr>';
-            }).join('');
+            }
+            tableBody.innerHTML = rowsHtml;
 
         } catch (err) {
             tableBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-xs text-red-500 font-bold">Ошибка загрузки: ' + err.message + '</td></tr>';
