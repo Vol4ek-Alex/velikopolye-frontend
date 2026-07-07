@@ -13,6 +13,7 @@ export const template = `
             <button onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">📂 Категории</button>
             <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">⏱️ Добавить часы</button>
             <button onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">➕ Карта</button>
+            <button onclick="window.downloadSimpleReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">📄 Скачать отчёт (CSV)</button>
         </div>
     </div>
 
@@ -259,6 +260,7 @@ export async function init() {
     window.openTasksModalForm = openTasksModalForm;
     window.addVehicleTask = addVehicleTask;
     window.completeTask = completeTask;
+    window.downloadSimpleReport = downloadSimpleReport
 
     // Первая загрузка данных
     await loadAllData(true);
@@ -879,3 +881,50 @@ async function submitHours() {
         alert('Ошибка: ' + err.message);
     }
 }
+// ===== Скачивание CSV-отчёта =====
+window.downloadSimpleReport = async () => {
+    if (!window._supabase) return alert('Нет подключения к БД');
+    try {
+        const { data, error } = await window._supabase
+            .from('vehicles')
+            .select('*')
+            .order('type', { ascending: true })
+            .order('model', { ascending: true });
+        if (error) throw error;
+
+        // Форматирование даты (минус 1 год)
+        const formatDateMinusYear = (dateStr) => {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            d.setFullYear(d.getFullYear() - 1);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = String(d.getFullYear()).slice(-2);
+            return `${day}.${month}.${year}`;
+        };
+
+        // Строим CSV
+        let csv = 'Наименование;Госномер / Инв. №;Наработка;Техосмотр (год назад)\n';
+        data.forEach(v => {
+            const model = v.model || '—';
+            const plate = v.plate || '';
+            const inv = v.inv_number || '';
+            const identifier = [plate, inv].filter(Boolean).join(' / ') || '—';
+            const unit = getUnitByCategory(v.type);
+            const hours = v.current_hours || 0;
+            const hoursStr = `${hours} ${unit}`;
+            const inspection = formatDateMinusYear(v.inspection_date);
+            csv += `${model};${identifier};${hoursStr};${inspection}\n`;
+        });
+
+        // Скачивание
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Отчёт_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (err) {
+        alert('Ошибка: ' + err.message);
+    }
+};
