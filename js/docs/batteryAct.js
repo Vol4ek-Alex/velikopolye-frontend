@@ -44,11 +44,11 @@ export const batteryTemplate = `
 
 export function initBatteryAct() {
     let batteryItems = [
-        { id: Date.now(), name: "6СТ-190 АБ-3 URA6AH", count: 2, period: 30, weight: 80 }
+        { id: Date.now(), name: "6СТ-190 АБ-3 URA6AH", count: 2, period: 30, weightOne: 80 }
     ];
 
     window.addBatteryRow = () => {
-        batteryItems.push({ id: Date.now(), name: "6СТ-190", count: 1, period: 24, weight: 40 });
+        batteryItems.push({ id: Date.now(), name: "6СТ-190", count: 1, period: 24, weightOne: 40 });
         window.renderBatteryInputs();
         window.updateBatteryPreview();
     };
@@ -69,7 +69,7 @@ export function initBatteryAct() {
             if (field === 'name') item.name = value;
             if (field === 'count') item.count = parseInt(value) || 0;
             if (field === 'period') item.period = value;
-            if (field === 'weight') item.weight = parseFloat(value) || 0;
+            if (field === 'weightOne') item.weightOne = parseFloat(value) || 0;
         }
         window.updateBatteryPreview();
     };
@@ -97,10 +97,11 @@ export function initBatteryAct() {
                         <input type="number" value="${item.period}" oninput="window.handleBatteryInputChange(${item.id}, 'period', this.value)" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold focus:ring-2 focus:ring-amber-400 focus:border-transparent">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-600 mb-0.5">Вес (кг)</label>
-                        <input type="number" value="${item.weight}" oninput="window.handleBatteryInputChange(${item.id}, 'weight', this.value)" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold focus:ring-2 focus:ring-amber-400 focus:border-transparent">
+                        <label class="block text-[10px] font-bold text-gray-600 mb-0.5">Вес 1 шт (кг)</label>
+                        <input type="number" value="${item.weightOne}" step="0.1" oninput="window.handleBatteryInputChange(${item.id}, 'weightOne', this.value)" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold focus:ring-2 focus:ring-amber-400 focus:border-transparent">
                     </div>
                 </div>
+                <div class="text-[10px] text-gray-500">Общий вес: ${(item.weightOne * item.count).toFixed(1)} кг</div>
             </div>
         `).join('');
     };
@@ -116,13 +117,21 @@ export function initBatteryAct() {
         const actDate = formatBatteryDate(document.getElementById('batteryDocDate')?.value);
         const car = document.getElementById('batteryCarDoc')?.value || '';
         const invNo = document.getElementById('batteryInvNo')?.value || '';
+
+        // Вычисляем общий вес по каждой позиции и суммарный
         let totalWeightAll = 0;
-        const linesHtml = batteryItems.map(item => {
-            totalWeightAll += item.weight;
-            return `<strong>${item.name}</strong> в количестве ${item.count} шт. в процессе эксплуатации (${item.period} месяцев) пришла в негодность`;
-        }).join(', а также ');
-        const listDetailsHtml = batteryItems.map(item =>
-            `• ${item.name} - ${item.count} шт. (${item.weight} кг);`
+        const itemsWithTotal = batteryItems.map(item => {
+            const total = item.count * item.weightOne;
+            totalWeightAll += total;
+            return { ...item, totalWeight: total };
+        });
+
+        const linesHtml = itemsWithTotal.map(item => 
+            `<strong>${item.name}</strong> в количестве ${item.count} шт. (общий вес ${item.totalWeight.toFixed(1)} кг) в процессе эксплуатации (${item.period} месяцев) пришла в негодность`
+        ).join(', а также ');
+
+        const listDetailsHtml = itemsWithTotal.map(item =>
+            `• ${item.name} - ${item.count} шт. (${item.weightOne} кг/шт, общий вес ${item.totalWeight.toFixed(1)} кг);`
         ).join('<br>');
 
         return `
@@ -143,7 +152,7 @@ export function initBatteryAct() {
                     <span style="padding-left: 82px;">Ладутько И.И. - Техник</span>
                 </div>
                 <p style="text-align: justify; text-indent: 40px; margin-bottom: 20px;">
-                    Мы, <u>нижеподписавшиеся</u>, настоящим актом удостоверяем, что следующие аккумуляторная батарея: ${linesHtml} и подлежит списанию с последующим <u>оприходованием</u> на склад в качестве лома свинца суммарным весом ${totalWeightAll} кг:
+                    Мы, <u>нижеподписавшиеся</u>, настоящим актом удостоверяем, что следующие аккумуляторные батареи: ${linesHtml} и подлежат списанию с последующим <u>оприходованием</u> на склад в качестве лома свинца суммарным весом ${totalWeightAll.toFixed(1)} кг:
                 </p>
                 <div style="margin-bottom: 40px; padding-left: 40px; font-weight: bold; line-height: 1.6;">
                     ${listDetailsHtml}<br>
@@ -177,7 +186,8 @@ export function initBatteryAct() {
         if (!supabase) return alert('Ошибка: Клиент Supabase не найден.');
 
         const docDate = document.getElementById('batteryDocDate')?.value || 'unknown-date';
-        const fileName = 'battery_' + docDate + '_act.doc';
+        const car = document.getElementById('batteryCarDoc')?.value || 'unknown-car';
+        const fileName = `СписаниеАКБ_${car.replace(/\s+/g, '_')}_${docDate}.doc`;
 
         try {
             const wordContent = `

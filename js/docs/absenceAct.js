@@ -71,6 +71,14 @@ export function initAbsenceAct() {
         return dateStr;
     }
 
+    // Извлечение фамилии (первое слово)
+    function extractSurname(fullName) {
+        if (!fullName) return 'unknown';
+        const trimmed = fullName.trim();
+        const firstWord = trimmed.split(/\s+/)[0].replace(/\.$/, '');
+        return firstWord || 'unknown';
+    }
+
     window.generateAbsenceHtmlContent = (isForWord = false) => {
         const empName = document.getElementById('absenceEmployeeName')?.value || '';
         const empNameIm = document.getElementById('absenceEmployeeNameIm')?.value || '';
@@ -133,6 +141,7 @@ export function initAbsenceAct() {
 
         // Докладная записка
         const reportDate = formattedEnd;
+        // Используем empNameIm (им. падеж) в докладной
         const reportHtml = `
         <div class="print-page-a4" style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 30px; border: 1px solid #ddd; border-radius: 8px; margin-top: 20px;">
             <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 40px;">
@@ -150,7 +159,7 @@ export function initAbsenceAct() {
             <div style="margin-bottom: 15px; font-size: 14px;">${reportDate}г.</div>
             <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; uppercase tracking-wide">Докладная записка</div>
             <p style="text-indent: 40px; margin-bottom: 60px;">
-                Довожу до Вашего сведения, что тракторист-машинист Пустельников ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
+                Довожу до Вашего сведения, что ${empJob} ${empNameIm} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
             </p>
             <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 50px; font-family: 'Times New Roman', serif; font-size: 14px;">
                 <tr>
@@ -186,8 +195,10 @@ export function initAbsenceAct() {
         const supabase = window._supabase || window.supabase;
         if (!supabase) return alert('Ошибка: Клиент Supabase не найден.');
 
-        const startRaw = document.getElementById('absenceStartDate')?.value || 'date';
-        const fileName = 'absence_packet_' + startRaw + '.doc';
+        const startRaw = document.getElementById('absenceStartDate')?.value || 'unknown-date';
+        const empName = document.getElementById('absenceEmployeeName')?.value || '';
+        const surname = extractSurname(empName);
+        const fileName = `Прогул_${surname}_${startRaw}.doc`;
 
         try {
             const wordContent = `

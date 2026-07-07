@@ -96,6 +96,15 @@ export function initBusinessTrip() {
         return dateStr;
     }
 
+    // Вспомогательная функция для извлечения фамилии (первое слово)
+    function extractSurname(fullName) {
+        if (!fullName) return 'unknown';
+        // Обрезаем лишние пробелы и берём первое слово до пробела или до точки
+        const trimmed = fullName.trim();
+        const firstWord = trimmed.split(/\s+/)[0].replace(/\.$/, '');
+        return firstWord || 'unknown';
+    }
+
     window.generateTripHtmlContent = () => {
         const docDate = formatTripDate(document.getElementById('tripDocDate')?.value);
         const targetDate = formatTripDate(document.getElementById('tripTargetDate')?.value);
@@ -147,19 +156,10 @@ export function initBusinessTrip() {
         const selectVal = document.getElementById('tripDriverSelect')?.value;
         const customVal = document.getElementById('tripDriverCustomInput')?.value.trim();
         const driverRaw = selectVal === 'CUSTOM' ? customVal : selectVal;
+        const surname = extractSurname(driverRaw || 'unknown');
         
-        const translit = (str) => {
-            const ru = {
-                'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z',
-                'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
-                'с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'shch',
-                'ы':'y','э':'e','ю':'yu','я':'ya',' ':'_','.':''
-            };
-            return str.toLowerCase().split('').map(c => ru[c] || (/[a-z0-9_-]/.test(c) ? c : '')).join('');
-        };
-
-        const driverSafe = translit(driverRaw || 'worker');
-        const fileName = 'trip_' + docDate + '_' + driverSafe + '.doc';
+        // Формируем понятное имя файла
+        const fileName = `Командировка_${surname}_${docDate}.doc`;
 
         try {
             const wordContent = `
