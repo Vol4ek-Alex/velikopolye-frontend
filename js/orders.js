@@ -10,7 +10,7 @@ const ALL_DOC_CARDS = [
     { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов и служебных записок.', icon: '💼', category: 'personal' },
     { id: 'absence_act', title: 'Акт о прогуле', desc: 'Акт об отсутствии сотрудника на рабочем месте с указанием периода.', icon: '🛑', category: 'acts' },
     { id: 'battery_act', title: 'Списание АКБ', desc: 'Акт на списание аккумуляторных батарей с расчетом лома свинца.', icon: '🔋', category: 'acts' },
-    // Добавляем карточку нового сквозного подмодуля для учета техники
+    // Карточка нового подмодуля для учета техники
     { id: 'machinery_lifecycle', title: 'Жизненный цикл техники', desc: 'Акты хранения (ГОСТ), дефектные акты, рапорты ТО (авто/трактора) и выход из ремонта.', icon: '🚜', category: 'acts' },
     { id: 'inventory_act', title: 'Акт инвентаризации', desc: 'Списание, проверка и учет ТМЦ.', icon: '📊', category: 'sklad' }
 ];
@@ -18,6 +18,7 @@ const ALL_DOC_CARDS = [
 let currentCategory = 'all';
 let currentSubModule = "menu";
 
+// Используем чистые переменные без экранирования, чтобы шаблоны встроились корректно
 export const template = `
 <style>
 .fade-in-sub { animation: fadeInSub 0.25s ease-out forwards; }
@@ -43,9 +44,9 @@ export const template = `
     <div id="docMenuBlock" class="space-y-6">
         <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
             <button onclick="window.filterDocCategory('all')" id="cat_all" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-900 text-white shadow-xs">Все документы</button>
-            <button onclick="window.filterDocCategory('personal')" id="cat_personal" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-gray-200">Кадры / Личный состав</button>
-            <button onclick="window.filterDocCategory('acts')" id="cat_acts" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-gray-200">Акты и Рапорты</button>
-            <button onclick="window.filterDocCategory('sklad')" id="cat_sklad" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-gray-200">Склад / Учет</button>
+            <button onclick="window.filterDocCategory('personal')" id="cat_personal" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-200">Кадры / Личный состав</button>
+            <button onclick="window.filterDocCategory('acts')" id="cat_acts" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-200">Акты и Рапорты</button>
+            <button onclick="window.filterDocCategory('sklad')" id="cat_sklad" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-200">Склад / Учет</button>
         </div>
 
         <div id="docCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -78,10 +79,10 @@ export const template = `
     </div>
 
     <div id="subModulesContainer">
-        \${tripTemplate}
-        \${batteryTemplate}
-        \${absenceTemplate}
-        \${machineryLifecycleTemplate}
+        ${tripTemplate}
+        ${batteryTemplate}
+        ${absenceTemplate}
+        ${machineryLifecycleTemplate}
     </div>
 </div>
 
@@ -102,7 +103,7 @@ export function init() {
             if (c === cat) {
                 btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-900 text-white shadow-xs";
             } else {
-                btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-gray-200";
+                btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-200";
             }
         });
     };
@@ -113,7 +114,7 @@ export function init() {
 
         const filtered = ALL_DOC_CARDS.filter(c => currentCategory === 'all' || c.category === currentCategory);
 
-        // Переписано на чистую конкатенацию строк во избежание конфликтов литералов
+        // Используем обычный цикл и чистую конкатенацию одинарных строк, чтобы избежать конфликтов с TS
         let html = '';
         for (let i = 0; i < filtered.length; i++) {
             const card = filtered[i];
@@ -133,7 +134,7 @@ export function init() {
         document.getElementById('docMenuBlock').classList.add('hidden');
         document.getElementById('btnBackToMenu').classList.remove('hidden');
 
-        // Скрываем абсолютно все подмодули
+        // Скрываем все подмодули
         const subs = ['subModule_trip', 'subModule_battery_act', 'subModule_absence_act', 'subModule_machinery_lifecycle'];
         subs.forEach(s => document.getElementById(s)?.classList.add('hidden'));
 
@@ -261,6 +262,5 @@ export function init() {
         }
     };
 
-    // Автоматическая загрузка архива при открытии вкладки модуля
     setTimeout(window.loadTripStorageHistory, 200);
 }
