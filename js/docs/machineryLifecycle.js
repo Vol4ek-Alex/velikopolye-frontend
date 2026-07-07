@@ -8,7 +8,7 @@ import { toTemplate } from './lifecycle/toReport.js';
 let allVehicles = [];
 let selectedVehicle = null;
 
-// Безопасная сборка общего шаблона без использования опасных символов экранирования
+// Сборка шаблона без использования опасных символов экранирования (исключаем Token Error)
 export const machineryLifecycleTemplate = '<div id="subModule_machinery_lifecycle" class="hidden space-y-6 fade-in-sub">' +
 '    ' +
 '    <div class="bg-white border-2 border-gray-900 rounded-2xl shadow-xs overflow-hidden">' +
@@ -18,7 +18,7 @@ export const machineryLifecycleTemplate = '<div id="subModule_machinery_lifecycl
 '                <p class="text-[10px] text-gray-500 font-medium mt-0.5">Сверка базы данных "vehicles" с файловым хранилищем документов</p>' +
 '            </div>' +
 '            <div class="flex items-center gap-2">' +
-'                <input type="text" id="lifecycleSearch" placeholder="Поиск по марке/инв. №..." class="border-2 border-gray-900 rounded-xl px-3 py-1 text-xs font-semibold focus:outline-none placeholder-gray-400">' +
+'                <input type="text" id="lifecycleSearch" placeholder="Поиск по модели/гос. №/инв. №..." class="border-2 border-gray-900 rounded-xl px-3 py-1 text-xs font-semibold focus:outline-none placeholder-gray-400">' +
 '                <button id="btnRefreshLifecycle" class="bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition">🔄 Обновить</button>' +
 '            </div>' +
 '        </div>' +
@@ -26,7 +26,7 @@ export const machineryLifecycleTemplate = '<div id="subModule_machinery_lifecycl
 '            <table class="w-full text-left border-collapse">' +
 '                <thead>' +
 '                    <tr class="bg-gray-100 text-[10px] font-black text-gray-600 uppercase tracking-wider border-b-2 border-gray-900">' +
-'                        <th class="p-3">Техника / Инв. Номер</th>' +
+'                        <th class="p-3">Техника / Гос. Номер / Инв. №</th>' +
 '                        <th class="p-3">Тип</th>' +
 '                        <th class="p-3">Закрепленный сотрудник</th>' +
 '                        <th class="p-3 text-center">🛠️ Дефектный</th>' +
@@ -83,8 +83,8 @@ export async function initMachineryLifecycle(storageFiles) {
 
     async function loadData() {
         try {
-            // Запрашиваем только реально существующие поля (name вместо brand)
-            const { data, error } = await supabase.from('vehicles').select('id, name, model, inv_num, type, driver_name');
+            // Запрашиваем строго существующие у тебя колонки: model, plate, inv_number
+            const { data, error } = await supabase.from('vehicles').select('id, model, plate, inv_number, type, driver_name');
             if (error) throw error;
             allVehicles = data || [];
             renderTable(allVehicles);
@@ -101,9 +101,11 @@ export async function initMachineryLifecycle(storageFiles) {
         }
 
         tableBody.innerHTML = vehiclesList.map(function(v) {
-            const inv = v.inv_num || 'б/н';
-            const vehicleTitle = v.name || v.model || 'Техника';
+            const inv = v.inv_number || 'б/н';
+            const plateStr = v.plate ? ' [' + v.plate + ']' : '';
+            const vehicleTitle = (v.model || 'Техника') + plateStr;
             
+            // Проверка наличия файлов в хранилище по инвентарному номеру
             const hasDefect = storageFiles.some(f => f.name.includes('defect_') && f.name.includes(inv));
             const hasTo = storageFiles.some(f => f.name.includes('to_report_') && f.name.includes(inv));
             const hasRepair = storageFiles.some(f => f.name.includes('repair_out_') && f.name.includes(inv));
@@ -127,9 +129,9 @@ export async function initMachineryLifecycle(storageFiles) {
     searchInput?.addEventListener('input', function(e) {
         const query = e.target.value.toLowerCase();
         const filtered = allVehicles.filter(function(v) {
-            return (v.name && v.name.toLowerCase().includes(query)) || 
-                   (v.model && v.model.toLowerCase().includes(query)) || 
-                   (v.inv_num && v.inv_num.toLowerCase().includes(query));
+            return (v.model && v.model.toLowerCase().includes(query)) || 
+                   (v.plate && v.plate.toLowerCase().includes(query)) || 
+                   (v.inv_number && v.inv_number.toLowerCase().includes(query));
         });
         renderTable(filtered);
     });
@@ -140,10 +142,11 @@ export async function initMachineryLifecycle(storageFiles) {
         selectedVehicle = allVehicles.find(v => v.id == id);
         if (!selectedVehicle) return;
 
-        const vehicleTitle = selectedVehicle.name || selectedVehicle.model || 'Техника';
+        const plateStr = selectedVehicle.plate ? ' [' + selectedVehicle.plate + ']' : '';
+        const vehicleTitle = (selectedVehicle.model || 'Техника') + plateStr;
 
         document.getElementById('lifecycleFormsBlock').classList.remove('hidden');
-        document.getElementById('selectedVehicleTitle').innerText = '🚜 Выбрана машина: ' + vehicleTitle + ' (Инв. № ' + (selectedVehicle.inv_num || 'б/н') + ')';
+        document.getElementById('selectedVehicleTitle').innerText = '🚜 Выбрана машина: ' + vehicleTitle + ' (Инв. № ' + (selectedVehicle.inv_number || 'б/н') + ')';
         
         const driverInputs = ['defect_driver', 'to_driver', 'repair_driver', 'storage_driver'];
         driverInputs.forEach(function(i) {
