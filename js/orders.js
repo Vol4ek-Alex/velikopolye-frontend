@@ -2,11 +2,13 @@
 
 import { tripTemplate, initBusinessTrip } from './docs/businessTrip.js';
 import { batteryTemplate, initBatteryAct } from './docs/batteryAct.js';
-import { absenceTemplate, initAbsenceAct } from './docs/absenceAct.js';
+import { absenceActsTemplate, initAbsenceActs } from './docs/absenceActs.js';
+import { absenceReportTemplate, initAbsenceReport } from './docs/absenceReport.js';
 
 const ALL_DOC_CARDS = [
     { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов и служебных записок.', icon: '💼', category: 'personal' },
-    { id: 'absence_act', title: 'Акт о прогуле', desc: 'Акт об отсутствии сотрудника на рабочем месте с указанием периода.', icon: '🛑', category: 'acts' },
+    { id: 'absence_acts', title: 'Акты о прогуле', desc: 'Подневные акты об отсутствии на рабочем месте.', icon: '🛑', category: 'acts' },
+    { id: 'absence_report', title: 'Служебная записка (прогул)', desc: 'Докладная записка о прогуле сотрудника.', icon: '📝', category: 'acts' },
     { id: 'battery_act', title: 'Списание АКБ', desc: 'Акт на списание аккумуляторных батарей с расчетом лома свинца.', icon: '🔋', category: 'acts' },
     { id: 'inventory_act', title: 'Акт инвентаризации', desc: 'Списание, проверка и учет ТМЦ.', icon: '📊', category: 'sklad' }
 ];
@@ -91,7 +93,8 @@ export function init() {
     setupSubModuleNavigation();
     initBusinessTrip();
     initBatteryAct();
-    initAbsenceAct();
+    initAbsenceActs();
+    initAbsenceReport();
     renderDocCards(ALL_DOC_CARDS);
     window.switchDocSubModule('menu');
 }
@@ -160,7 +163,8 @@ function setupSubModuleNavigation() {
         const subContainers = {
             business_trip: document.getElementById('subModule_business_trip'),
             battery_act: document.getElementById('subModule_battery_act'),
-            absence_act: document.getElementById('subModule_absence_act')
+            absence_acts: document.getElementById('subModule_absence_acts'),
+            absence_report: document.getElementById('subModule_absence_report')
         };
 
         if (mainContainer) mainContainer.classList.add('hidden');
@@ -192,6 +196,18 @@ function setupSubModuleNavigation() {
                 document.getElementById('absenceStartDate').value = today;
                 document.getElementById('absenceEndDate').value = today;
                 window.updateAbsencePreview();
+            }
+            if (targetModule === 'absence_acts' && typeof window.updateActsPreview === 'function') {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('actsStartDate').value = today;
+                document.getElementById('actsEndDate').value = today;
+                window.updateActsPreview();
+            }
+            if (targetModule === 'absence_report' && typeof window.updateReportPreview === 'function') {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('reportStartDate').value = today;
+                document.getElementById('reportEndDate').value = today;
+                window.updateReportPreview();
             }
         }
     };
@@ -243,9 +259,14 @@ function setupSubModuleNavigation() {
                 typeLabel = 'Списание АКБ';
                 bgColor = 'bg-amber-100';
                 textColor = 'text-amber-800';
-            } else if (f.name.startsWith('absence_') || f.name.includes('Прогул')) {
+            } else if (f.name.startsWith('acts_') || f.name.includes('Акты о прогуле')) {
                 icon = '🛑';
-                typeLabel = 'Прогул';
+                typeLabel = 'Акты о прогуле';
+                bgColor = 'bg-red-100';
+                textColor = 'text-red-800';
+            } else if (f.name.startsWith('report_') || f.name.includes('Служебная записка')) {
+                icon = '🛑';
+                typeLabel = 'Служебная записка (Прогул)';
                 bgColor = 'bg-red-100';
                 textColor = 'text-red-800';
             }
