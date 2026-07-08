@@ -106,14 +106,13 @@ export function initAbsenceReport() {
         let docDate;
         if (isOngoing) {
             dateRange = `с ${formattedStart} по настоящее время`;
-            docDate = formattedStart; // дата документа – дата начала
+            docDate = formattedStart;
         } else {
             const formattedEnd = formatRusDate(endDate);
             dateRange = `с ${formattedStart} по ${formattedEnd}гг.`;
-            docDate = formattedEnd; // дата документа – дата окончания
+            docDate = formattedEnd;
         }
 
-        // Основной стиль для всего документа
         const style = `
             font-family: 'Times New Roman', serif;
             font-size: ${fontSize}pt;
@@ -124,15 +123,14 @@ export function initAbsenceReport() {
             margin: 0;
         `;
 
-        // Шапка: дата справа, затем адресат слева (без даты)
         return `
             <div style="${style}">
-                <!-- Дата в правом верхнем углу -->
-                <div style="text-align: right; margin-bottom: 20px; font-size: ${fontSize}pt;">
+                <!-- Дата слева -->
+                <div style="text-align: left; margin-bottom: 20px; font-size: ${fontSize}pt;">
                     ${docDate}г.
                 </div>
 
-                <!-- Адресат (слева) -->
+                <!-- Адресат (справа) -->
                 <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 30px;">
                     <tr>
                         <td style="width: 45%; border: none;"></td>
@@ -185,7 +183,6 @@ export function initAbsenceReport() {
         const html = generateReportHtml(empName, empJob, startRaw, endRaw, isOngoing, fontSize);
 
         if (isForWord) {
-            // Для Word оборачиваем в полноценный HTML-документ с нужным шрифтом
             return `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
                 <head><meta charset="utf-8">
@@ -199,7 +196,6 @@ export function initAbsenceReport() {
             `;
         }
 
-        // Для превью – обёртка с тенью
         return { combinedHtml: `<div style="background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 30px; border: 1px solid #eee;">${html}</div>` };
     };
 
@@ -217,7 +213,6 @@ export function initAbsenceReport() {
 
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
-            // Для печати используем тот же HTML с разметкой страницы
             printBlock.innerHTML = fullHtml;
             window.print();
             printBlock.innerHTML = '';
@@ -232,7 +227,6 @@ export function initAbsenceReport() {
         const fileName = `report_${startRaw}_${safeName}.doc`;
 
         try {
-            // Сохраняем как .doc (Word) – уже сформирован fullHtml
             const fileBlob = new Blob([fullHtml], { type: 'application/msword;charset=utf-8' });
             const { error } = await supabase.storage.from('documents-history').upload(fileName, fileBlob, { cacheControl: '3600', upsert: true });
             if (error) throw error;
