@@ -8,7 +8,7 @@ import { absenceReportTemplate, initAbsenceReport } from './docs/absenceReport.j
 const ALL_DOC_CARDS = [
     { id: 'business_trip', title: 'Командировки', desc: 'Оформление приказов и служебных записок.', icon: '💼', category: 'personal' },
     { id: 'absence_acts', title: 'Акты о прогуле', desc: 'Подневные акты об отсутствии на рабочем месте.', icon: '🛑', category: 'acts' },
-    { id: 'absence_report', title: 'Служебная записка (прогул)', desc: 'Докладная записка о прогуле сотрудника.', icon: '📝', category: 'acts' },
+    { id: 'absence_report', title: 'Служебная записка (прогул)', desc: 'Докладная записка о прогуле сотрудника.', icon: '📝', category: 'personal' }, // <-- перенесли в personal
     { id: 'battery_act', title: 'Списание АКБ', desc: 'Акт на списание аккумуляторных батарей с расчетом лома свинца.', icon: '🔋', category: 'acts' },
     { id: 'inventory_act', title: 'Акт инвентаризации', desc: 'Списание, проверка и учет ТМЦ.', icon: '📊', category: 'sklad' }
 ];
@@ -82,9 +82,9 @@ export const template = `
 
     <!-- Подмодули -->
     ${tripTemplate}
-    ${batteryTemplate}
     ${absenceActsTemplate}
     ${absenceReportTemplate}
+    ${batteryTemplate}
 </div>
 
 <div id="tripPrintBlock"></div>
@@ -202,6 +202,9 @@ function setupSubModuleNavigation() {
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('reportStartDate').value = today;
                 document.getElementById('reportEndDate').value = today;
+                // Чекбокс "по настоящее время" выключаем при открытии
+                const checkbox = document.getElementById('reportOngoing');
+                if (checkbox) checkbox.checked = false;
                 window.updateReportPreview();
             }
         }
@@ -264,10 +267,11 @@ function setupSubModuleNavigation() {
                 bgColor = 'bg-red-100';
                 textColor = 'text-red-800';
             }
-            // Извлекаем дату из имени (формат ГГГГ-ММ-ДД)
+            // Извлекаем дату
             const dateMatch = f.name.match(/\d{4}-\d{2}-\d{2}/);
             const displayDate = dateMatch ? dateMatch[0] : '—';
 
+            // Извлекаем имя
             let namePart = f.name.replace(/^[^_]*_/, '').replace(/\d{4}-\d{2}-\d{2}_/, '').replace(/\.doc$/, '');
             if (namePart.length > 30) namePart = namePart.slice(0, 28) + '…';
 

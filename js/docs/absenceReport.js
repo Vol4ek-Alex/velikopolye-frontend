@@ -19,6 +19,10 @@ export const absenceReportTemplate = `
                         <input type="date" id="reportEndDate" oninput="window.updateReportPreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                     </div>
                 </div>
+                <div class="flex items-center gap-2 mt-1">
+                    <input type="checkbox" id="reportOngoing" onchange="window.updateReportPreview()" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                    <label for="reportOngoing" class="text-xs font-bold text-gray-700">По настоящее время</label>
+                </div>
             </div>
             <div class="border-t border-gray-200 pt-3 space-y-3">
                 <span class="text-xs font-extrabold text-gray-600 uppercase tracking-wider">Данные сотрудника</span>
@@ -31,6 +35,15 @@ export const absenceReportTemplate = `
                     <input type="text" id="reportEmployeeJob" value="тракторист-машинист" oninput="window.updateReportPreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
                 </div>
             </div>
+            <div class="border-t border-gray-200 pt-3">
+                <label class="block text-[10px] font-bold text-gray-600 mb-1">Размер шрифта (pt)</label>
+                <select id="reportFontSize" onchange="window.updateReportPreview()" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-400 focus:border-transparent">
+                    <option value="12">12</option>
+                    <option value="14" selected>14</option>
+                    <option value="16">16</option>
+                    <option value="18">18</option>
+                </select>
+            </div>
             <button onclick="window.printAndSaveReport()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
                 🖨️ Печать служебной
             </button>
@@ -39,7 +52,7 @@ export const absenceReportTemplate = `
         <div class="lg:col-span-2 bg-gray-50 rounded-2xl p-3 border border-gray-200 flex flex-col min-h-[500px]">
             <div id="reportPreviewWrapper" class="flex-1 flex items-center justify-center overflow-hidden relative">
                 <div id="reportPreviewScaler" style="transform-origin: top left; transition: transform 0.2s ease;">
-                    <div id="reportLivePreview" class="bg-white shadow-lg" style="width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; color: black; overflow: hidden;">
+                    <div id="reportLivePreview" class="bg-white shadow-lg" style="width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; font-family: 'Times New Roman', serif; color: black; overflow: hidden;">
                         <!-- Сюда динамически вставляется содержимое -->
                     </div>
                 </div>
@@ -87,15 +100,43 @@ export function initAbsenceReport() {
         scaler.style.marginTop = offsetY + 'px';
     }
 
-    function generateReportHtml(empName, empJob, startDate, endDate) {
+    function generateReportHtml(empName, empJob, startDate, endDate, isOngoing, fontSize) {
         const formattedStart = formatRusDate(startDate);
-        const formattedEnd = formatRusDate(endDate);
+        let dateRange;
+        let docDate;
+        if (isOngoing) {
+            dateRange = `с ${formattedStart} по настоящее время`;
+            docDate = formattedStart; // дата документа – дата начала
+        } else {
+            const formattedEnd = formatRusDate(endDate);
+            dateRange = `с ${formattedStart} по ${formattedEnd}гг.`;
+            docDate = formattedEnd; // дата документа – дата окончания
+        }
+
+        // Основной стиль для всего документа
+        const style = `
+            font-family: 'Times New Roman', serif;
+            font-size: ${fontSize}pt;
+            line-height: 1.5;
+            box-sizing: border-box;
+            background: white;
+            padding: 0;
+            margin: 0;
+        `;
+
+        // Шапка: дата справа, затем адресат слева (без даты)
         return `
-            <div style="font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; box-sizing: border-box; background: white; padding: 0; margin-bottom: 0;">
-                <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 40px;">
+            <div style="${style}">
+                <!-- Дата в правом верхнем углу -->
+                <div style="text-align: right; margin-bottom: 20px; font-size: ${fontSize}pt;">
+                    ${docDate}г.
+                </div>
+
+                <!-- Адресат (слева) -->
+                <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 30px;">
                     <tr>
                         <td style="width: 45%; border: none;"></td>
-                        <td style="width: 55%; text-align: left; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.3; border: none; padding: 0;">
+                        <td style="width: 55%; text-align: left; font-size: ${fontSize}pt; line-height: 1.3; border: none; padding: 0;">
                             Директору филиала СХК<br>
                             «Великополье»<br>
                             Рунцевичу Д.С.<br>
@@ -104,12 +145,19 @@ export function initAbsenceReport() {
                         </td>
                     </tr>
                 </table>
-                <div style="margin-bottom: 15px; font-size: 14px;">${formattedEnd}г.</div>
-                <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px;">Докладная записка</div>
-                <p style="text-indent: 40px; margin-bottom: 40px;">
-                    Довожу до Вашего сведения, что ${empJob} ${empName} отсутствовал на рабочем месте с ${formattedStart} по ${formattedEnd}гг., что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
+
+                <!-- Заголовок -->
+                <div style="text-align: center; font-weight: bold; font-size: ${fontSize}pt; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px;">
+                    Докладная записка
+                </div>
+
+                <!-- Текст -->
+                <p style="text-indent: 40px; margin-bottom: 40px; font-size: ${fontSize}pt; line-height: 1.5;">
+                    Довожу до Вашего сведения, что ${empJob} ${empName} отсутствовал на рабочем месте ${dateRange}, что повлияло на рабочий процесс. Прошу признать его отсутствие, как отсутствие без уважительной причины, и принять соответствующие меры.
                 </p>
-                <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 20px; font-family: 'Times New Roman', serif; font-size: 14px;">
+
+                <!-- Подпись -->
+                <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 20px; font-size: ${fontSize}pt;">
                     <tr>
                         <td style="width: 50%; text-align: left; border: none; padding: 0;">Инженер по ЭМТП</td>
                         <td style="width: 50%; text-align: right; border: none; padding: 0;">Волчек А.А.</td>
@@ -124,11 +172,34 @@ export function initAbsenceReport() {
         const empJob = document.getElementById('reportEmployeeJob')?.value || '';
         const startRaw = document.getElementById('reportStartDate')?.value;
         const endRaw = document.getElementById('reportEndDate')?.value;
-        if (!startRaw || !endRaw) {
-            return isForWord ? '' : { combinedHtml: '<div class="p-4 text-center text-gray-400 font-bold">Выберите даты</div>' };
+        const isOngoing = document.getElementById('reportOngoing')?.checked || false;
+        const fontSize = document.getElementById('reportFontSize')?.value || '14';
+
+        if (!startRaw) {
+            return isForWord ? '' : { combinedHtml: '<div class="p-4 text-center text-gray-400 font-bold">Выберите дату начала</div>' };
         }
-        const html = generateReportHtml(empName, empJob, startRaw, endRaw);
-        if (isForWord) return html;
+        if (!isOngoing && !endRaw) {
+            return isForWord ? '' : { combinedHtml: '<div class="p-4 text-center text-gray-400 font-bold">Укажите конечную дату или включите "по настоящее время"</div>' };
+        }
+
+        const html = generateReportHtml(empName, empJob, startRaw, endRaw, isOngoing, fontSize);
+
+        if (isForWord) {
+            // Для Word оборачиваем в полноценный HTML-документ с нужным шрифтом
+            return `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta charset="utf-8">
+                <style>
+                    body { font-family: 'Times New Roman', serif; font-size: ${fontSize}pt; line-height: 1.5; }
+                    p { margin: 0 0 10px 0; text-indent: 40px; }
+                </style>
+                </head>
+                <body>${html}</body>
+                </html>
+            `;
+        }
+
+        // Для превью – обёртка с тенью
         return { combinedHtml: `<div style="background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 30px; border: 1px solid #eee;">${html}</div>` };
     };
 
@@ -146,6 +217,7 @@ export function initAbsenceReport() {
 
         const printBlock = document.getElementById('tripPrintBlock');
         if (printBlock) {
+            // Для печати используем тот же HTML с разметкой страницы
             printBlock.innerHTML = fullHtml;
             window.print();
             printBlock.innerHTML = '';
@@ -160,13 +232,8 @@ export function initAbsenceReport() {
         const fileName = `report_${startRaw}_${safeName}.doc`;
 
         try {
-            const wordContent = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-                <head><meta charset="utf-8"></head>
-                <body>${fullHtml}</body>
-                </html>
-            `;
-            const fileBlob = new Blob([wordContent], { type: 'application/msword;charset=utf-8' });
+            // Сохраняем как .doc (Word) – уже сформирован fullHtml
+            const fileBlob = new Blob([fullHtml], { type: 'application/msword;charset=utf-8' });
             const { error } = await supabase.storage.from('documents-history').upload(fileName, fileBlob, { cacheControl: '3600', upsert: true });
             if (error) throw error;
             alert('Служебная записка сохранена в архив!');
