@@ -37,7 +37,7 @@ export const template = `
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Колонки (каждая с новой строки)</label>
                     <div class="space-y-2">
                         <div id="columnsContainer" class="space-y-2 max-h-48 overflow-y-auto"></div>
-                        <button type="button" onclick="addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">➕ Добавить колонку</button>
+                        <button type="button" onclick="window.addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">➕ Добавить колонку</button>
                     </div>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
@@ -49,7 +49,7 @@ export const template = `
         </div>
     </div>
 
-    <!-- Модалка данных (таблица) -->
+    <!-- Модалка просмотра таблицы (инлайн-редактирование) -->
     <div id="dataModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-4xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
             <button onclick="window.closeDataModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
@@ -77,6 +77,7 @@ let currentColumns = [];
 let currentRows = [];
 let allVehicles = [];
 let editingRowId = null;
+let editingCell = null; // { rowId, colName }
 
 // ===== Инициализация =====
 export async function init() {
@@ -89,10 +90,6 @@ export async function init() {
     window.addRow = addRow;
     window.addColumn = addColumn;
     window.deleteTemplate = deleteTemplate;
-    window.toggleCheckbox = toggleCheckbox;
-    window.updateCell = updateCell;
-    window.selectVehicle = selectVehicle;
-    window.deleteRow = deleteRow;
 
     await loadVehicles();
     await loadTemplates();
@@ -202,20 +199,18 @@ function renderColumns(cols) {
     if (!container) return;
     container.innerHTML = cols.map((col, index) => `
         <div class="flex items-center gap-2">
-            <input type="text" value="${col.name}" placeholder="Название колонки" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" oninput="updateColumn(${index}, this.value)">
-            <select class="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" onchange="updateColumnType(${index}, this.value)">
+            <input type="text" value="${col.name}" placeholder="Название колонки" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" oninput="window.updateColumn(${index}, this.value)">
+            <select class="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" onchange="window.updateColumnType(${index}, this.value)">
                 <option value="text" ${col.type === 'text' ? 'selected' : ''}>Текст</option>
                 <option value="checkbox" ${col.type === 'checkbox' ? 'selected' : ''}>Чекбокс</option>
                 <option value="vehicle" ${col.type === 'vehicle' ? 'selected' : ''}>Техника</option>
             </select>
-            <button type="button" onclick="removeColumn(${index})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
+            <button type="button" onclick="window.removeColumn(${index})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
         </div>
     `).join('');
 }
 
 window.addColumn = () => {
-    const container = document.getElementById('columnsContainer');
-    if (!container) return;
     const cols = getColumnsFromDOM();
     cols.push({ name: 'Новая колонка', type: 'text' });
     renderColumns(cols);
@@ -330,6 +325,7 @@ async function loadRows(templateId) {
     }
 }
 
+// ===== Рендеринг таблицы с инлайн-редактированием =====
 function renderTable() {
     const thead = document.getElementById('dataTableHead');
     const tbody = document.getElementById('dataTableBody');
@@ -337,12 +333,11 @@ function renderTable() {
 
     // Заголовок
     thead.innerHTML = `
-        <th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b">#</th>
-        ${currentColumns.map(col => `<th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b">${col.name}</th>`).join('')}
-        <th class="px-3 py-2 text-center text-xs font-bold text-gray-600 uppercase tracking-wider border-b">Действия</th>
+        <th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b whitespace-nowrap">#</th>
+        ${currentColumns.map(col => `<th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b whitespace-nowrap">${col.name}</th>`).join('')}
+        <th class="px-3 py-2 text-center text-xs font-bold text-gray-600 uppercase tracking-wider border-b whitespace-nowrap">Действия</th>
     `;
 
-    // Тело
     if (currentRows.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${currentColumns.length + 2}" class="text-center py-6 text-gray-400">Нет данных. Добавьте строку!</td></tr>`;
         return;
@@ -351,75 +346,81 @@ function renderTable() {
     tbody.innerHTML = currentRows.map((row, index) => {
         const rowData = row.row_data || {};
         return `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="px-3 py-2 text-sm font-medium text-gray-500">${index + 1}</td>
+            <tr class="border-b border-gray-100 hover:bg-gray-50 transition" data-row-id="${row.id}">
+                <td class="px-3 py-2 text-sm font-medium text-gray-500 whitespace-nowrap">${index + 1}</td>
                 ${currentColumns.map(col => {
                     const value = rowData[col.name];
                     let display = '';
+                    let cellContent = '';
+
                     if (col.type === 'checkbox') {
-                        display = `<input type="checkbox" ${value ? 'checked' : ''} onchange="window.toggleCheckbox('${row.id}', '${col.name}', this.checked)" class="w-4 h-4 rounded text-amber-600 border-gray-300 focus:ring-amber-500">`;
+                        const checked = value ? 'checked' : '';
+                        display = `<input type="checkbox" ${checked} onchange="window.updateCell('${row.id}', '${col.name}', this.checked)" class="w-5 h-5 rounded text-amber-600 border-gray-300 focus:ring-amber-500">`;
                     } else if (col.type === 'vehicle') {
-                        const vehicle = allVehicles.find(v => v.id === value);
-                        const displayName = vehicle ? `${vehicle.model} ${vehicle.plate ? '['+vehicle.plate+']' : ''}` : '—';
-                        display = `
-                            <select onchange="window.selectVehicle('${row.id}', '${col.name}', this.value)" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-2 py-1 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent">
+                        // Показываем выпадающий список для выбора техники
+                        const selectedId = value || '';
+                        cellContent = `
+                            <select onchange="window.updateCell('${row.id}', '${col.name}', this.value)" class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded-lg p-1 text-sm">
                                 <option value="">—</option>
-                                ${allVehicles.map(v => `<option value="${v.id}" ${v.id === value ? 'selected' : ''}>${v.model} ${v.plate ? '['+v.plate+']' : ''}</option>`).join('')}
+                                ${allVehicles.map(v => `<option value="${v.id}" ${String(v.id) === String(selectedId) ? 'selected' : ''}>${v.model} ${v.plate ? '['+v.plate+']' : ''}</option>`).join('')}
                             </select>
                         `;
                     } else {
-                        display = `<input type="text" value="${value || ''}" onchange="window.updateCell('${row.id}', '${col.name}', this.value)" class="w-full bg-transparent border-b border-gray-300 focus:border-amber-400 focus:outline-none px-1 py-0.5">`;
+                        // Текст – редактируемое поле
+                        cellContent = `
+                            <input type="text" value="${value || ''}" onchange="window.updateCell('${row.id}', '${col.name}', this.value)" class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded-lg p-1 text-sm" placeholder="—">
+                        `;
                     }
-                    return `<td class="px-3 py-2 text-sm text-gray-800">${display}</td>`;
+
+                    return `<td class="px-3 py-2 text-sm text-gray-800">${cellContent || display}</td>`;
                 }).join('')}
-                <td class="px-3 py-2 text-center">
-                    <button onclick="window.deleteRow('${row.id}')" class="text-red-400 hover:text-red-600 text-xs">🗑️</button>
+                <td class="px-3 py-2 text-center whitespace-nowrap">
+                    <button onclick="window.deleteRow('${row.id}')" class="text-red-400 hover:text-red-600 text-sm">🗑️</button>
                 </td>
             </tr>
         `;
     }).join('');
 }
 
-// ===== Функции для inline-редактирования =====
-window.toggleCheckbox = async (rowId, colName, checked) => {
-    const row = currentRows.find(r => r.id === rowId);
-    if (!row) return;
-    row.row_data[colName] = checked;
-    try {
-        await window._supabase
-            .from('inspection_rows')
-            .update({ row_data: row.row_data })
-            .eq('id', rowId);
-    } catch (err) {
-        console.error('Ошибка сохранения чекбокса:', err);
-    }
-};
-
+// ===== Обновление ячейки (инлайн) =====
 window.updateCell = async (rowId, colName, value) => {
     const row = currentRows.find(r => r.id === rowId);
     if (!row) return;
-    row.row_data[colName] = value;
-    try {
-        await window._supabase
-            .from('inspection_rows')
-            .update({ row_data: row.row_data })
-            .eq('id', rowId);
-    } catch (err) {
-        console.error('Ошибка сохранения текста:', err);
-    }
-};
+    const rowData = row.row_data || {};
 
-window.selectVehicle = async (rowId, colName, vehicleId) => {
-    const row = currentRows.find(r => r.id === rowId);
-    if (!row) return;
-    row.row_data[colName] = vehicleId || null;
+    // Для checkbox – value приходит как boolean (из атрибута checked)
+    // Для vehicle – value – это id техники (строка или число)
+    // Для text – value – это строка
+
+    // Если колонка типа vehicle – приводим к числу (если id – число)
+    const col = currentColumns.find(c => c.name === colName);
+    if (col && col.type === 'vehicle') {
+        // Если value пустая строка – сохраняем null
+        if (value === '') {
+            rowData[colName] = null;
+        } else {
+            // Пытаемся преобразовать в число, если id – число
+            const numValue = Number(value);
+            rowData[colName] = isNaN(numValue) ? value : numValue;
+        }
+    } else {
+        rowData[colName] = value;
+    }
+
+    // Обновляем локально
+    row.row_data = rowData;
+
+    // Сохраняем в БД
     try {
-        await window._supabase
+        const { error } = await window._supabase
             .from('inspection_rows')
-            .update({ row_data: row.row_data })
+            .update({ row_data: rowData })
             .eq('id', rowId);
+        if (error) throw error;
+        // Перерисовываем только эту строку, но для простоты перерисуем всю таблицу
+        renderTable();
     } catch (err) {
-        console.error('Ошибка сохранения техники:', err);
+        alert('Ошибка сохранения: ' + err.message);
     }
 };
 
@@ -433,10 +434,9 @@ window.addRow = async () => {
         else rowData[col.name] = '';
     });
     try {
-        const { data, error } = await window._supabase
+        const { error } = await window._supabase
             .from('inspection_rows')
-            .insert([{ template_id: currentTemplateId, row_data: rowData }])
-            .select();
+            .insert([{ template_id: currentTemplateId, row_data: rowData }]);
         if (error) throw error;
         await loadRows(currentTemplateId);
         renderTable();
