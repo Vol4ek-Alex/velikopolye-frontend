@@ -20,12 +20,107 @@
     <link rel="manifest" href="manifest.json">
     
     <style>
+        /* ===== CSS-ПЕРЕМЕННЫЕ ДЛЯ ТЕМ ===== */
+        :root {
+            /* Светлая тема (по умолчанию) */
+            --bg-body: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
+            --bg-sidebar: rgba(255,255,255,0.95);
+            --bg-sidebar-border: rgba(0,0,0,0.05);
+            --bg-card: #ffffff;
+            --bg-card-hover: #f9fafb;
+            --bg-input: #f9fafb;
+            --bg-input-border: #e5e7eb;
+            --bg-gray-50: #f9fafb;
+            --bg-gray-100: #f3f4f6;
+            --bg-gray-200: #e5e7eb;
+            --bg-gray-300: #d1d5db;
+            --bg-gray-400: #9ca3af;
+            --bg-gray-500: #6b7280;
+            --bg-gray-600: #4b5563;
+            --bg-gray-700: #374151;
+            --bg-gray-800: #1f2937;
+            --bg-gray-900: #111827;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --text-light: #9ca3af;
+            --text-white: #ffffff;
+            --border-light: rgba(0,0,0,0.05);
+            --border-gray-100: #f3f4f6;
+            --border-gray-200: #e5e7eb;
+            --border-gray-300: #d1d5db;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --scrollbar-thumb: #d1d5db;
+            --scrollbar-thumb-hover: #9ca3af;
+            --nav-item-hover: #f3f4f6;
+            --nav-item-active: #eef2ff;
+            --nav-item-active-text: #4f46e5;
+            --nav-group-title: #9ca3af;
+            --nav-group-border: #e5e7eb;
+            --auth-card-bg: #ffffff;
+            --auth-card-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            --toast-bg: #1f2937;
+            --toast-text: #ffffff;
+            --module-bg: transparent;
+        }
+
+        /* Тёмная тема */
+        [data-theme="dark"] {
+            --bg-body: linear-gradient(145deg, #111827 0%, #1f2937 100%);
+            --bg-sidebar: rgba(31, 41, 55, 0.95);
+            --bg-sidebar-border: rgba(255,255,255,0.05);
+            --bg-card: #1f2937;
+            --bg-card-hover: #374151;
+            --bg-input: #374151;
+            --bg-input-border: #4b5563;
+            --bg-gray-50: #1f2937;
+            --bg-gray-100: #374151;
+            --bg-gray-200: #4b5563;
+            --bg-gray-300: #6b7280;
+            --bg-gray-400: #9ca3af;
+            --bg-gray-500: #d1d5db;
+            --bg-gray-600: #e5e7eb;
+            --bg-gray-700: #f3f4f6;
+            --bg-gray-800: #f9fafb;
+            --bg-gray-900: #ffffff;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-muted: #9ca3af;
+            --text-light: #6b7280;
+            --text-white: #ffffff;
+            --border-light: rgba(255,255,255,0.05);
+            --border-gray-100: #374151;
+            --border-gray-200: #4b5563;
+            --border-gray-300: #6b7280;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+            --scrollbar-thumb: #4b5563;
+            --scrollbar-thumb-hover: #6b7280;
+            --nav-item-hover: #374151;
+            --nav-item-active: #312e81;
+            --nav-item-active-text: #818cf8;
+            --nav-group-title: #6b7280;
+            --nav-group-border: #374151;
+            --auth-card-bg: #1f2937;
+            --auth-card-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            --toast-bg: #f9fafb;
+            --toast-text: #1f2937;
+            --module-bg: transparent;
+        }
+
+        /* ===== ОСНОВНЫЕ СТИЛИ ===== */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
+            background: var(--bg-body);
             height: 100vh;
             overflow: hidden;
+            transition: background 0.4s ease;
         }
         #app {
             display: flex;
@@ -40,9 +135,9 @@
             left: 0;
             height: 100%;
             width: 280px;
-            background: rgba(255,255,255,0.95);
+            background: var(--bg-sidebar);
             backdrop-filter: blur(8px);
-            border-right: 1px solid rgba(0,0,0,0.05);
+            border-right: 1px solid var(--bg-sidebar-border);
             box-shadow: 4px 0 20px rgba(0,0,0,0.05);
             transform: translateX(-100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -75,7 +170,8 @@
             overflow-y: auto;
             padding: 16px;
             padding-top: 80px;
-            background: transparent;
+            background: var(--module-bg);
+            transition: background 0.4s ease;
         }
         @media (min-width: 768px) {
             #main {
@@ -102,7 +198,7 @@
             gap: 8px;
             font-size: 18px;
             font-weight: 500;
-            color: #1f2937;
+            color: var(--text-primary);
             opacity: 1;
             transform: translateY(0);
             pointer-events: auto;
@@ -134,7 +230,7 @@
             border-radius: 10px;
             font-size: 14px;
             font-weight: 500;
-            color: #4b5563;
+            color: var(--text-secondary);
             transition: all 0.15s;
             cursor: pointer;
             width: 100%;
@@ -142,23 +238,23 @@
             background: transparent;
         }
         .nav-item:hover {
-            background: #f3f4f6;
-            color: #1f2937;
+            background: var(--nav-item-hover);
+            color: var(--text-primary);
         }
         .nav-item.active {
-            background: #eef2ff;
-            color: #4f46e5;
+            background: var(--nav-item-active);
+            color: var(--nav-item-active-text);
             font-weight: 600;
-            border-right: 3px solid #4f46e5;
+            border-right: 3px solid var(--nav-item-active-text);
         }
         .nav-group-title {
             font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            color: #9ca3af;
+            color: var(--nav-group-title);
             padding: 12px 12px 6px 12px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--nav-group-border);
             margin-bottom: 4px;
         }
         .user-avatar {
@@ -177,8 +273,8 @@
         }
         #main::-webkit-scrollbar { width: 6px; }
         #main::-webkit-scrollbar-track { background: transparent; }
-        #main::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        #main::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        #main::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+        #main::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
         .module-enter {
             animation: fadeIn 0.4s ease-out;
         }
@@ -198,13 +294,14 @@
             padding: 16px;
         }
         .auth-card {
-            background: white;
+            background: var(--auth-card-bg);
             border-radius: 32px;
             max-width: 440px;
             width: 100%;
             padding: 32px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            box-shadow: var(--auth-card-shadow);
             text-align: center;
+            transition: background 0.3s, box-shadow 0.3s;
         }
         .auth-card .icon {
             width: 72px;
@@ -220,21 +317,22 @@
         .auth-card h2 {
             font-size: 24px;
             font-weight: 800;
-            color: #1f2937;
+            color: var(--text-primary);
             margin-bottom: 4px;
         }
         .auth-card p.sub {
-            color: #6b7280;
+            color: var(--text-muted);
             font-size: 14px;
             margin-bottom: 24px;
         }
         .auth-card input, .auth-card select {
             width: 100%;
             padding: 12px 16px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--bg-input-border);
             border-radius: 16px;
             font-size: 14px;
-            background: #f9fafb;
+            background: var(--bg-input);
+            color: var(--text-primary);
             transition: border 0.2s;
         }
         .auth-card input:focus, .auth-card select:focus {
@@ -267,6 +365,29 @@
         #pwaInstallBtn {
             display: none !important;
         }
+
+        /* Переключатель темы */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: var(--bg-gray-100);
+            border: 1px solid var(--border-gray-200);
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            width: 100%;
+        }
+        .theme-toggle:hover {
+            background: var(--bg-gray-200);
+        }
+        .theme-toggle .icon {
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
@@ -279,7 +400,7 @@
             <h2>Вход в АРМ</h2>
             <p class="sub">филиал СХК «Великополье»</p>
             <div style="text-align: left; margin-bottom: 16px;">
-                <label style="display: block; font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 4px;">Должность</label>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Должность</label>
                 <select id="authRoleSelect">
                     <option value="Директор">Директор</option>
                     <option value="Инженер по ЭМТП">Инженер по ЭМТП</option>
@@ -288,7 +409,7 @@
                 </select>
             </div>
             <div style="text-align: left; margin-bottom: 20px;">
-                <label style="display: block; font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 4px;">ПИН-код</label>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">ПИН-код</label>
                 <input type="password" id="sitePinInput" inputmode="numeric" pattern="[0-9]*" placeholder="••••">
             </div>
             <button class="btn-primary" onclick="checkSiteAccess()">Войти</button>
@@ -312,8 +433,14 @@
             </div>
             <nav id="menuContainer" class="space-y-0.5"></nav>
         </div>
-        <!-- Блок пользователя (без кнопки PWA) -->
+        <!-- Блок пользователя + переключатель темы -->
         <div class="space-y-4 border-t border-gray-100/80 pt-4 mt-auto">
+            <!-- Переключатель темы -->
+            <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">
+                <span class="icon" id="themeIcon">🌙</span>
+                <span id="themeLabel">Тёмная тема</span>
+            </button>
+
             <div class="bg-gray-50/80 border border-gray-200/80 rounded-2xl p-3 flex items-center justify-between shadow-sm gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <div id="userAvatar" class="user-avatar">В</div>
@@ -342,6 +469,41 @@
 </div>
 
 <script>
+    // ===== УПРАВЛЕНИЕ ТЕМОЙ =====
+    (function() {
+        // Определяем сохранённую тему
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeUI(savedTheme);
+
+        window.toggleTheme = function() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateThemeUI(next);
+        };
+
+        function updateThemeUI(theme) {
+            const icon = document.getElementById('themeIcon');
+            const label = document.getElementById('themeLabel');
+            if (theme === 'dark') {
+                icon.textContent = '☀️';
+                label.textContent = 'Светлая тема';
+            } else {
+                icon.textContent = '🌙';
+                label.textContent = 'Тёмная тема';
+            }
+        }
+
+        // Синхронизация темы при загрузке страницы
+        window.addEventListener('load', function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeUI(theme);
+        });
+    })();
+
     // ===== Управление кнопкой меню =====
     (function() {
         const menuBtn = document.getElementById('menuToggle');
@@ -375,7 +537,6 @@
         });
 
         // Перехватываем открытие/закрытие меню
-        const origToggle = window.toggleSidebar;
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -443,7 +604,6 @@
             const container = document.getElementById('menuContainer');
             if (!container) return;
 
-            // Группируем модули
             const groups = {
                 main: { title: 'Основное', modules: [] },
                 docs: { title: 'Документы', modules: [] },
@@ -483,12 +643,11 @@
             });
         }
 
-        // PWA (кнопка теперь не показывается)
+        // PWA (кнопка не показывается)
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Кнопка скрыта – ничего не делаем
         });
 
         // Аутентификация
@@ -553,7 +712,6 @@
             }
         }
 
-        // Старт
         document.addEventListener('DOMContentLoaded', () => {
             verifySession();
             renderMenu();
@@ -562,56 +720,47 @@
             }
         });
     })();
-    // В index.html внутри основного скрипта
 
-    // Простой тост-уведомление
+    // ===== ТОСТ-УВЕДОМЛЕНИЯ =====
     window.showToast = (message, type = 'info') => {
         const toast = document.createElement('div');
-        toast.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-lg z-[200] text-sm font-medium transition-all duration-300 opacity-0`;
+        toast.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-xl shadow-lg z-[200] text-sm font-medium transition-all duration-300 opacity-0`;
         toast.textContent = message;
         if (type === 'info') toast.style.backgroundColor = '#4f46e5';
-        if (type === 'success') toast.style.backgroundColor = '#059669';
-        if (type === 'error') toast.style.backgroundColor = '#dc2626';
+        else if (type === 'success') toast.style.backgroundColor = '#059669';
+        else if (type === 'error') toast.style.backgroundColor = '#dc2626';
+        else toast.style.backgroundColor = '#1f2937';
+        toast.style.color = '#ffffff';
         document.body.appendChild(toast);
 
         setTimeout(() => { toast.style.opacity = '1'; }, 50);
         setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
     };
 
-    // Очистка устаревших данных при запуске
-    const APP_VERSION = '1.0.2'; // увеличивайте при изменениях
+    // ===== УПРАВЛЕНИЕ ВЕРСИЕЙ =====
+    const APP_VERSION = '1.0.3';
     const storedVersion = localStorage.getItem('app_version');
-
     if (storedVersion !== APP_VERSION) {
-        // Очищаем кэш старых данных
         localStorage.clear();
         sessionStorage.clear();
         localStorage.setItem('app_version', APP_VERSION);
         console.log('🧹 Кэш данных очищен (новая версия)');
     }
 
-    // Регистрация Service Worker с принудительным обновлением
+    // ===== SERVICE WORKER С ПРИНУДИТЕЛЬНЫМ ОБНОВЛЕНИЕМ =====
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
             .then(reg => {
-                // Проверяем обновления при каждой загрузке
                 reg.update();
-
-                // Автоматически обновляем приложение, если есть новая версия
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // Показываем уведомление о новой версии (опционально)
                             console.log('📦 Новая версия приложения доступна!');
-                            // Можно показать тост: "Приложение обновлено"
                             if (window.showToast) {
                                 window.showToast('Приложение обновлено!', 'info');
                             }
-                            // Перезагружаем страницу, чтобы применить обновление
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
+                            setTimeout(() => { window.location.reload(); }, 2000);
                         }
                     });
                 });
@@ -619,14 +768,10 @@
             .catch(err => console.error('SW error:', err));
     }
 
-    // Функция для принудительного обновления (по требованию пользователя)
     window.forceUpdateApp = () => {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistration().then(reg => {
-                if (reg) {
-                    reg.update();
-                    alert('Поиск обновлений...');
-                }
+                if (reg) { reg.update(); alert('Поиск обновлений...'); }
             });
         }
     };
