@@ -1,223 +1,199 @@
-// js/repair.js
+// js/repair_requests.js
 
 export const template = `
+<div class="space-y-6">
     <!-- Верхняя панель -->
-    <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
                 <span class="bg-orange-100 p-1.5 rounded-lg">🔧</span> Заявки на ремонт
             </h2>
             <p class="text-sm text-gray-500 font-medium">Учёт заявок на ремонт и обслуживание техники</p>
         </div>
-        <button onclick="window.openRepairModal()" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2">
-            ➕ Создать заявку
+        <button onclick="window.openRequestModal()" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2">
+            ➕ Новая заявка
         </button>
     </div>
 
-    <!-- Статистика -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <div class="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm">
-            <p class="text-xs text-gray-500 font-medium">Всего</p>
-            <p id="statTotal" class="text-2xl font-black text-gray-900">0</p>
-        </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center shadow-sm">
-            <p class="text-xs text-blue-600 font-medium">Новые</p>
-            <p id="statNew" class="text-2xl font-black text-blue-700">0</p>
-        </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center shadow-sm">
-            <p class="text-xs text-amber-600 font-medium">В работе</p>
-            <p id="statInProgress" class="text-2xl font-black text-amber-700">0</p>
-        </div>
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center shadow-sm">
-            <p class="text-xs text-emerald-600 font-medium">Выполнено</p>
-            <p id="statCompleted" class="text-2xl font-black text-emerald-700">0</p>
-        </div>
-        <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-center shadow-sm">
-            <p class="text-xs text-red-600 font-medium">Закрыто</p>
-            <p id="statClosed" class="text-2xl font-black text-red-700">0</p>
-        </div>
-    </div>
-
     <!-- Фильтры -->
-    <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm mb-6">
-        <div class="flex flex-wrap items-center gap-3">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Статус:</span>
-            <button onclick="window.filterRepairs('all')" id="repairFilter_all" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-orange-600 bg-orange-600 text-white">Все</button>
-            <button onclick="window.filterRepairs('new')" id="repairFilter_new" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-gray-300 text-gray-700 hover:border-orange-400">Новые</button>
-            <button onclick="window.filterRepairs('assigned')" id="repairFilter_assigned" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-gray-300 text-gray-700 hover:border-orange-400">Назначены</button>
-            <button onclick="window.filterRepairs('in_progress')" id="repairFilter_in_progress" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-gray-300 text-gray-700 hover:border-orange-400">В работе</button>
-            <button onclick="window.filterRepairs('completed')" id="repairFilter_completed" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-gray-300 text-gray-700 hover:border-orange-400">Выполнено</button>
-            <button onclick="window.filterRepairs('closed')" id="repairFilter_closed" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-gray-300 text-gray-700 hover:border-orange-400">Закрыто</button>
-        </div>
-        <div class="mt-3 flex flex-wrap gap-3">
-            <input type="text" id="repairSearchInput" placeholder="🔍 Поиск по названию или описанию..." class="flex-1 min-w-[200px] bg-gray-50 border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent">
-            <button onclick="window.openRepairModal()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm">+ Новая</button>
-        </div>
+    <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-3">
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-1">Фильтр по статусу:</span>
+        <button onclick="window.filterRequests('all')" id="statusFilter_all" class="px-3 py-1 text-xs font-bold rounded-xl border-2 border-orange-600 bg-orange-600 text-white">Все</button>
+        <div id="statusFilterContainer" class="flex flex-wrap gap-2"></div>
+        <button onclick="window.openStatusManager()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-xl border border-gray-300 transition">+ Управлять</button>
     </div>
 
     <!-- Список заявок -->
-    <div id="repairList" class="space-y-3">
+    <div id="requestsGrid" class="space-y-3">
         <div class="text-center text-gray-400 py-12 text-sm font-medium bg-white rounded-2xl border border-gray-200">Загрузка заявок...</div>
     </div>
 
-    <!-- Модалка создания/редактирования -->
-    <div id="repairFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto">
-            <button onclick="window.closeRepairModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
-            <h3 id="repairModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Создание заявки</h3>
-            <form id="repairForm" class="space-y-4 text-sm">
-                <input type="hidden" id="repairId">
+    <!-- Модалка создания/редактирования заявки -->
+    <div id="requestFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
+            <button onclick="window.closeRequestModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
+            <h3 id="requestModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Новая заявка</h3>
+            <form id="requestForm" class="space-y-4 text-sm">
+                <input type="hidden" id="requestId">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Краткое описание *</label>
-                    <input type="text" id="repairTitle" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="Например: Замена масла в двигателе">
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Заголовок *</label>
+                    <input type="text" id="requestTitle" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="Краткое описание">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Техника *</label>
-                    <select id="repairVehicle" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent">
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Техника</label>
+                    <select id="requestVehicle" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent">
                         <option value="">-- Выберите технику --</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Приоритет</label>
-                    <select id="repairPriority" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent">
-                        <option value="low">🟢 Низкий</option>
-                        <option value="medium" selected>🟡 Средний</option>
-                        <option value="high">🟠 Высокий</option>
-                        <option value="critical">🔴 Критический</option>
-                    </select>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Описание</label>
+                    <textarea id="requestDescription" rows="3" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="Подробности неисправности"></textarea>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Подробное описание</label>
-                    <textarea id="repairDescription" rows="3" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="Опишите проблему подробно..."></textarea>
-                </div>
-                <div id="repairAdminFields" class="hidden border-t border-gray-100 pt-4 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Приоритет</label>
+                        <div class="flex gap-1">
+                            <select id="requestPriority" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent">
+                                <option value="low">Низкий</option>
+                                <option value="normal" selected>Средний</option>
+                                <option value="high">Высокий</option>
+                                <option value="critical">Критический</option>
+                            </select>
+                            <button type="button" onclick="window.addPriorityOption()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 rounded-xl border border-gray-300 transition" title="Добавить новый приоритет">+</button>
+                        </div>
+                    </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Статус</label>
-                        <select id="repairStatus" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent">
-                            <option value="new">🆕 Новая</option>
-                            <option value="assigned">👤 Назначена</option>
-                            <option value="in_progress">⚙️ В работе</option>
-                            <option value="completed">✅ Выполнена</option>
-                            <option value="closed">🚫 Закрыта</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Назначить исполнителю</label>
-                        <input type="text" id="repairAssignedTo" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="ФИО механика или водителя">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Предварительная стоимость</label>
-                            <input type="number" id="repairCostEstimate" step="0.01" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="0.00">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Фактическая стоимость</label>
-                            <input type="number" id="repairActualCost" step="0.01" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="0.00">
+                        <div class="flex gap-1">
+                            <select id="requestStatus" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent">
+                                <option value="new">Новая</option>
+                                <option value="in_progress">В работе</option>
+                                <option value="completed">Выполнена</option>
+                                <option value="cancelled">Отменена</option>
+                            </select>
+                            <button type="button" onclick="window.addStatusOption()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 rounded-xl border border-gray-300 transition" title="Добавить новый статус">+</button>
                         </div>
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Примечания</label>
+                    <textarea id="requestNotes" rows="2" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="Дополнительная информация"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Заметки</label>
-                        <textarea id="repairNotes" rows="2" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent" placeholder="Дополнительная информация..."></textarea>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Оценочная стоимость (руб)</label>
+                        <input type="number" id="requestCostEstimate" step="0.01" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Фактическая стоимость (руб)</label>
+                        <input type="number" id="requestActualCost" step="0.01" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-orange-400 focus:border-transparent">
                     </div>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="window.closeRepairModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
+                    <button type="button" onclick="window.closeRequestModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
                     <button type="submit" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
                 </div>
-                <button type="button" id="repairDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить заявку</button>
+                <button type="button" id="requestDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить заявку</button>
             </form>
         </div>
     </div>
+
+    <!-- Модалка управления приоритетами/статусами -->
+    <div id="statusManagerModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+            <button onclick="window.closeStatusManager()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
+            <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Управление статусами и приоритетами</h3>
+            <div>
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Статусы</p>
+                <div id="statusList" class="space-y-1 max-h-32 overflow-y-auto"></div>
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="newStatusInput" placeholder="Новый статус..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent">
+                    <button onclick="window.addStatusItem()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold transition">Добавить</button>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 pt-3">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Приоритеты</p>
+                <div id="priorityList" class="space-y-1 max-h-32 overflow-y-auto"></div>
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="newPriorityInput" placeholder="Новый приоритет..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent">
+                    <button onclick="window.addPriorityItem()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold transition">Добавить</button>
+                </div>
+            </div>
+            <button onclick="window.closeStatusManager()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
+        </div>
+    </div>
+</div>
 `;
 
-// ===== Глобальные переменные =====
-let repairs = [];
+// ===== Глобальные данные =====
+let requests = [];
 let vehicles = [];
-let currentFilter = 'all';
-let searchQuery = '';
-let refreshIntervalId = null;
-let editingRepairId = null;
+let allStatuses = ['new', 'in_progress', 'completed', 'cancelled'];
+let allPriorities = ['low', 'normal', 'high', 'critical'];
 
-// ===== Вспомогательные функции =====
-const STATUS_LABELS = {
-    'new': { label: 'Новая', color: 'bg-blue-100 text-blue-800' },
-    'assigned': { label: 'Назначена', color: 'bg-amber-100 text-amber-800' },
-    'in_progress': { label: 'В работе', color: 'bg-amber-100 text-amber-800' },
-    'completed': { label: 'Выполнена', color: 'bg-emerald-100 text-emerald-800' },
-    'closed': { label: 'Закрыта', color: 'bg-gray-100 text-gray-800' }
-};
-
-const PRIORITY_LABELS = {
-    'low': { label: '🟢 Низкий', color: 'bg-green-100 text-green-800' },
-    'medium': { label: '🟡 Средний', color: 'bg-yellow-100 text-yellow-800' },
-    'high': { label: '🟠 Высокий', color: 'bg-orange-100 text-orange-800' },
-    'critical': { label: '🔴 Критический', color: 'bg-red-100 text-red-800' }
-};
+// Храним соответствие отображаемых названий и значений
+const statusDisplay = { 'new': 'Новая', 'in_progress': 'В работе', 'completed': 'Выполнена', 'cancelled': 'Отменена' };
+const priorityDisplay = { 'low': 'Низкий', 'normal': 'Средний', 'high': 'Высокий', 'critical': 'Критический' };
 
 // ===== Инициализация =====
 export async function init() {
-    console.log('🔧 Модуль "Заявки на ремонт" инициализирован');
+    console.log('🔧 Модуль заявок инициализирован');
 
     // Глобальные функции
-    window.openRepairModal = openRepairModal;
-    window.closeRepairModal = closeRepairModal;
-    window.filterRepairs = filterRepairs;
+    window.openRequestModal = openRequestModal;
+    window.closeRequestModal = closeRequestModal;
+    window.filterRequests = filterRequests;
+    window.openStatusManager = openStatusManager;
+    window.closeStatusManager = closeStatusManager;
+    window.addPriorityOption = addPriorityOption;
+    window.addStatusOption = addStatusOption;
+    window.addStatusItem = addStatusItem;
+    window.addPriorityItem = addPriorityItem;
 
-    // Привязка формы
-    const form = document.getElementById('repairForm');
-    if (form) {
-        form.removeEventListener('submit', handleFormSubmit);
-        form.addEventListener('submit', handleFormSubmit);
-    }
-
-    const deleteBtn = document.getElementById('repairDeleteBtn');
-    if (deleteBtn) {
-        deleteBtn.removeEventListener('click', handleDelete);
-        deleteBtn.addEventListener('click', handleDelete);
-    }
-
-    // Поиск
-    const searchInput = document.getElementById('repairSearchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            searchQuery = e.target.value.toLowerCase().trim();
-            renderRepairs();
-        });
-    }
-
-    // Загрузка данных
+    // Загружаем технику
     await loadVehicles();
-    await loadRepairs();
-    renderStats();
-    renderRepairs();
 
-    // Автообновление
-    if (refreshIntervalId) clearInterval(refreshIntervalId);
-    refreshIntervalId = setInterval(async () => {
-        await loadRepairs();
-        renderStats();
-        renderRepairs();
-    }, 10000);
+    // Загружаем заявки
+    await loadRequests();
+    renderRequests();
+
+    // Обработчики форм
+    const form = document.getElementById('requestForm');
+    if (form) form.addEventListener('submit', handleRequestSubmit);
+
+    const deleteBtn = document.getElementById('requestDeleteBtn');
+    if (deleteBtn) deleteBtn.addEventListener('click', handleDeleteRequest);
+
+    // Загружаем сохранённые статусы/приоритеты из localStorage
+    loadCustomOptions();
 }
 
-// ===== Загрузка данных =====
+// ===== Загрузка техники =====
 async function loadVehicles() {
     if (!window._supabase) return;
     try {
         const { data, error } = await window._supabase
             .from('vehicles')
-            .select('id, model, plate, inv_number')
-            .order('model', { ascending: true });
+            .select('id, model, plate')
+            .order('model');
         if (error) throw error;
         vehicles = data || [];
-        // Обновить селект
-        populateVehicleSelect();
-    } catch (e) {
-        console.error('Ошибка загрузки техники:', e);
+        console.log(`✅ Загружено ${vehicles.length} единиц техники`);
+        fillVehicleSelect();
+    } catch (err) {
+        console.error('Ошибка загрузки техники:', err);
     }
 }
 
-async function loadRepairs() {
+function fillVehicleSelect() {
+    const select = document.getElementById('requestVehicle');
+    if (!select) return;
+    select.innerHTML = '<option value="">-- Выберите технику --</option>' +
+        vehicles.map(v => `<option value="${v.id}">${v.model} ${v.plate ? '['+v.plate+']' : ''}</option>`).join('');
+}
+
+// ===== Загрузка заявок =====
+async function loadRequests() {
     if (!window._supabase) return;
     try {
         const { data, error } = await window._supabase
@@ -225,266 +201,405 @@ async function loadRepairs() {
             .select('*')
             .order('created_at', { ascending: false });
         if (error) throw error;
-        repairs = data || [];
-    } catch (e) {
-        console.error('Ошибка загрузки заявок:', e);
+        requests = data || [];
+        console.log(`✅ Загружено ${requests.length} заявок`);
+    } catch (err) {
+        console.error('Ошибка загрузки заявок:', err);
     }
 }
 
-function populateVehicleSelect() {
-    const select = document.getElementById('repairVehicle');
-    if (!select) return;
-    select.innerHTML = '<option value="">-- Выберите технику --</option>' +
-        vehicles.map(v => `<option value="${v.id}">${v.model} ${v.plate ? '['+v.plate+']' : ''} ${v.inv_number ? '('+v.inv_number+')' : ''}</option>`).join('');
-}
-
-function getVehicleName(id) {
-    const v = vehicles.find(v => v.id === id);
-    return v ? `${v.model} ${v.plate ? '['+v.plate+']' : ''}` : 'Неизвестная техника';
-}
-
-// ===== Рендеринг статистики =====
-function renderStats() {
-    const total = repairs.length;
-    const stats = {
-        'statNew': repairs.filter(r => r.status === 'new').length,
-        'statInProgress': repairs.filter(r => r.status === 'assigned' || r.status === 'in_progress').length,
-        'statCompleted': repairs.filter(r => r.status === 'completed').length,
-        'statClosed': repairs.filter(r => r.status === 'closed').length
-    };
-    document.getElementById('statTotal').textContent = total;
-    for (const [id, value] of Object.entries(stats)) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
-    }
-}
-
-// ===== Фильтрация =====
-function filterRepairs(status) {
-    currentFilter = status;
-    // Обновить активную кнопку
-    document.querySelectorAll('[id^="repairFilter_"]').forEach(btn => {
-        btn.classList.remove('border-orange-600', 'bg-orange-600', 'text-white');
-        btn.classList.add('border-gray-300', 'text-gray-700');
-    });
-    const activeBtn = document.getElementById('repairFilter_' + status);
-    if (activeBtn) {
-        activeBtn.classList.remove('border-gray-300', 'text-gray-700');
-        activeBtn.classList.add('border-orange-600', 'bg-orange-600', 'text-white');
-    }
-    renderRepairs();
-}
-window.filterRepairs = filterRepairs;
-
-// ===== Рендеринг списка заявок =====
-function renderRepairs() {
-    const container = document.getElementById('repairList');
+// ===== Рендеринг заявок =====
+function renderRequests() {
+    const container = document.getElementById('requestsGrid');
     if (!container) return;
 
-    let filtered = repairs;
-    if (currentFilter !== 'all') {
-        filtered = filtered.filter(r => r.status === currentFilter);
-    }
-    if (searchQuery) {
-        filtered = filtered.filter(r =>
-            (r.title || '').toLowerCase().includes(searchQuery) ||
-            (r.description || '').toLowerCase().includes(searchQuery)
-        );
-    }
+    const filtered = getFilteredRequests();
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-400 py-12 text-sm font-medium bg-white rounded-2xl border border-gray-200">Нет заявок</div>';
+        container.innerHTML = `<div class="text-center text-gray-400 py-12 text-sm font-medium bg-white rounded-2xl border border-gray-200">Нет заявок</div>`;
         return;
     }
 
-    container.innerHTML = filtered.map(r => {
-        const statusInfo = STATUS_LABELS[r.status] || STATUS_LABELS['new'];
-        const priorityInfo = PRIORITY_LABELS[r.priority] || PRIORITY_LABELS['medium'];
-        const vehicleName = getVehicleName(r.vehicle_id);
-        const createdDate = r.created_at ? new Date(r.created_at).toLocaleDateString('ru-RU') : '—';
-        const isAdmin = localStorage.getItem('user_role') === 'Директор' || localStorage.getItem('user_role') === 'Инженер по ЭМТП';
+    container.innerHTML = filtered.map(req => {
+        const vehicle = vehicles.find(v => v.id === req.vehicle_id);
+        const vehicleName = vehicle ? `${vehicle.model} ${vehicle.plate ? '['+vehicle.plate+']' : ''}` : '—';
+        const priorityText = priorityDisplay[req.priority] || req.priority;
+        const statusText = statusDisplay[req.status] || req.status;
+
+        let priorityColor = 'bg-gray-100 text-gray-700';
+        if (req.priority === 'low') priorityColor = 'bg-green-100 text-green-800';
+        else if (req.priority === 'normal') priorityColor = 'bg-blue-100 text-blue-800';
+        else if (req.priority === 'high') priorityColor = 'bg-yellow-100 text-yellow-800';
+        else if (req.priority === 'critical') priorityColor = 'bg-red-100 text-red-800';
+
+        let statusColor = 'bg-gray-100 text-gray-700';
+        if (req.status === 'new') statusColor = 'bg-blue-100 text-blue-800';
+        else if (req.status === 'in_progress') statusColor = 'bg-amber-100 text-amber-800';
+        else if (req.status === 'completed') statusColor = 'bg-green-100 text-green-800';
+        else if (req.status === 'cancelled') statusColor = 'bg-red-100 text-red-800';
+
+        const date = new Date(req.created_at).toLocaleDateString('ru-RU');
 
         return `
-            <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="font-bold text-gray-900 text-sm">${r.title}</span>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${statusInfo.color}">${statusInfo.label}</span>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${priorityInfo.color}">${priorityInfo.label}</span>
+            <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="window.openRequestModal('${req.id}')">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-gray-900">${req.title || 'Без заголовка'}</h3>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${priorityColor}">${priorityText}</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${statusColor}">${statusText}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">${req.description || '—'}</p>
+                        <div class="text-xs text-gray-500 mt-1">🚜 ${vehicleName}</div>
                     </div>
-                    <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-                        <span>🚜 ${vehicleName}</span>
-                        <span>📅 ${createdDate}</span>
-                        ${r.assigned_to ? `<span>👤 ${r.assigned_to}</span>` : ''}
-                    </div>
-                    ${r.description ? `<p class="text-xs text-gray-600 mt-1 truncate max-w-md">${r.description}</p>` : ''}
+                    <div class="text-xs text-gray-400">📅 ${date}</div>
                 </div>
-                <div class="flex gap-2 flex-shrink-0">
-                    <button onclick="window.openRepairModal('${r.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold transition">✏️ Редактировать</button>
-                    ${isAdmin ? `<button onclick="window.deleteRepair('${r.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-red-200">🗑️</button>` : ''}
-                </div>
+                ${req.notes ? `<div class="text-xs text-gray-500 mt-2 border-t border-gray-100 pt-2">📝 ${req.notes}</div>` : ''}
             </div>
         `;
     }).join('');
 }
 
-// ===== Модалка создания/редактирования =====
-function openRepairModal(id = null) {
-    const modal = document.getElementById('repairFormModal');
-    const title = document.getElementById('repairModalTitle');
-    const deleteBtn = document.getElementById('repairDeleteBtn');
-    const adminFields = document.getElementById('repairAdminFields');
+// ===== Фильтрация =====
+let currentStatusFilter = 'all';
 
-    // Заполняем селект техники
-    populateVehicleSelect();
+function filterRequests(status) {
+    currentStatusFilter = status;
+    // Обновляем активную кнопку
+    document.querySelectorAll('#statusFilterContainer button, #statusFilter_all').forEach(btn => {
+        btn.classList.remove('border-orange-600', 'bg-orange-600', 'text-white');
+        btn.classList.add('border-gray-300', 'text-gray-700');
+        if (btn.id === 'statusFilter_all' && status === 'all') {
+            btn.classList.add('border-orange-600', 'bg-orange-600', 'text-white');
+        } else if (btn.dataset.status === status) {
+            btn.classList.add('border-orange-600', 'bg-orange-600', 'text-white');
+        }
+    });
+    renderRequests();
+}
+
+function getFilteredRequests() {
+    if (currentStatusFilter === 'all') return requests;
+    return requests.filter(r => r.status === currentStatusFilter);
+}
+
+// ===== Модалка создания/редактирования =====
+let editingRequestId = null;
+
+function openRequestModal(id = null) {
+    const modal = document.getElementById('requestFormModal');
+    const title = document.getElementById('requestModalTitle');
+    const deleteBtn = document.getElementById('requestDeleteBtn');
+
+    // Заполняем select техники
+    fillVehicleSelect();
+
+    // Заполняем приоритеты и статусы из кастомных списков
+    const prioritySelect = document.getElementById('requestPriority');
+    const statusSelect = document.getElementById('requestStatus');
+    prioritySelect.innerHTML = allPriorities.map(p => `<option value="${p}">${priorityDisplay[p] || p}</option>`).join('');
+    statusSelect.innerHTML = allStatuses.map(s => `<option value="${s}">${statusDisplay[s] || s}</option>`).join('');
 
     if (id) {
-        // Режим редактирования
-        const repair = repairs.find(r => r.id === id);
-        if (!repair) return;
-        editingRepairId = id;
+        const req = requests.find(r => r.id === id);
+        if (!req) return;
+        editingRequestId = id;
         title.textContent = 'Редактирование заявки';
-        document.getElementById('repairId').value = repair.id;
-        document.getElementById('repairTitle').value = repair.title || '';
-        document.getElementById('repairVehicle').value = repair.vehicle_id || '';
-        document.getElementById('repairPriority').value = repair.priority || 'medium';
-        document.getElementById('repairDescription').value = repair.description || '';
-        document.getElementById('repairStatus').value = repair.status || 'new';
-        document.getElementById('repairAssignedTo').value = repair.assigned_to || '';
-        document.getElementById('repairCostEstimate').value = repair.cost_estimate || '';
-        document.getElementById('repairActualCost').value = repair.actual_cost || '';
-        document.getElementById('repairNotes').value = repair.notes || '';
+        document.getElementById('requestId').value = req.id;
+        document.getElementById('requestTitle').value = req.title || '';
+        document.getElementById('requestVehicle').value = req.vehicle_id || '';
+        document.getElementById('requestDescription').value = req.description || '';
+        document.getElementById('requestPriority').value = req.priority || 'normal';
+        document.getElementById('requestStatus').value = req.status || 'new';
+        document.getElementById('requestNotes').value = req.notes || '';
+        document.getElementById('requestCostEstimate').value = req.cost_estimate || '';
+        document.getElementById('requestActualCost').value = req.actual_cost || '';
         deleteBtn.classList.remove('hidden');
-        adminFields.classList.remove('hidden');
     } else {
-        // Режим создания
-        editingRepairId = null;
-        title.textContent = 'Создание заявки';
-        document.getElementById('repairForm').reset();
-        document.getElementById('repairId').value = '';
-        document.getElementById('repairPriority').value = 'medium';
-        document.getElementById('repairStatus').value = 'new';
+        editingRequestId = null;
+        title.textContent = 'Новая заявка';
+        document.getElementById('requestForm').reset();
+        document.getElementById('requestId').value = '';
         deleteBtn.classList.add('hidden');
-        // Для обычных пользователей скрываем админские поля
-        const userRole = localStorage.getItem('user_role');
-        if (userRole === 'Директор' || userRole === 'Инженер по ЭМТП') {
-            adminFields.classList.remove('hidden');
-        } else {
-            adminFields.classList.add('hidden');
-        }
+        // Устанавливаем дату сегодня
+        document.getElementById('requestTitle').value = 'Заявка от ' + new Date().toLocaleDateString('ru-RU');
+        document.getElementById('requestPriority').value = 'normal';
+        document.getElementById('requestStatus').value = 'new';
     }
 
     modal.classList.remove('hidden');
 }
-window.openRepairModal = openRepairModal;
 
-function closeRepairModal() {
-    document.getElementById('repairFormModal').classList.add('hidden');
-    editingRepairId = null;
+function closeRequestModal() {
+    document.getElementById('requestFormModal').classList.add('hidden');
+    editingRequestId = null;
 }
-window.closeRepairModal = closeRepairModal;
 
-// ===== Обработчик формы =====
-async function handleFormSubmit(e) {
+window.closeRequestModal = closeRequestModal;
+window.openRequestModal = openRequestModal;
+
+async function handleRequestSubmit(e) {
     e.preventDefault();
-    const id = document.getElementById('repairId').value;
-    const title = document.getElementById('repairTitle').value.trim();
-    const vehicle_id = document.getElementById('repairVehicle').value;
-    const priority = document.getElementById('repairPriority').value;
-    const description = document.getElementById('repairDescription').value.trim();
-    const status = document.getElementById('repairStatus').value;
-    const assigned_to = document.getElementById('repairAssignedTo').value.trim();
-    const cost_estimate = parseFloat(document.getElementById('repairCostEstimate').value) || null;
-    const actual_cost = parseFloat(document.getElementById('repairActualCost').value) || null;
-    const notes = document.getElementById('repairNotes').value.trim();
+    const id = document.getElementById('requestId').value;
+    const title = document.getElementById('requestTitle').value.trim();
+    const vehicle_id = document.getElementById('requestVehicle').value || null;
+    const description = document.getElementById('requestDescription').value.trim() || null;
+    const priority = document.getElementById('requestPriority').value;
+    const status = document.getElementById('requestStatus').value;
+    const notes = document.getElementById('requestNotes').value.trim() || null;
+    const cost_estimate = parseFloat(document.getElementById('requestCostEstimate').value) || null;
+    const actual_cost = parseFloat(document.getElementById('requestActualCost').value) || null;
 
-    if (!title || !vehicle_id) {
-        alert('Заполните обязательные поля: название и техника!');
+    if (!title) {
+        alert('Заголовок обязателен!');
         return;
     }
 
-    const userRole = localStorage.getItem('user_role') || 'Сотрудник';
-    const userName = localStorage.getItem('user_name') || 'Неизвестный';
+    if (!window._supabase) return;
 
     const payload = {
         title,
-        vehicle_id,
-        priority,
+        vehicle_id: vehicle_id ? parseInt(vehicle_id) : null,
         description,
+        priority,
         status,
-        assigned_to,
+        notes,
         cost_estimate,
         actual_cost,
-        notes,
         updated_at: new Date().toISOString()
     };
 
-    if (!id) {
-        payload.created_by = userName;
-        payload.created_at = new Date().toISOString();
-    }
-
     try {
-        let result;
         if (id) {
-            result = await window._supabase
+            const { error } = await window._supabase
                 .from('repair_requests')
                 .update(payload)
                 .eq('id', id);
+            if (error) throw error;
         } else {
-            result = await window._supabase
+            payload.created_by = localStorage.getItem('user_name') || 'Сотрудник';
+            const { error } = await window._supabase
                 .from('repair_requests')
                 .insert([payload]);
+            if (error) throw error;
         }
-        if (result.error) throw result.error;
-
-        closeRepairModal();
-        await loadRepairs();
-        renderStats();
-        renderRepairs();
-    } catch (e) {
-        alert('Ошибка сохранения: ' + e.message);
+        closeRequestModal();
+        await loadRequests();
+        renderRequests();
+        updateStatusFilterButtons();
+    } catch (err) {
+        alert('Ошибка сохранения: ' + err.message);
     }
 }
 
-// ===== Обработчик удаления =====
-async function handleDelete() {
-    const id = document.getElementById('repairId').value;
+async function handleDeleteRequest() {
+    const id = document.getElementById('requestId').value;
     if (!id) return;
     if (!confirm('Удалить заявку?')) return;
+
     try {
         const { error } = await window._supabase
             .from('repair_requests')
             .delete()
             .eq('id', id);
         if (error) throw error;
-        closeRepairModal();
-        await loadRepairs();
-        renderStats();
-        renderRepairs();
-    } catch (e) {
-        alert('Ошибка удаления: ' + e.message);
+        closeRequestModal();
+        await loadRequests();
+        renderRequests();
+        updateStatusFilterButtons();
+    } catch (err) {
+        alert('Ошибка удаления: ' + err.message);
     }
 }
 
-// ===== Удаление через кнопку на карточке =====
-window.deleteRepair = async (id) => {
-    const userRole = localStorage.getItem('user_role');
-    if (userRole !== 'Директор' && userRole !== 'Инженер по ЭМТП') {
-        alert('Только директор или инженер могут удалять заявки.');
+// ===== Фильтры по статусам (динамические) =====
+function updateStatusFilterButtons() {
+    const container = document.getElementById('statusFilterContainer');
+    if (!container) return;
+
+    // Получаем уникальные статусы из заявок
+    const statuses = [...new Set(requests.map(r => r.status))].filter(Boolean);
+    const allStatusesList = ['all', ...statuses];
+
+    container.innerHTML = statuses.map(s => {
+        const display = statusDisplay[s] || s;
+        const isActive = currentStatusFilter === s;
+        return `<button onclick="window.filterRequests('${s}')" data-status="${s}" class="px-3 py-1 text-xs font-bold rounded-xl border-2 ${isActive ? 'border-orange-600 bg-orange-600 text-white' : 'border-gray-300 text-gray-700'}">${display}</button>`;
+    }).join('');
+}
+
+// ===== Управление кастомными приоритетами/статусами =====
+function loadCustomOptions() {
+    // Загружаем из localStorage
+    const savedStatuses = localStorage.getItem('repair_statuses');
+    const savedPriorities = localStorage.getItem('repair_priorities');
+    if (savedStatuses) {
+        try {
+            const parsed = JSON.parse(savedStatuses);
+            if (Array.isArray(parsed) && parsed.length) {
+                allStatuses = parsed;
+                // Обновляем display-маппинг
+                parsed.forEach(s => { if (!statusDisplay[s]) statusDisplay[s] = s; });
+            }
+        } catch(e) {}
+    }
+    if (savedPriorities) {
+        try {
+            const parsed = JSON.parse(savedPriorities);
+            if (Array.isArray(parsed) && parsed.length) {
+                allPriorities = parsed;
+                parsed.forEach(p => { if (!priorityDisplay[p]) priorityDisplay[p] = p; });
+            }
+        } catch(e) {}
+    }
+}
+
+function saveCustomOptions() {
+    localStorage.setItem('repair_statuses', JSON.stringify(allStatuses));
+    localStorage.setItem('repair_priorities', JSON.stringify(allPriorities));
+}
+
+// ===== Добавление опции через кнопку "+" =====
+function addPriorityOption() {
+    const newValue = prompt('Введите новый приоритет (на английском, например: urgent):');
+    if (!newValue) return;
+    const trimmed = newValue.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!trimmed) return;
+    if (allPriorities.includes(trimmed)) {
+        alert('Такой приоритет уже существует');
         return;
     }
-    if (!confirm('Удалить заявку?')) return;
-    try {
-        const { error } = await window._supabase
-            .from('repair_requests')
-            .delete()
-            .eq('id', id);
-        if (error) throw error;
-        await loadRepairs();
-        renderStats();
-        renderRepairs();
-    } catch (e) {
-        alert('Ошибка удаления: ' + e.message);
+    allPriorities.push(trimmed);
+    priorityDisplay[trimmed] = newValue.trim();
+    saveCustomOptions();
+    // Обновляем select
+    const select = document.getElementById('requestPriority');
+    if (select) {
+        const opt = document.createElement('option');
+        opt.value = trimmed;
+        opt.textContent = priorityDisplay[trimmed];
+        select.appendChild(opt);
+        select.value = trimmed;
     }
+}
+
+function addStatusOption() {
+    const newValue = prompt('Введите новый статус (на английском, например: awaiting_parts):');
+    if (!newValue) return;
+    const trimmed = newValue.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!trimmed) return;
+    if (allStatuses.includes(trimmed)) {
+        alert('Такой статус уже существует');
+        return;
+    }
+    allStatuses.push(trimmed);
+    statusDisplay[trimmed] = newValue.trim();
+    saveCustomOptions();
+    // Обновляем select
+    const select = document.getElementById('requestStatus');
+    if (select) {
+        const opt = document.createElement('option');
+        opt.value = trimmed;
+        opt.textContent = statusDisplay[trimmed];
+        select.appendChild(opt);
+        select.value = trimmed;
+    }
+}
+
+window.addPriorityOption = addPriorityOption;
+window.addStatusOption = addStatusOption;
+
+// ===== Модалка управления (для массового добавления) =====
+function openStatusManager() {
+    document.getElementById('statusManagerModal').classList.remove('hidden');
+    renderStatusManagerLists();
+}
+
+function closeStatusManager() {
+    document.getElementById('statusManagerModal').classList.add('hidden');
+}
+
+window.openStatusManager = openStatusManager;
+window.closeStatusManager = closeStatusManager;
+
+function renderStatusManagerLists() {
+    const statusList = document.getElementById('statusList');
+    const priorityList = document.getElementById('priorityList');
+    if (!statusList || !priorityList) return;
+
+    statusList.innerHTML = allStatuses.map(s => `
+        <div class="flex justify-between items-center p-1.5 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+            <span>${statusDisplay[s] || s}</span>
+            <button onclick="window.removeStatusItem('${s}')" class="text-red-500 hover:text-red-700 text-xs font-bold">Удалить</button>
+        </div>
+    `).join('');
+
+    priorityList.innerHTML = allPriorities.map(p => `
+        <div class="flex justify-between items-center p-1.5 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+            <span>${priorityDisplay[p] || p}</span>
+            <button onclick="window.removePriorityItem('${p}')" class="text-red-500 hover:text-red-700 text-xs font-bold">Удалить</button>
+        </div>
+    `).join('');
+}
+
+window.addStatusItem = () => {
+    const input = document.getElementById('newStatusInput');
+    const val = input.value.trim();
+    if (!val) return;
+    const key = val.toLowerCase().replace(/\s+/g, '_');
+    if (allStatuses.includes(key)) {
+        alert('Уже существует');
+        return;
+    }
+    allStatuses.push(key);
+    statusDisplay[key] = val;
+    saveCustomOptions();
+    input.value = '';
+    renderStatusManagerLists();
+    // Обновляем селекты в форме
+    updateSelectOptions('requestStatus', allStatuses, statusDisplay);
 };
+
+window.addPriorityItem = () => {
+    const input = document.getElementById('newPriorityInput');
+    const val = input.value.trim();
+    if (!val) return;
+    const key = val.toLowerCase().replace(/\s+/g, '_');
+    if (allPriorities.includes(key)) {
+        alert('Уже существует');
+        return;
+    }
+    allPriorities.push(key);
+    priorityDisplay[key] = val;
+    saveCustomOptions();
+    input.value = '';
+    renderStatusManagerLists();
+    updateSelectOptions('requestPriority', allPriorities, priorityDisplay);
+};
+
+window.removeStatusItem = (key) => {
+    if (!confirm(`Удалить статус "${statusDisplay[key] || key}"?`)) return;
+    allStatuses = allStatuses.filter(s => s !== key);
+    delete statusDisplay[key];
+    saveCustomOptions();
+    renderStatusManagerLists();
+    updateSelectOptions('requestStatus', allStatuses, statusDisplay);
+};
+
+window.removePriorityItem = (key) => {
+    if (!confirm(`Удалить приоритет "${priorityDisplay[key] || key}"?`)) return;
+    allPriorities = allPriorities.filter(p => p !== key);
+    delete priorityDisplay[key];
+    saveCustomOptions();
+    renderStatusManagerLists();
+    updateSelectOptions('requestPriority', allPriorities, priorityDisplay);
+};
+
+function updateSelectOptions(selectId, options, displayMap) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    select.innerHTML = options.map(opt => `<option value="${opt}">${displayMap[opt] || opt}</option>`).join('');
+}
+
+// ===== Автообновление фильтров =====
+// После загрузки обновляем кнопки фильтров
