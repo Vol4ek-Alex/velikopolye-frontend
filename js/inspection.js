@@ -37,7 +37,7 @@ export const template = `
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Колонки (каждая с новой строки)</label>
                     <div class="space-y-2">
                         <div id="columnsContainer" class="space-y-2 max-h-48 overflow-y-auto"></div>
-                        <button type="button" onclick="window.addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">➕ Добавить колонку</button>
+                        <button type="button" onclick="addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">➕ Добавить колонку</button>
                     </div>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
@@ -49,7 +49,7 @@ export const template = `
         </div>
     </div>
 
-    <!-- Модалка заполнения таблицы -->
+    <!-- Модалка данных (таблица с инлайн-редактированием) -->
     <div id="dataModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-4xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
             <button onclick="window.closeDataModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
@@ -57,9 +57,11 @@ export const template = `
                 <h3 id="dataModalTitle" class="text-xl font-extrabold text-gray-900">Название шаблона</h3>
                 <p id="dataModalDesc" class="text-sm text-gray-500"></p>
             </div>
-            <div class="overflow-x-auto max-h-[60vh] overflow-y-auto">
+            <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse">
-                    <thead id="dataTableHead" class="bg-gray-50 border-b border-gray-200 sticky top-0 z-10"></thead>
+                    <thead>
+                        <tr id="dataTableHead" class="bg-gray-50 border-b border-gray-200"></tr>
+                    </thead>
                     <tbody id="dataTableBody"></tbody>
                 </table>
             </div>
@@ -88,8 +90,6 @@ export async function init() {
     window.addRow = addRow;
     window.addColumn = addColumn;
     window.deleteTemplate = deleteTemplate;
-    window.editRow = editRow;
-    window.deleteRow = deleteRow;
 
     await loadVehicles();
     await loadTemplates();
@@ -109,9 +109,7 @@ async function loadVehicles() {
             .order('model');
         if (error) throw error;
         allVehicles = data || [];
-    } catch (err) {
-        console.error('Ошибка загрузки техники:', err);
-    }
+    } catch (err) { console.error(err); }
 }
 
 // ===== Загрузка шаблонов =====
@@ -124,9 +122,7 @@ async function loadTemplates() {
             .order('created_at', { ascending: false });
         if (error) throw error;
         templates = data || [];
-    } catch (err) {
-        console.error('Ошибка загрузки шаблонов:', err);
-    }
+    } catch (err) { console.error(err); }
 }
 
 // ===== Рендеринг шаблонов =====
@@ -199,20 +195,18 @@ function renderColumns(cols) {
     if (!container) return;
     container.innerHTML = cols.map((col, index) => `
         <div class="flex items-center gap-2">
-            <input type="text" value="${col.name}" placeholder="Название колонки" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" oninput="window.updateColumn(${index}, this.value)">
-            <select class="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" onchange="window.updateColumnType(${index}, this.value)">
+            <input type="text" value="${col.name}" placeholder="Название колонки" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" oninput="updateColumn(${index}, this.value)">
+            <select class="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" onchange="updateColumnType(${index}, this.value)">
                 <option value="text" ${col.type === 'text' ? 'selected' : ''}>Текст</option>
                 <option value="checkbox" ${col.type === 'checkbox' ? 'selected' : ''}>Чекбокс</option>
                 <option value="vehicle" ${col.type === 'vehicle' ? 'selected' : ''}>Техника</option>
             </select>
-            <button type="button" onclick="window.removeColumn(${index})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
+            <button type="button" onclick="removeColumn(${index})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
         </div>
     `).join('');
 }
 
 window.addColumn = () => {
-    const container = document.getElementById('columnsContainer');
-    if (!container) return;
     const cols = getColumnsFromDOM();
     cols.push({ name: 'Новая колонка', type: 'text' });
     renderColumns(cols);
@@ -289,7 +283,7 @@ async function handleDeleteTemplate() {
     }
 }
 
-// ===== Модалка данных (таблица) =====
+// ===== Модалка данных (таблица с инлайн-редактированием) =====
 async function openDataModal(templateId) {
     const t = templates.find(t => t.id === templateId);
     if (!t) return;
@@ -322,9 +316,7 @@ async function loadRows(templateId) {
             .order('created_at', { ascending: true });
         if (error) throw error;
         currentRows = data || [];
-    } catch (err) {
-        console.error('Ошибка загрузки строк:', err);
-    }
+    } catch (err) { console.error(err); }
 }
 
 function renderTable() {
@@ -332,12 +324,14 @@ function renderTable() {
     const tbody = document.getElementById('dataTableBody');
     if (!thead || !tbody) return;
 
+    // Заголовок
     thead.innerHTML = `
-        <th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b sticky top-0 bg-gray-50">#</th>
-        ${currentColumns.map(col => `<th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b sticky top-0 bg-gray-50">${col.name}</th>`).join('')}
-        <th class="px-3 py-2 text-center text-xs font-bold text-gray-600 uppercase tracking-wider border-b sticky top-0 bg-gray-50">Действия</th>
+        <th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b">#</th>
+        ${currentColumns.map(col => `<th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b">${col.name}</th>`).join('')}
+        <th class="px-3 py-2 text-center text-xs font-bold text-gray-600 uppercase tracking-wider border-b">Действия</th>
     `;
 
+    // Тело
     if (currentRows.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${currentColumns.length + 2}" class="text-center py-6 text-gray-400">Нет данных. Добавьте строку!</td></tr>`;
         return;
@@ -346,29 +340,64 @@ function renderTable() {
     tbody.innerHTML = currentRows.map((row, index) => {
         const rowData = row.row_data || {};
         return `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+            <tr class="border-b border-gray-100 hover:bg-gray-50 transition" data-row-id="${row.id}">
                 <td class="px-3 py-2 text-sm font-medium text-gray-500">${index + 1}</td>
                 ${currentColumns.map(col => {
                     const value = rowData[col.name];
-                    let display = '';
+                    let cellContent = '';
                     if (col.type === 'checkbox') {
-                        display = value ? '✅' : '❌';
+                        const checked = value ? 'checked' : '';
+                        cellContent = `<input type="checkbox" ${checked} class="w-4 h-4 rounded text-amber-600 border-gray-300 focus:ring-amber-500" onchange="window.updateCell('${row.id}', '${col.name}', this.checked, 'checkbox')">`;
                     } else if (col.type === 'vehicle') {
-                        const vehicle = allVehicles.find(v => v.id === value);
-                        display = vehicle ? `${vehicle.model} ${vehicle.plate ? '['+vehicle.plate+']' : ''}` : '—';
+                        const selectedId = value || '';
+                        const options = allVehicles.map(v =>
+                            `<option value="${v.id}" ${v.id === selectedId ? 'selected' : ''}>${v.model} ${v.plate ? '['+v.plate+']' : ''}</option>`
+                        ).join('');
+                        cellContent = `
+                            <select class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded" onchange="window.updateCell('${row.id}', '${col.name}', this.value, 'vehicle')">
+                                <option value="">—</option>
+                                ${options}
+                            </select>
+                        `;
                     } else {
-                        display = value || '—';
+                        // text
+                        cellContent = `<input type="text" value="${value || ''}" class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded px-1 py-0.5" onchange="window.updateCell('${row.id}', '${col.name}', this.value, 'text')" placeholder="—">`;
                     }
-                    return `<td class="px-3 py-2 text-sm text-gray-800">${display}</td>`;
+                    return `<td class="px-3 py-2 text-sm text-gray-800">${cellContent}</td>`;
                 }).join('')}
                 <td class="px-3 py-2 text-center">
-                    <button onclick="window.editRow('${row.id}')" class="text-gray-400 hover:text-gray-700 text-xs mr-2">✏️</button>
                     <button onclick="window.deleteRow('${row.id}')" class="text-red-400 hover:text-red-600 text-xs">🗑️</button>
                 </td>
             </tr>
         `;
     }).join('');
 }
+
+// ===== Обновление ячейки =====
+window.updateCell = async (rowId, colName, value, type) => {
+    const row = currentRows.find(r => r.id === rowId);
+    if (!row) return;
+    let newValue = value;
+    if (type === 'checkbox') {
+        newValue = value === true || value === 'true' ? true : false;
+    } else if (type === 'vehicle') {
+        newValue = value || null;
+    } else {
+        newValue = value || '';
+    }
+    const rowData = row.row_data || {};
+    rowData[colName] = newValue;
+    try {
+        await window._supabase
+            .from('inspection_rows')
+            .update({ row_data: rowData })
+            .eq('id', rowId);
+        // Обновляем локальный массив
+        row.row_data = rowData;
+    } catch (err) {
+        alert('Ошибка сохранения: ' + err.message);
+    }
+};
 
 // ===== Добавление строки =====
 window.addRow = async () => {
@@ -387,85 +416,10 @@ window.addRow = async () => {
         if (error) throw error;
         await loadRows(currentTemplateId);
         renderTable();
-        if (data && data[0]) editRow(data[0].id);
     } catch (err) {
         alert('Ошибка добавления: ' + err.message);
     }
 };
-
-// ===== Редактирование строки (инлайн-модалка) =====
-function editRow(rowId) {
-    const row = currentRows.find(r => r.id === rowId);
-    if (!row) return;
-    const rowData = row.row_data || {};
-
-    const overlay = document.createElement('div');
-    overlay.className = 'fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4';
-    overlay.id = 'inlineEditOverlay';
-    overlay.innerHTML = `
-        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-4 relative max-h-[90vh] overflow-y-auto">
-            <button onclick="this.closest('#inlineEditOverlay').remove()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
-            <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Редактирование строки</h3>
-            <form id="inlineEditForm" class="space-y-4 text-sm">
-                ${currentColumns.map(col => {
-                    const value = rowData[col.name] !== undefined ? rowData[col.name] : '';
-                    if (col.type === 'checkbox') {
-                        return `<div class="flex items-center gap-2">
-                            <label class="text-sm font-medium text-gray-700">${col.name}</label>
-                            <input type="checkbox" id="edit_${col.name}" ${value ? 'checked' : ''} class="w-4 h-4 rounded text-amber-600 border-gray-300 focus:ring-amber-500">
-                        </div>`;
-                    } else if (col.type === 'vehicle') {
-                        return `<div>
-                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">${col.name}</label>
-                            <select id="edit_${col.name}" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent">
-                                <option value="">-- Выберите технику --</option>
-                                ${allVehicles.map(v => `<option value="${v.id}" ${v.id === value ? 'selected' : ''}>${v.model} ${v.plate ? '['+v.plate+']' : ''}</option>`).join('')}
-                            </select>
-                        </div>`;
-                    } else {
-                        return `<div>
-                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">${col.name}</label>
-                            <input type="text" id="edit_${col.name}" value="${value}" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent">
-                        </div>`;
-                    }
-                }).join('')}
-                <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="this.closest('#inlineEditOverlay').remove()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
-                    <button type="submit" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
-                </div>
-            </form>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    document.getElementById('inlineEditForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const newData = {};
-        for (const col of currentColumns) {
-            const el = document.getElementById('edit_' + col.name);
-            if (col.type === 'checkbox') {
-                newData[col.name] = el.checked;
-            } else if (col.type === 'vehicle') {
-                newData[col.name] = el.value || null;
-            } else {
-                newData[col.name] = el.value;
-            }
-        }
-        try {
-            await window._supabase
-                .from('inspection_rows')
-                .update({ row_data: newData })
-                .eq('id', rowId);
-            overlay.remove();
-            await loadRows(currentTemplateId);
-            renderTable();
-        } catch (err) {
-            alert('Ошибка сохранения: ' + err.message);
-        }
-    });
-}
-
-window.editRow = editRow;
 
 // ===== Удаление строки =====
 window.deleteRow = async (rowId) => {
