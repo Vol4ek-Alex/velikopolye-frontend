@@ -13,12 +13,11 @@ export const template = `
         </button>
     </div>
 
-    <!-- Список шаблонов -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="templatesGrid">
         <div class="col-span-full text-center py-12 text-sm text-gray-400 font-medium bg-white rounded-2xl border border-gray-200">Загрузка шаблонов...</div>
     </div>
 
-    <!-- Модалка создания/редактирования шаблона -->
+    <!-- Модалка шаблона -->
     <div id="templateModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
             <button onclick="window.closeTemplateModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
@@ -34,7 +33,7 @@ export const template = `
                     <input type="text" id="templateDescription" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" placeholder="Краткое описание">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Колонки (каждая с новой строки)</label>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Колонки</label>
                     <div class="space-y-2">
                         <div id="columnsContainer" class="space-y-2 max-h-48 overflow-y-auto"></div>
                         <button type="button" onclick="window.addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">➕ Добавить колонку</button>
@@ -49,7 +48,7 @@ export const template = `
         </div>
     </div>
 
-    <!-- Модалка просмотра таблицы (инлайн-редактирование) -->
+    <!-- Модалка данных -->
     <div id="dataModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-4xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
             <button onclick="window.closeDataModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
@@ -63,12 +62,15 @@ export const template = `
                     <tbody id="dataTableBody"></tbody>
                 </table>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-3">
                 <button onclick="window.addRow()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
                     ➕ Добавить строку
                 </button>
-                <button onclick="window.downloadExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
-                    📥 Excel
+                <button onclick="window.downloadExcel()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
+                    📥 Скачать Excel
+                </button>
+                <button onclick="window.reloadData()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold transition border border-gray-300 text-sm flex items-center justify-center gap-2">
+                    🔄 Обновить
                 </button>
             </div>
         </div>
@@ -82,7 +84,6 @@ let currentColumns = [];
 let currentRows = [];
 let allVehicles = [];
 let editingRowId = null;
-let editingCell = null; // { rowId, colName }
 
 // ===== Инициализация =====
 export async function init() {
@@ -95,6 +96,8 @@ export async function init() {
     window.addRow = addRow;
     window.addColumn = addColumn;
     window.deleteTemplate = deleteTemplate;
+    window.downloadExcel = downloadExcel;
+    window.reloadData = reloadData;
 
     await loadVehicles();
     await loadTemplates();
@@ -292,7 +295,7 @@ async function handleDeleteTemplate() {
     }
 }
 
-// ===== Модалка данных (таблица) =====
+// ===== Модалка данных =====
 async function openDataModal(templateId) {
     const t = templates.find(t => t.id === templateId);
     if (!t) return;
@@ -330,13 +333,12 @@ async function loadRows(templateId) {
     }
 }
 
-// ===== Рендеринг таблицы с инлайн-редактированием =====
+// ===== Рендеринг таблицы =====
 function renderTable() {
     const thead = document.getElementById('dataTableHead');
     const tbody = document.getElementById('dataTableBody');
     if (!thead || !tbody) return;
 
-    // Заголовок
     thead.innerHTML = `
         <th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b whitespace-nowrap">#</th>
         ${currentColumns.map(col => `<th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b whitespace-nowrap">${col.name}</th>`).join('')}
@@ -355,14 +357,12 @@ function renderTable() {
                 <td class="px-3 py-2 text-sm font-medium text-gray-500 whitespace-nowrap">${index + 1}</td>
                 ${currentColumns.map(col => {
                     const value = rowData[col.name];
-                    let display = '';
                     let cellContent = '';
 
                     if (col.type === 'checkbox') {
                         const checked = value ? 'checked' : '';
-                        display = `<input type="checkbox" ${checked} onchange="window.updateCell('${row.id}', '${col.name}', this.checked)" class="w-5 h-5 rounded text-amber-600 border-gray-300 focus:ring-amber-500">`;
+                        cellContent = `<input type="checkbox" ${checked} onchange="window.updateCell('${row.id}', '${col.name}', this.checked)" class="w-5 h-5 rounded text-amber-600 border-gray-300 focus:ring-amber-500">`;
                     } else if (col.type === 'vehicle') {
-                        // Показываем выпадающий список для выбора техники
                         const selectedId = value || '';
                         cellContent = `
                             <select onchange="window.updateCell('${row.id}', '${col.name}', this.value)" class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded-lg p-1 text-sm">
@@ -371,13 +371,12 @@ function renderTable() {
                             </select>
                         `;
                     } else {
-                        // Текст – редактируемое поле
                         cellContent = `
                             <input type="text" value="${value || ''}" onchange="window.updateCell('${row.id}', '${col.name}', this.value)" class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded-lg p-1 text-sm" placeholder="—">
                         `;
                     }
 
-                    return `<td class="px-3 py-2 text-sm text-gray-800">${cellContent || display}</td>`;
+                    return `<td class="px-3 py-2 text-sm text-gray-800">${cellContent}</td>`;
                 }).join('')}
                 <td class="px-3 py-2 text-center whitespace-nowrap">
                     <button onclick="window.deleteRow('${row.id}')" class="text-red-400 hover:text-red-600 text-sm">🗑️</button>
@@ -387,24 +386,17 @@ function renderTable() {
     }).join('');
 }
 
-// ===== Обновление ячейки (инлайн) =====
+// ===== Обновление ячейки (с таймаутом для мобильных) =====
 window.updateCell = async (rowId, colName, value) => {
     const row = currentRows.find(r => r.id === rowId);
     if (!row) return;
     const rowData = row.row_data || {};
 
-    // Для checkbox – value приходит как boolean (из атрибута checked)
-    // Для vehicle – value – это id техники (строка или число)
-    // Для text – value – это строка
-
-    // Если колонка типа vehicle – приводим к числу (если id – число)
     const col = currentColumns.find(c => c.name === colName);
     if (col && col.type === 'vehicle') {
-        // Если value пустая строка – сохраняем null
         if (value === '') {
             rowData[colName] = null;
         } else {
-            // Пытаемся преобразовать в число, если id – число
             const numValue = Number(value);
             rowData[colName] = isNaN(numValue) ? value : numValue;
         }
@@ -412,18 +404,18 @@ window.updateCell = async (rowId, colName, value) => {
         rowData[colName] = value;
     }
 
-    // Обновляем локально
     row.row_data = rowData;
 
-    // Сохраняем в БД
     try {
         const { error } = await window._supabase
             .from('inspection_rows')
             .update({ row_data: rowData })
             .eq('id', rowId);
         if (error) throw error;
-        // Перерисовываем только эту строку, но для простоты перерисуем всю таблицу
-        renderTable();
+        // Принудительная перерисовка с таймаутом для мобильных
+        setTimeout(() => {
+            renderTable();
+        }, 50);
     } catch (err) {
         alert('Ошибка сохранения: ' + err.message);
     }
@@ -462,6 +454,52 @@ window.deleteRow = async (rowId) => {
     }
 };
 
+// ===== Обновить данные =====
+window.reloadData = async () => {
+    if (!currentTemplateId) return;
+    await loadRows(currentTemplateId);
+    renderTable();
+};
+
+// ===== Экспорт в Excel =====
+window.downloadExcel = () => {
+    if (currentRows.length === 0) {
+        alert('Нет данных для экспорта');
+        return;
+    }
+
+    if (typeof XLSX === 'undefined') {
+        alert('Библиотека XLSX не загружена. Проверьте подключение скрипта.');
+        return;
+    }
+
+    const headers = ['#', ...currentColumns.map(c => c.name)];
+    const dataRows = currentRows.map((row, index) => {
+        const rowData = row.row_data || {};
+        const rowValues = [index + 1];
+        currentColumns.forEach(col => {
+            const value = rowData[col.name];
+            let display = '';
+            if (col.type === 'checkbox') {
+                display = value ? '✅' : '❌';
+            } else if (col.type === 'vehicle') {
+                const vehicle = allVehicles.find(v => String(v.id) === String(value));
+                display = vehicle ? `${vehicle.model} ${vehicle.plate ? '['+vehicle.plate+']' : ''}` : '—';
+            } else {
+                display = value || '—';
+            }
+            rowValues.push(display);
+        });
+        return rowValues;
+    });
+
+    const wsData = [headers, ...dataRows];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Инспекция');
+    XLSX.writeFile(wb, `Инспекция_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
 // ===== Удаление шаблона =====
 window.deleteTemplate = async (templateId) => {
     if (!confirm('Удалить шаблон и все данные?')) return;
@@ -472,37 +510,4 @@ window.deleteTemplate = async (templateId) => {
     } catch (err) {
         alert('Ошибка удаления: ' + err.message);
     }
-};
-
-// ===== EXCEL =====
-window.downloadExcel = () => {
-    if (!currentRows.length || !currentColumns.length) {
-        alert('Нет данных для экспорта');
-        return;
-    }
-    // Формируем данные для Excel
-    const header = ['#', ...currentColumns.map(c => c.name)];
-    const rows = currentRows.map((row, index) => {
-        const rowData = row.row_data || {};
-        const rowCells = [index + 1];
-        currentColumns.forEach(col => {
-            let val = rowData[col.name];
-            if (col.type === 'checkbox') {
-                val = val ? 'Да' : 'Нет';
-            } else if (col.type === 'vehicle') {
-                const vehicle = allVehicles.find(v => String(v.id) === String(val));
-                val = vehicle ? `${vehicle.model} ${vehicle.plate ? '['+vehicle.plate+']' : ''}` : '—';
-            } else {
-                val = val || '—';
-            }
-            rowCells.push(val);
-        });
-        return rowCells;
-    });
-
-    const data = [header, ...rows];
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, 'Инспекция');
-    XLSX.writeFile(wb, `Инспекция_${new Date().toISOString().slice(0,10)}.xlsx`);
 };
