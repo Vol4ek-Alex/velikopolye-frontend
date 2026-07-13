@@ -49,7 +49,7 @@ export const template = `
         </div>
     </div>
 
-    <!-- Модалка заполнения таблицы (с горизонтальным скроллом) -->
+    <!-- Модалка заполнения таблицы -->
     <div id="dataModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-4xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
             <button onclick="window.closeDataModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
@@ -57,9 +57,9 @@ export const template = `
                 <h3 id="dataModalTitle" class="text-xl font-extrabold text-gray-900">Название шаблона</h3>
                 <p id="dataModalDesc" class="text-sm text-gray-500"></p>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm border-collapse min-w-max">
-                    <thead id="dataTableHead" class="bg-gray-50 border-b border-gray-200"></thead>
+            <div class="overflow-x-auto max-h-[60vh] overflow-y-auto">
+                <table class="w-full text-sm border-collapse">
+                    <thead id="dataTableHead" class="bg-gray-50 border-b border-gray-200 sticky top-0 z-10"></thead>
                     <tbody id="dataTableBody"></tbody>
                 </table>
             </div>
@@ -76,7 +76,6 @@ let currentTemplateId = null;
 let currentColumns = [];
 let currentRows = [];
 let allVehicles = [];
-let editingRowId = null;
 
 // ===== Инициализация =====
 export async function init() {
@@ -333,14 +332,12 @@ function renderTable() {
     const tbody = document.getElementById('dataTableBody');
     if (!thead || !tbody) return;
 
-    // Заголовок
     thead.innerHTML = `
-        <th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b">#</th>
-        ${currentColumns.map(col => `<th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b">${col.name}</th>`).join('')}
-        <th class="px-3 py-2 text-center text-xs font-bold text-gray-600 uppercase tracking-wider border-b">Действия</th>
+        <th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b sticky top-0 bg-gray-50">#</th>
+        ${currentColumns.map(col => `<th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b sticky top-0 bg-gray-50">${col.name}</th>`).join('')}
+        <th class="px-3 py-2 text-center text-xs font-bold text-gray-600 uppercase tracking-wider border-b sticky top-0 bg-gray-50">Действия</th>
     `;
 
-    // Тело
     if (currentRows.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${currentColumns.length + 2}" class="text-center py-6 text-gray-400">Нет данных. Добавьте строку!</td></tr>`;
         return;
@@ -396,24 +393,22 @@ window.addRow = async () => {
     }
 };
 
-// ===== Редактирование строки (inline-модалка) =====
+// ===== Редактирование строки (инлайн-модалка) =====
 function editRow(rowId) {
     const row = currentRows.find(r => r.id === rowId);
     if (!row) return;
-    editingRowId = rowId;
     const rowData = row.row_data || {};
 
-    // Создаём модалку редактирования
     const overlay = document.createElement('div');
     overlay.className = 'fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4';
     overlay.id = 'inlineEditOverlay';
     overlay.innerHTML = `
-        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-4 relative max-h-[90vh] overflow-y-auto">
             <button onclick="this.closest('#inlineEditOverlay').remove()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Редактирование строки</h3>
             <form id="inlineEditForm" class="space-y-4 text-sm">
                 ${currentColumns.map(col => {
-                    const value = rowData[col.name] !== undefined ? rowData[col.name] : (col.type === 'checkbox' ? false : '');
+                    const value = rowData[col.name] !== undefined ? rowData[col.name] : '';
                     if (col.type === 'checkbox') {
                         return `<div class="flex items-center gap-2">
                             <label class="text-sm font-medium text-gray-700">${col.name}</label>
@@ -430,7 +425,7 @@ function editRow(rowId) {
                     } else {
                         return `<div>
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">${col.name}</label>
-                            <input type="text" id="edit_${col.name}" value="${value || ''}" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent">
+                            <input type="text" id="edit_${col.name}" value="${value}" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent">
                         </div>`;
                     }
                 }).join('')}
@@ -446,13 +441,8 @@ function editRow(rowId) {
     document.getElementById('inlineEditForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const newData = {};
-        let hasError = false;
-        currentColumns.forEach(col => {
+        for (const col of currentColumns) {
             const el = document.getElementById('edit_' + col.name);
-            if (!el) {
-                hasError = true;
-                return;
-            }
             if (col.type === 'checkbox') {
                 newData[col.name] = el.checked;
             } else if (col.type === 'vehicle') {
@@ -460,14 +450,12 @@ function editRow(rowId) {
             } else {
                 newData[col.name] = el.value;
             }
-        });
-        if (hasError) return;
+        }
         try {
-            const { error } = await window._supabase
+            await window._supabase
                 .from('inspection_rows')
                 .update({ row_data: newData })
                 .eq('id', rowId);
-            if (error) throw error;
             overlay.remove();
             await loadRows(currentTemplateId);
             renderTable();
