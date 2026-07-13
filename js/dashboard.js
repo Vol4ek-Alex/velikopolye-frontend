@@ -84,7 +84,7 @@ export const template = `
             </div>
         </div>
 
-        <!-- Гарантийный контроль -->
+        <!-- Гарантия -->
         <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden relative animate-fade-in-up delay-200">
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <div class="flex items-center gap-2">
@@ -95,7 +95,6 @@ export const template = `
                     <span>⚙️</span> Фильтр
                 </button>
             </div>
-            <!-- Фильтр -->
             <div id="dashFilterDropdown" class="absolute left-4 top-[72px] w-64 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-2xl shadow-xl p-4 z-50 space-y-3 hidden max-h-[300px] overflow-y-auto">
                 <div class="flex items-center justify-between border-b border-gray-100 pb-2">
                     <p class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Отображать</p>
@@ -123,7 +122,7 @@ export const template = `
         </div>
     </div>
 
-    <!-- Модалка редактирования -->
+    <!-- Модалка -->
     <div id="dashEditModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[150] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-5 relative border border-gray-200 modal-enter">
             <button onclick="window.dashCloseModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl">✕</button>
@@ -132,34 +131,17 @@ export const template = `
                 <p id="modalVehiclePlate" class="text-sm font-mono text-gray-500 mt-0.5">[0000 AA-7]</p>
             </div>
             <div id="modalWarrantySection" class="space-y-4 pt-2 border-t border-gray-100 hidden">
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Текущая наработка</label>
-                    <input type="number" id="inputModalCurrentHours" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-bold focus:ring-2 focus:ring-emerald-400 focus:outline-none">
-                </div>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Текущая наработка</label><input type="number" id="inputModalCurrentHours" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-bold focus:ring-2 focus:ring-emerald-400 focus:outline-none"></div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Нулевая база</label>
-                        <input type="number" id="inputModalZeroHours" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-bold focus:ring-2 focus:ring-emerald-400 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Периодичность</label>
-                        <input type="number" id="inputModalStepHours" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-bold focus:ring-2 focus:ring-emerald-400 focus:outline-none">
-                    </div>
+                    <div><label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Нулевая база</label><input type="number" id="inputModalZeroHours" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-bold focus:ring-2 focus:ring-emerald-400 focus:outline-none"></div>
+                    <div><label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Периодичность</label><input type="number" id="inputModalStepHours" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-bold focus:ring-2 focus:ring-emerald-400 focus:outline-none"></div>
                 </div>
             </div>
             <div id="modalDocsSection" class="space-y-4 pt-2 border-t border-gray-100 hidden">
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Дата Гостехосмотра</label>
-                    <input type="date" id="inputModalInspectionDate" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Дата Страховки</label>
-                    <input type="date" id="inputModalInsuranceDate" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:outline-none">
-                </div>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Дата Гостехосмотра</label><input type="date" id="inputModalInspectionDate" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:outline-none"></div>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Дата Страховки</label><input type="date" id="inputModalInsuranceDate" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-emerald-400 focus:outline-none"></div>
             </div>
-            <button onclick="window.dashSaveModalData()" class="w-full bg-gray-900 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition shadow-md text-sm">
-                Сохранить изменения
-            </button>
+            <button onclick="window.dashSaveModalData()" class="w-full bg-gray-900 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition shadow-md text-sm">Сохранить изменения</button>
         </div>
     </div>
 
@@ -178,9 +160,9 @@ export const template = `
     </div>
 `;
 
-// ---------- ВСЕ ФУНКЦИИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ ----------
-// (весь остальной код вашего dashboard.js остаётся точно таким же)
-// Я не вставляю их повторно, чтобы не дублировать, но они все работают.
+// ===== ВСЕ ФУНКЦИИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ =====
+// (тут должен быть весь остальной код dashboard.js – он не меняется)
+// Просто оставьте всё, что было после template.
 
 let refreshIntervalId = null;
 let clockIntervalId = null;
