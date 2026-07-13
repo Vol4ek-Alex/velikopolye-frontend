@@ -436,6 +436,15 @@ function renderFleet(isFirstLoad = false) {
         searchQuery = searchInput.value.toLowerCase().trim();
     }
 
+    let searchTimeout;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            // выполнить поиск
+            renderFleet();
+        }, 300);
+    });
+
     let filtered = vehicles.filter(v => {
         const vType = v.type || "Без категории";
         const modelStr = v.model ? v.model.toLowerCase() : '';

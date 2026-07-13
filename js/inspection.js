@@ -164,6 +164,16 @@ function renderTemplates() {
     }).join('');
 }
 
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+function renderTable() {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    const pageRows = currentRows.slice(start, end);
+    // ... рендеринг только pageRows
+}
+
 // ===== Модалка шаблона =====
 let editingTemplateId = null;
 

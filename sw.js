@@ -1,5 +1,9 @@
-const CACHE_NAME = 'arm-cache-v1';
-const urlsToCache = [
+// sw.js – улучшенная версия
+const CACHE_NAME = 'arm-v1';
+const STATIC_CACHE = 'arm-static-v1';
+const API_CACHE = 'arm-api-v1';
+
+const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/manifest.json',
@@ -7,60 +11,58 @@ const urlsToCache = [
     '/js/dashboard.js',
     '/js/orders.js',
     '/js/fleet.js',
-    '/js/links.js'
+    '/js/links.js',
+    '/js/repair_requests.js',
+    '/js/my_lists.js',
+    '/js/inspection.js'
 ];
 
+// Установка
 self.addEventListener('install', event => {
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('[SW] Кеширование ресурсов');
-                return cache.addAll(urlsToCache);
-            })
-            .catch(err => console.error('[SW] Ошибка кеширования:', err))
+        caches.open(STATIC_CACHE)
+            .then(cache => cache.addAll(STATIC_ASSETS))
+            .then(() => self.skipWaiting())
     );
 });
 
+// Активация
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
             return Promise.all(
-                keys.filter(key => key !== CACHE_NAME)
+                keys.filter(key => key !== STATIC_CACHE && key !== API_CACHE)
                     .map(key => caches.delete(key))
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
+// Перехват запросов
 self.addEventListener('fetch', event => {
-    // Не кешируем POST, PUT, DELETE и т.п.
-    if (event.request.method !== 'GET') {
-        event.respondWith(fetch(event.request));
+    const url = new URL(event.request.url);
+
+    // API-запросы кешируем с сетью в приоритете
+    if (url.pathname.startsWith('/api/') || url.hostname.includes('supabase')) {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    const clone = response.clone();
+                    caches.open(API_CACHE).then(cache => {
+                        cache.put(event.request, clone);
+                    });
+                    return response;
+                })
+                .catch(() => {
+                    return caches.match(event.request);
+                })
+        );
         return;
     }
 
+    // Статика – сначала кеш, потом сеть
     event.respondWith(
         caches.match(event.request)
-            .then(cachedResponse => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-                return fetch(event.request)
-                    .then(networkResponse => {
-                        if (!networkResponse || networkResponse.status !== 200) {
-                            return networkResponse;
-                        }
-                        const responseToCache = networkResponse.clone();
-                        caches.open(CACHE_NAME)
-                            .then(cache => {
-                                cache.put(event.request, responseToCache);
-                            })
-                            .catch(err => console.warn('[SW] Не удалось закешировать:', err));
-                        return networkResponse;
-                    })
-                    .catch(() => {
-                        return new Response('Офлайн-режим: ресурс не доступен', { status: 503 });
-                    });
-            })
+            .then(cached => cached || fetch(event.request))
     );
 });
