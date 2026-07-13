@@ -27,7 +27,6 @@
             overflow: hidden;
             position: relative;
         }
-        /* Боковое меню */
         #sidebar {
             position: fixed;
             top: 0;
@@ -63,7 +62,6 @@
             opacity: 1;
             pointer-events: all;
         }
-        /* Основная область */
         #main {
             flex: 1;
             height: 100vh;
@@ -78,7 +76,6 @@
                 padding-top: 90px;
             }
         }
-        /* Кнопка меню */
         #menuToggle {
             position: fixed;
             top: 16px;
@@ -122,14 +119,13 @@
                 padding: 12px 20px;
             }
         }
-        /* Навигация в меню */
         .nav-item {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 15px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 500;
             color: #4b5563;
             transition: all 0.15s;
@@ -147,6 +143,16 @@
             color: #4f46e5;
             font-weight: 600;
             border-right: 3px solid #4f46e5;
+        }
+        .nav-group-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #9ca3af;
+            padding: 12px 12px 6px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 4px;
         }
         .user-avatar {
             width: 40px;
@@ -173,7 +179,6 @@
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Стили для оверлея аутентификации */
         .auth-overlay {
             position: fixed;
             inset: 0;
@@ -251,6 +256,10 @@
             margin-top: 8px;
             display: none;
         }
+        /* Кнопка PWA только в оверлее (скрыта в сайдбаре) */
+        #pwaInstallBtn {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -294,8 +303,9 @@
                     <span class="text-[11px] font-medium text-gray-400 leading-none mt-1 block">ГП «Минсктранс»</span>
                 </div>
             </div>
-            <nav id="menuContainer" class="space-y-1"></nav>
+            <nav id="menuContainer" class="space-y-0.5"></nav>
         </div>
+        <!-- Блок пользователя (без кнопки PWA) -->
         <div class="space-y-4 border-t border-gray-100/80 pt-4 mt-auto">
             <div class="bg-gray-50/80 border border-gray-200/80 rounded-2xl p-3 flex items-center justify-between shadow-sm gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -307,7 +317,6 @@
                 </div>
                 <button onclick="window.logoutSystemUser()" title="Выйти" class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white text-gray-500 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded-xl transition shadow-sm text-sm">🚪</button>
             </div>
-            <button id="pwaInstallBtn" onclick="installPWA()" class="hidden w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2.5 rounded-2xl transition text-center shadow-sm">📱 Установить на телефон</button>
             <div class="text-[10px] text-gray-400 text-center pt-1 pb-2 font-medium">АРМ v1.0.1 • by Vol4ek</div>
         </div>
     </aside>
@@ -385,14 +394,15 @@
         const SUPABASE_KEY = "sb_publishable_3sU4_opgqfZ5tPzk1bW5Ig_6XlX97pm";
         window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Модули с группировкой
         const APP_MODULES = [
-            { id: 'dashboard', name: '🏠 Главная', file: './js/dashboard.js' },
-            { id: 'orders', name: '📄 Документы', file: './js/orders.js' },
-            { id: 'fleet', name: '🚜 Автопарк', file: './js/fleet.js' },
-            { id: 'links', name: '🔗 Ссылки', file: './js/links.js' },
-            { id: 'repair_requests', name: '🔧 Заявки', file: './js/repair_requests.js' },
-            { id: 'my_lists', name: '📋 Списки', file: './js/my_lists.js' },
-            { id: 'inspection', name: '📋 Инспекция', file: './js/inspection.js' }
+            { id: 'dashboard', name: '🏠 Главная', file: './js/dashboard.js', group: 'main' },
+            { id: 'fleet', name: '🚜 Автопарк', file: './js/fleet.js', group: 'main' },
+            { id: 'orders', name: '📄 Документы', file: './js/orders.js', group: 'docs' },
+            { id: 'repair_requests', name: '🔧 Заявки', file: './js/repair_requests.js', group: 'docs' },
+            { id: 'my_lists', name: '📋 Списки', file: './js/my_lists.js', group: 'docs' },
+            { id: 'inspection', name: '📋 Инспекция', file: './js/inspection.js', group: 'docs' },
+            { id: 'links', name: '🔗 Ссылки', file: './js/links.js', group: 'tools' }
         ];
 
         let currentModuleId = 'dashboard';
@@ -418,12 +428,36 @@
         function renderMenu() {
             const container = document.getElementById('menuContainer');
             if (!container) return;
-            container.innerHTML = APP_MODULES.map(mod => {
-                const isActive = mod.id === currentModuleId;
-                return `<button onclick="switchModule('${mod.id}')" class="nav-item ${isActive ? 'active' : ''}">
-                    <span class="text-lg">${mod.name}</span>
-                </button>`;
-            }).join('');
+
+            // Группируем модули
+            const groups = {
+                main: { title: 'Основное', modules: [] },
+                docs: { title: 'Документы', modules: [] },
+                tools: { title: 'Сервисы', modules: [] }
+            };
+
+            APP_MODULES.forEach(mod => {
+                if (groups[mod.group]) {
+                    groups[mod.group].modules.push(mod);
+                }
+            });
+
+            let html = '';
+            for (const [key, group] of Object.entries(groups)) {
+                if (group.modules.length === 0) continue;
+                html += `<div class="nav-group-title">${group.title}</div>`;
+                group.modules.forEach(mod => {
+                    const isActive = mod.id === currentModuleId;
+                    const activeClass = isActive ? 'active' : '';
+                    html += `
+                        <button onclick="switchModule('${mod.id}')" class="nav-item ${activeClass}">
+                            <span class="text-base">${mod.name}</span>
+                        </button>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
         }
 
         // Service Worker
@@ -435,23 +469,13 @@
             });
         }
 
-        // PWA
+        // PWA (кнопка теперь не показывается)
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            document.getElementById('pwaInstallBtn').classList.remove('hidden');
+            // Кнопка скрыта – ничего не делаем
         });
-
-        window.installPWA = async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                document.getElementById('pwaInstallBtn').classList.add('hidden');
-            }
-            deferredPrompt = null;
-        };
 
         // Аутентификация
         const USER_PROFILES = {
