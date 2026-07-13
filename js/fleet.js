@@ -1,6 +1,6 @@
 export const template = `
     <!-- Верхняя панель -->
-    <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+    <div class="animate-fade-in-down mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div>
             <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
                 <span class="bg-blue-100 p-1.5 rounded-lg">🚜</span> Управление автопарком
@@ -8,16 +8,16 @@ export const template = `
             <p class="text-sm text-gray-500 font-medium">Учет техники, закрепление водителей и механизаторов, контроль документов и ремонтов</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <button onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">👤 Вод/Мех</button>
-            <button onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">🏷️ Теги</button>
-            <button onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5">📂 Категории</button>
-            <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">⏱️ Добавить часы</button>
-            <button onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5">➕ Карта</button>
+            <button onclick="window.openDriversModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5 hover-lift">👤 Вод/Мех</button>
+            <button onclick="window.openTagsModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5 hover-lift">🏷️ Теги</button>
+            <button onclick="window.openCategoriesModal()" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-1.5 hover-lift">📂 Категории</button>
+            <button onclick="window.openHoursModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5 hover-lift">⏱️ Добавить часы</button>
+            <button onclick="window.openVehicleModalForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-1.5 hover-lift">➕ Карта</button>
         </div>
     </div>
 
     <!-- Поиск и сортировка -->
-    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4 mb-6">
+    <div class="animate-fade-in-up delay-50 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4 mb-6">
         <div class="flex flex-col sm:flex-row gap-3">
             <input type="text" id="vehicleSearchInput" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-emerald-400 focus:border-transparent focus:bg-white font-medium transition" placeholder="🔍 Поиск по модели, номеру, VIN, водителю или тегу...">
             <select id="sortSelect" onchange="window.handleSortChange(this.value)" class="bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-emerald-400 focus:border-transparent">
@@ -37,9 +37,9 @@ export const template = `
         <div class="text-center text-gray-400 py-12 text-sm font-medium bg-white rounded-2xl border border-gray-200">Загрузка данных...</div>
     </div>
 
-    <!-- Модалка редактирования техники (с крестиком) -->
+    <!-- Модалка редактирования техники -->
     <div id="vFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative modal-enter">
             <button onclick="window.closeVModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 id="vModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Карточка техники</h3>
             <form id="vForm" class="space-y-4 text-sm">
@@ -93,32 +93,30 @@ export const template = `
                     <div id="tagsCheckboxContainer" class="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200 max-h-32 overflow-y-auto"></div>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
+                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Сохранить</button>
                 </div>
                 <button type="button" id="vDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить из базы</button>
             </form>
         </div>
     </div>
 
-    <!-- Остальные модалки (водители, теги, категории, задачи, часы) – без изменений, 
-         но для единообразия тоже добавим крестик (это не критично, можно оставить как есть) -->
     <!-- Модалка водителей -->
     <div id="driversManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative modal-enter">
             <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">👤 Водители и механизаторы</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto" id="modalDriversList"></div>
             <div class="pt-3 border-t border-gray-100 space-y-3">
                 <input type="text" id="newDriverNameInput" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="ФИО...">
-                <button onclick="window.addCustomDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm">Добавить</button>
+                <button onclick="window.addCustomDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm hover-lift">Добавить</button>
             </div>
-            <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="document.getElementById('driversManagementModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Закрыть</button>
         </div>
     </div>
 
     <!-- Модалка тегов -->
     <div id="tagsManagementModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative modal-enter">
             <button onclick="document.getElementById('tagsManagementModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">🏷️ Управление тегами</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto" id="modalTagsList"></div>
@@ -128,29 +126,29 @@ export const template = `
                     <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Цвет:</label>
                     <input type="color" id="newTagColorInput" value="#e2e8f0" class="w-10 h-10 rounded-xl border border-gray-300 cursor-pointer">
                 </div>
-                <button onclick="window.addCustomTag()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm">Создать тег</button>
+                <button onclick="window.addCustomTag()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm hover-lift">Создать тег</button>
             </div>
-            <button onclick="document.getElementById('tagsManagementModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="document.getElementById('tagsManagementModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Закрыть</button>
         </div>
     </div>
 
     <!-- Модалка категорий -->
     <div id="categoriesModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative modal-enter">
             <button onclick="document.getElementById('categoriesModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">📂 Категории</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto" id="modalCategoriesList"></div>
             <div class="pt-3 border-t border-gray-100 space-y-3">
                 <input type="text" id="newCatInput" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="Новая категория...">
-                <button onclick="window.addCustomCategory()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm">Добавить</button>
+                <button onclick="window.addCustomCategory()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm hover-lift">Добавить</button>
             </div>
-            <button onclick="document.getElementById('categoriesModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="document.getElementById('categoriesModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Закрыть</button>
         </div>
     </div>
 
     <!-- Модалка задач -->
     <div id="tasksModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-4 relative modal-enter">
             <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <div>
                 <h3 id="tasksModalTitle" class="text-lg font-extrabold text-gray-900">Задачи по технике</h3>
@@ -161,15 +159,15 @@ export const template = `
             <div class="space-y-2 max-h-48 overflow-y-auto" id="vehicleTasksList"></div>
             <div class="pt-3 border-t border-gray-100 space-y-3">
                 <textarea id="newTaskText" rows="2" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-emerald-400 focus:border-transparent" placeholder="Текст задачи..."></textarea>
-                <button onclick="window.addVehicleTask()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm">Добавить задачу</button>
+                <button onclick="window.addVehicleTask()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm hover-lift">Добавить задачу</button>
             </div>
-            <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="document.getElementById('tasksModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Закрыть</button>
         </div>
     </div>
 
     <!-- Модалка добавления часов -->
     <div id="hoursModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative modal-enter">
             <button onclick="window.closeHoursModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">⏱️ Добавить наработку</h3>
             <div class="space-y-4">
@@ -185,8 +183,8 @@ export const template = `
                 </div>
             </div>
             <div class="flex gap-3 pt-3 border-t border-gray-100">
-                <button onclick="window.closeHoursModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
-                <button onclick="window.submitHours()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Добавить</button>
+                <button onclick="window.closeHoursModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Отмена</button>
+                <button onclick="window.submitHours()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Добавить</button>
             </div>
         </div>
     </div>
