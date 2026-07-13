@@ -63,9 +63,14 @@ export const template = `
                     <tbody id="dataTableBody"></tbody>
                 </table>
             </div>
-            <button onclick="window.addRow()" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
-                ➕ Добавить строку
-            </button>
+            <div class="flex gap-2">
+                <button onclick="window.addRow()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
+                    ➕ Добавить строку
+                </button>
+                <button onclick="window.downloadExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
+                    📥 Excel
+                </button>
+            </div>
         </div>
     </div>
 `;
@@ -467,4 +472,37 @@ window.deleteTemplate = async (templateId) => {
     } catch (err) {
         alert('Ошибка удаления: ' + err.message);
     }
+};
+
+// ===== EXCEL =====
+window.downloadExcel = () => {
+    if (!currentRows.length || !currentColumns.length) {
+        alert('Нет данных для экспорта');
+        return;
+    }
+    // Формируем данные для Excel
+    const header = ['#', ...currentColumns.map(c => c.name)];
+    const rows = currentRows.map((row, index) => {
+        const rowData = row.row_data || {};
+        const rowCells = [index + 1];
+        currentColumns.forEach(col => {
+            let val = rowData[col.name];
+            if (col.type === 'checkbox') {
+                val = val ? 'Да' : 'Нет';
+            } else if (col.type === 'vehicle') {
+                const vehicle = allVehicles.find(v => String(v.id) === String(val));
+                val = vehicle ? `${vehicle.model} ${vehicle.plate ? '['+vehicle.plate+']' : ''}` : '—';
+            } else {
+                val = val || '—';
+            }
+            rowCells.push(val);
+        });
+        return rowCells;
+    });
+
+    const data = [header, ...rows];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'Инспекция');
+    XLSX.writeFile(wb, `Инспекция_${new Date().toISOString().slice(0,10)}.xlsx`);
 };
