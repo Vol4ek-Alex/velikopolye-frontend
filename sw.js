@@ -1,28 +1,33 @@
 // sw.js
-const CACHE_NAME = 'arm-v1.0.5';
-const STATIC_CACHE = 'arm-static-v1.0.5';
-const API_CACHE = 'arm-api-v1.0.5';
+const CACHE_NAME = 'arm-v1.0.6';
+const STATIC_CACHE = 'arm-static-v1.0.6';
 
 const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/manifest.json',
     '/favicon.ico',
+    '/css/animations.css',
     '/js/dashboard.js',
     '/js/orders.js',
     '/js/fleet.js',
     '/js/links.js',
     '/js/repair_requests.js',
     '/js/my_lists.js',
-    '/js/inspection.js'
+    '/js/inspection.js',
+    '/js/search.js'
 ];
 
-// Установка
+// Установка – кешируем всё сразу
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(STATIC_CACHE)
-            .then(cache => cache.addAll(STATIC_ASSETS))
+            .then(cache => {
+                console.log('[SW] Кеширование ресурсов');
+                return cache.addAll(STATIC_ASSETS);
+            })
             .then(() => self.skipWaiting())
+            .catch(err => console.warn('[SW] Не все ресурсы закешированы:', err))
     );
 });
 
@@ -31,26 +36,29 @@ self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
             return Promise.all(
-                keys.filter(key => key !== STATIC_CACHE && key !== API_CACHE)
+                keys.filter(key => key !== STATIC_CACHE)
                     .map(key => caches.delete(key))
             );
         }).then(() => self.clients.claim())
     );
 });
 
-// Перехват запросов – сначала сеть, потом кэш
+// Перехват запросов – сначала кэш, потом сеть (быстрее для мобильных)
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // API-запросы: сначала сеть, потом кэш (для офлайн)
+    // API-запросы: сначала сеть, потом кэш (всегда свежие данные)
     if (url.pathname.startsWith('/api/') || url.hostname.includes('supabase')) {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
-                    const clone = response.clone();
-                    caches.open(API_CACHE).then(cache => {
-                        cache.put(event.request, clone);
-                    });
+                    // Кешируем успешные ответы
+                    if (response && response.status === 200) {
+                        const clone = response.clone();
+                        caches.open(STATIC_CACHE).then(cache => {
+                            cache.put(event.request, clone);
+                        });
+                    }
                     return response;
                 })
                 .catch(() => {
@@ -60,25 +68,42 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Статика: сначала сеть (всегда свежая), если сеть недоступна – кэш
+    // Статика: сначала кэш (мгновенно), потом сеть (обновление в фоне)
     event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                // Если успешно загрузили из сети – обновляем кэш
-                const clone = response.clone();
-                caches.open(STATIC_CACHE).then(cache => {
-                    cache.put(event.request, clone);
-                });
-                return response;
-            })
-            .catch(() => {
-                // Если сеть недоступна – берём из кэша
-                return caches.match(event.request);
+        caches.match(event.request)
+            .then(cachedResponse => {
+                if (cachedResponse) {
+                    // Обновляем кэш в фоне (stale-while-revalidate)
+                    fetch(event.request)
+                        .then(networkResponse => {
+                            if (networkResponse && networkResponse.status === 200) {
+                                caches.open(STATIC_CACHE).then(cache => {
+                                    cache.put(event.request, networkResponse);
+                                });
+                            }
+                        })
+                        .catch(() => {});
+                    return cachedResponse;
+                }
+                // Если нет в кэше – идём в сеть
+                return fetch(event.request)
+                    .then(networkResponse => {
+                        if (networkResponse && networkResponse.status === 200) {
+                            const clone = networkResponse.clone();
+                            caches.open(STATIC_CACHE).then(cache => {
+                                cache.put(event.request, clone);
+                            });
+                        }
+                        return networkResponse;
+                    })
+                    .catch(() => {
+                        return new Response('Офлайн-режим', { status: 503 });
+                    });
             })
     );
 });
 
-// Автоматическое обновление приложения при переходе на сайт
+// Автоматическое обновление
 self.addEventListener('message', event => {
     if (event.data === 'skipWaiting') {
         self.skipWaiting();
