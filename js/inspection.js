@@ -49,7 +49,7 @@ export const template = `
         </div>
     </div>
 
-    <!-- Модалка данных (таблица с инлайн-редактированием) -->
+    <!-- Модалка данных (таблица) -->
     <div id="dataModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-4xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
             <button onclick="window.closeDataModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
@@ -59,9 +59,7 @@ export const template = `
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse">
-                    <thead>
-                        <tr id="dataTableHead" class="bg-gray-50 border-b border-gray-200"></tr>
-                    </thead>
+                    <thead id="dataTableHead" class="bg-gray-50 border-b border-gray-200"></thead>
                     <tbody id="dataTableBody"></tbody>
                 </table>
             </div>
@@ -78,6 +76,7 @@ let currentTemplateId = null;
 let currentColumns = [];
 let currentRows = [];
 let allVehicles = [];
+let editingRowId = null;
 
 // ===== Инициализация =====
 export async function init() {
@@ -90,6 +89,10 @@ export async function init() {
     window.addRow = addRow;
     window.addColumn = addColumn;
     window.deleteTemplate = deleteTemplate;
+    window.toggleCheckbox = toggleCheckbox;
+    window.updateCell = updateCell;
+    window.selectVehicle = selectVehicle;
+    window.deleteRow = deleteRow;
 
     await loadVehicles();
     await loadTemplates();
@@ -109,7 +112,9 @@ async function loadVehicles() {
             .order('model');
         if (error) throw error;
         allVehicles = data || [];
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error('Ошибка загрузки техники:', err);
+    }
 }
 
 // ===== Загрузка шаблонов =====
@@ -122,7 +127,9 @@ async function loadTemplates() {
             .order('created_at', { ascending: false });
         if (error) throw error;
         templates = data || [];
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error('Ошибка загрузки шаблонов:', err);
+    }
 }
 
 // ===== Рендеринг шаблонов =====
@@ -207,6 +214,8 @@ function renderColumns(cols) {
 }
 
 window.addColumn = () => {
+    const container = document.getElementById('columnsContainer');
+    if (!container) return;
     const cols = getColumnsFromDOM();
     cols.push({ name: 'Новая колонка', type: 'text' });
     renderColumns(cols);
@@ -283,7 +292,7 @@ async function handleDeleteTemplate() {
     }
 }
 
-// ===== Модалка данных (таблица с инлайн-редактированием) =====
+// ===== Модалка данных (таблица) =====
 async function openDataModal(templateId) {
     const t = templates.find(t => t.id === templateId);
     if (!t) return;
@@ -316,7 +325,9 @@ async function loadRows(templateId) {
             .order('created_at', { ascending: true });
         if (error) throw error;
         currentRows = data || [];
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error('Ошибка загрузки строк:', err);
+    }
 }
 
 function renderTable() {
@@ -340,30 +351,26 @@ function renderTable() {
     tbody.innerHTML = currentRows.map((row, index) => {
         const rowData = row.row_data || {};
         return `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition" data-row-id="${row.id}">
+            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
                 <td class="px-3 py-2 text-sm font-medium text-gray-500">${index + 1}</td>
                 ${currentColumns.map(col => {
                     const value = rowData[col.name];
-                    let cellContent = '';
+                    let display = '';
                     if (col.type === 'checkbox') {
-                        const checked = value ? 'checked' : '';
-                        cellContent = `<input type="checkbox" ${checked} class="w-4 h-4 rounded text-amber-600 border-gray-300 focus:ring-amber-500" onchange="window.updateCell('${row.id}', '${col.name}', this.checked, 'checkbox')">`;
+                        display = `<input type="checkbox" ${value ? 'checked' : ''} onchange="window.toggleCheckbox('${row.id}', '${col.name}', this.checked)" class="w-4 h-4 rounded text-amber-600 border-gray-300 focus:ring-amber-500">`;
                     } else if (col.type === 'vehicle') {
-                        const selectedId = value || '';
-                        const options = allVehicles.map(v =>
-                            `<option value="${v.id}" ${v.id === selectedId ? 'selected' : ''}>${v.model} ${v.plate ? '['+v.plate+']' : ''}</option>`
-                        ).join('');
-                        cellContent = `
-                            <select class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded" onchange="window.updateCell('${row.id}', '${col.name}', this.value, 'vehicle')">
+                        const vehicle = allVehicles.find(v => v.id === value);
+                        const displayName = vehicle ? `${vehicle.model} ${vehicle.plate ? '['+vehicle.plate+']' : ''}` : '—';
+                        display = `
+                            <select onchange="window.selectVehicle('${row.id}', '${col.name}', this.value)" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-2 py-1 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent">
                                 <option value="">—</option>
-                                ${options}
+                                ${allVehicles.map(v => `<option value="${v.id}" ${v.id === value ? 'selected' : ''}>${v.model} ${v.plate ? '['+v.plate+']' : ''}</option>`).join('')}
                             </select>
                         `;
                     } else {
-                        // text
-                        cellContent = `<input type="text" value="${value || ''}" class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded px-1 py-0.5" onchange="window.updateCell('${row.id}', '${col.name}', this.value, 'text')" placeholder="—">`;
+                        display = `<input type="text" value="${value || ''}" onchange="window.updateCell('${row.id}', '${col.name}', this.value)" class="w-full bg-transparent border-b border-gray-300 focus:border-amber-400 focus:outline-none px-1 py-0.5">`;
                     }
-                    return `<td class="px-3 py-2 text-sm text-gray-800">${cellContent}</td>`;
+                    return `<td class="px-3 py-2 text-sm text-gray-800">${display}</td>`;
                 }).join('')}
                 <td class="px-3 py-2 text-center">
                     <button onclick="window.deleteRow('${row.id}')" class="text-red-400 hover:text-red-600 text-xs">🗑️</button>
@@ -373,29 +380,46 @@ function renderTable() {
     }).join('');
 }
 
-// ===== Обновление ячейки =====
-window.updateCell = async (rowId, colName, value, type) => {
+// ===== Функции для inline-редактирования =====
+window.toggleCheckbox = async (rowId, colName, checked) => {
     const row = currentRows.find(r => r.id === rowId);
     if (!row) return;
-    let newValue = value;
-    if (type === 'checkbox') {
-        newValue = value === true || value === 'true' ? true : false;
-    } else if (type === 'vehicle') {
-        newValue = value || null;
-    } else {
-        newValue = value || '';
-    }
-    const rowData = row.row_data || {};
-    rowData[colName] = newValue;
+    row.row_data[colName] = checked;
     try {
         await window._supabase
             .from('inspection_rows')
-            .update({ row_data: rowData })
+            .update({ row_data: row.row_data })
             .eq('id', rowId);
-        // Обновляем локальный массив
-        row.row_data = rowData;
     } catch (err) {
-        alert('Ошибка сохранения: ' + err.message);
+        console.error('Ошибка сохранения чекбокса:', err);
+    }
+};
+
+window.updateCell = async (rowId, colName, value) => {
+    const row = currentRows.find(r => r.id === rowId);
+    if (!row) return;
+    row.row_data[colName] = value;
+    try {
+        await window._supabase
+            .from('inspection_rows')
+            .update({ row_data: row.row_data })
+            .eq('id', rowId);
+    } catch (err) {
+        console.error('Ошибка сохранения текста:', err);
+    }
+};
+
+window.selectVehicle = async (rowId, colName, vehicleId) => {
+    const row = currentRows.find(r => r.id === rowId);
+    if (!row) return;
+    row.row_data[colName] = vehicleId || null;
+    try {
+        await window._supabase
+            .from('inspection_rows')
+            .update({ row_data: row.row_data })
+            .eq('id', rowId);
+    } catch (err) {
+        console.error('Ошибка сохранения техники:', err);
     }
 };
 
