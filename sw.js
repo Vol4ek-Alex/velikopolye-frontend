@@ -1,7 +1,7 @@
-// sw.js – улучшенная версия
-const CACHE_NAME = 'arm-v1';
-const STATIC_CACHE = 'arm-static-v1';
-const API_CACHE = 'arm-api-v1';
+// sw.js
+const CACHE_NAME = 'arm-v2';
+const STATIC_CACHE = 'arm-static-v2';
+const API_CACHE = 'arm-api-v2';
 
 const STATIC_ASSETS = [
     '/',
@@ -26,7 +26,7 @@ self.addEventListener('install', event => {
     );
 });
 
-// Активация
+// Активация – удаляем старые кэши
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
@@ -38,11 +38,11 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Перехват запросов
+// Перехват запросов – сначала сеть, потом кэш
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // API-запросы кешируем с сетью в приоритете
+    // API-запросы: сначала сеть, потом кэш (для офлайн)
     if (url.pathname.startsWith('/api/') || url.hostname.includes('supabase')) {
         event.respondWith(
             fetch(event.request)
@@ -60,9 +60,27 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Статика – сначала кеш, потом сеть
+    // Статика: сначала сеть (всегда свежая), если сеть недоступна – кэш
     event.respondWith(
-        caches.match(event.request)
-            .then(cached => cached || fetch(event.request))
+        fetch(event.request)
+            .then(response => {
+                // Если успешно загрузили из сети – обновляем кэш
+                const clone = response.clone();
+                caches.open(STATIC_CACHE).then(cache => {
+                    cache.put(event.request, clone);
+                });
+                return response;
+            })
+            .catch(() => {
+                // Если сеть недоступна – берём из кэша
+                return caches.match(event.request);
+            })
     );
+});
+
+// Автоматическое обновление приложения при переходе на сайт
+self.addEventListener('message', event => {
+    if (event.data === 'skipWaiting') {
+        self.skipWaiting();
+    }
 });

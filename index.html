@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>АРМ «Великополье»</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -559,6 +562,74 @@
             }
         });
     })();
+    // В index.html внутри основного скрипта
+
+    // Простой тост-уведомление
+    window.showToast = (message, type = 'info') => {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-lg z-[200] text-sm font-medium transition-all duration-300 opacity-0`;
+        toast.textContent = message;
+        if (type === 'info') toast.style.backgroundColor = '#4f46e5';
+        if (type === 'success') toast.style.backgroundColor = '#059669';
+        if (type === 'error') toast.style.backgroundColor = '#dc2626';
+        document.body.appendChild(toast);
+
+        setTimeout(() => { toast.style.opacity = '1'; }, 50);
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    };
+
+    // Очистка устаревших данных при запуске
+    const APP_VERSION = '1.0.2'; // увеличивайте при изменениях
+    const storedVersion = localStorage.getItem('app_version');
+
+    if (storedVersion !== APP_VERSION) {
+        // Очищаем кэш старых данных
+        localStorage.clear();
+        sessionStorage.clear();
+        localStorage.setItem('app_version', APP_VERSION);
+        console.log('🧹 Кэш данных очищен (новая версия)');
+    }
+
+    // Регистрация Service Worker с принудительным обновлением
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+            .then(reg => {
+                // Проверяем обновления при каждой загрузке
+                reg.update();
+
+                // Автоматически обновляем приложение, если есть новая версия
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // Показываем уведомление о новой версии (опционально)
+                            console.log('📦 Новая версия приложения доступна!');
+                            // Можно показать тост: "Приложение обновлено"
+                            if (window.showToast) {
+                                window.showToast('Приложение обновлено!', 'info');
+                            }
+                            // Перезагружаем страницу, чтобы применить обновление
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        }
+                    });
+                });
+            })
+            .catch(err => console.error('SW error:', err));
+    }
+
+    // Функция для принудительного обновления (по требованию пользователя)
+    window.forceUpdateApp = () => {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    reg.update();
+                    alert('Поиск обновлений...');
+                }
+            });
+        }
+    };
 </script>
 </body>
 </html>
