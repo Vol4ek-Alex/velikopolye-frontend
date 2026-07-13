@@ -37,7 +37,7 @@ export const template = `
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Колонки (каждая с новой строки)</label>
                     <div class="space-y-2">
                         <div id="columnsContainer" class="space-y-2 max-h-48 overflow-y-auto"></div>
-                        <button type="button" onclick="addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">➕ Добавить колонку</button>
+                        <button type="button" onclick="window.addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">➕ Добавить колонку</button>
                     </div>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
@@ -49,19 +49,17 @@ export const template = `
         </div>
     </div>
 
-    <!-- Модалка заполнения таблицы -->
+    <!-- Модалка заполнения таблицы (с горизонтальным скроллом) -->
     <div id="dataModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-3xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
+        <div class="bg-white rounded-3xl w-full max-w-4xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
             <button onclick="window.closeDataModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <div>
                 <h3 id="dataModalTitle" class="text-xl font-extrabold text-gray-900">Название шаблона</h3>
                 <p id="dataModalDesc" class="text-sm text-gray-500"></p>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm border-collapse">
-                    <thead>
-                        <tr id="dataTableHead" class="bg-gray-50 border-b border-gray-200"></tr>
-                    </thead>
+                <table class="w-full text-sm border-collapse min-w-max">
+                    <thead id="dataTableHead" class="bg-gray-50 border-b border-gray-200"></thead>
                     <tbody id="dataTableBody"></tbody>
                 </table>
             </div>
@@ -91,12 +89,13 @@ export async function init() {
     window.addRow = addRow;
     window.addColumn = addColumn;
     window.deleteTemplate = deleteTemplate;
+    window.editRow = editRow;
+    window.deleteRow = deleteRow;
 
     await loadVehicles();
     await loadTemplates();
     renderTemplates();
 
-    // Обработчики форм
     document.getElementById('templateForm').addEventListener('submit', handleTemplateSubmit);
     document.getElementById('templateDeleteBtn').addEventListener('click', handleDeleteTemplate);
 }
@@ -201,13 +200,13 @@ function renderColumns(cols) {
     if (!container) return;
     container.innerHTML = cols.map((col, index) => `
         <div class="flex items-center gap-2">
-            <input type="text" value="${col.name}" placeholder="Название колонки" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" oninput="updateColumn(${index}, this.value)">
-            <select class="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" onchange="updateColumnType(${index}, this.value)">
+            <input type="text" value="${col.name}" placeholder="Название колонки" class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" oninput="window.updateColumn(${index}, this.value)">
+            <select class="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent" data-index="${index}" onchange="window.updateColumnType(${index}, this.value)">
                 <option value="text" ${col.type === 'text' ? 'selected' : ''}>Текст</option>
                 <option value="checkbox" ${col.type === 'checkbox' ? 'selected' : ''}>Чекбокс</option>
                 <option value="vehicle" ${col.type === 'vehicle' ? 'selected' : ''}>Техника</option>
             </select>
-            <button type="button" onclick="removeColumn(${index})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
+            <button type="button" onclick="window.removeColumn(${index})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
         </div>
     `).join('');
 }
@@ -300,7 +299,6 @@ async function openDataModal(templateId) {
     document.getElementById('dataModalTitle').textContent = t.title;
     document.getElementById('dataModalDesc').textContent = t.description || '';
 
-    // Загружаем строки
     await loadRows(templateId);
     renderTable();
     document.getElementById('dataModal').classList.remove('hidden');
@@ -392,34 +390,20 @@ window.addRow = async () => {
         if (error) throw error;
         await loadRows(currentTemplateId);
         renderTable();
-        // Открываем редактирование новой строки
         if (data && data[0]) editRow(data[0].id);
     } catch (err) {
         alert('Ошибка добавления: ' + err.message);
     }
 };
 
-// ===== Редактирование строки =====
+// ===== Редактирование строки (inline-модалка) =====
 function editRow(rowId) {
     const row = currentRows.find(r => r.id === rowId);
     if (!row) return;
     editingRowId = rowId;
     const rowData = row.row_data || {};
 
-    // Создаём модалку редактирования строки (временное решение – просто простые поля)
-    // Проще всего открыть редактирование в той же таблице с инлайновым редактированием, но для упрощения сделаем модалку.
-    // Пока не будем усложнять, просто выведем alert с инструкцией.
-    // В идеале – открыть модалку с полями для ввода.
-    // Я добавлю быструю модалку.
-    showInlineEditModal(rowId);
-}
-
-function showInlineEditModal(rowId) {
-    const row = currentRows.find(r => r.id === rowId);
-    if (!row) return;
-    const rowData = row.row_data || {};
-
-    // Создаём временный диалог
+    // Создаём модалку редактирования
     const overlay = document.createElement('div');
     overlay.className = 'fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4';
     overlay.id = 'inlineEditOverlay';
@@ -429,7 +413,7 @@ function showInlineEditModal(rowId) {
             <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Редактирование строки</h3>
             <form id="inlineEditForm" class="space-y-4 text-sm">
                 ${currentColumns.map(col => {
-                    const value = rowData[col.name] || '';
+                    const value = rowData[col.name] !== undefined ? rowData[col.name] : (col.type === 'checkbox' ? false : '');
                     if (col.type === 'checkbox') {
                         return `<div class="flex items-center gap-2">
                             <label class="text-sm font-medium text-gray-700">${col.name}</label>
@@ -446,7 +430,7 @@ function showInlineEditModal(rowId) {
                     } else {
                         return `<div>
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">${col.name}</label>
-                            <input type="text" id="edit_${col.name}" value="${value}" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent">
+                            <input type="text" id="edit_${col.name}" value="${value || ''}" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-amber-400 focus:border-transparent">
                         </div>`;
                     }
                 }).join('')}
@@ -462,8 +446,13 @@ function showInlineEditModal(rowId) {
     document.getElementById('inlineEditForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const newData = {};
+        let hasError = false;
         currentColumns.forEach(col => {
             const el = document.getElementById('edit_' + col.name);
+            if (!el) {
+                hasError = true;
+                return;
+            }
             if (col.type === 'checkbox') {
                 newData[col.name] = el.checked;
             } else if (col.type === 'vehicle') {
@@ -472,11 +461,13 @@ function showInlineEditModal(rowId) {
                 newData[col.name] = el.value;
             }
         });
+        if (hasError) return;
         try {
-            await window._supabase
+            const { error } = await window._supabase
                 .from('inspection_rows')
                 .update({ row_data: newData })
                 .eq('id', rowId);
+            if (error) throw error;
             overlay.remove();
             await loadRows(currentTemplateId);
             renderTable();
