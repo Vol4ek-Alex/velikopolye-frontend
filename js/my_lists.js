@@ -1,26 +1,24 @@
 // js/my_lists.js
 
 export const template = `
-    <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+    <div class="animate-fade-in-down mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div>
             <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
                 <span class="bg-cyan-100 p-1.5 rounded-lg">📋</span> Мои списки
             </h2>
             <p class="text-sm text-gray-500 font-medium">Создавайте чек-листы, заметки, инспекционные листы для работы</p>
         </div>
-        <button onclick="window.openListModal()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2">
+        <button onclick="window.openListModal()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2 hover-lift">
             ➕ Новый список
         </button>
     </div>
 
-    <!-- Список документов (история) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="listsGrid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger" id="listsGrid">
         <div class="col-span-full text-center py-12 text-sm text-gray-400 font-medium bg-white rounded-2xl border border-gray-200">Загрузка списков...</div>
     </div>
 
-    <!-- Модалка создания/редактирования списка -->
     <div id="listFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative modal-enter">
             <button onclick="window.closeListModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 id="listModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Новый список</h3>
             <form id="listForm" class="space-y-4 text-sm">
@@ -34,42 +32,36 @@ export const template = `
                     <input type="text" id="listDescription" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-cyan-400 focus:border-transparent" placeholder="Краткий комментарий">
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="window.closeListModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
-                    <button type="submit" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
+                    <button type="button" onclick="window.closeListModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Отмена</button>
+                    <button type="submit" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Сохранить</button>
                 </div>
-                <button type="button" id="listDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить список</button>
+                <button type="button" id="listDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden hover-lift">Удалить список</button>
             </form>
         </div>
     </div>
 
-    <!-- Модалка просмотра списка (строки) -->
     <div id="listViewModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative modal-enter">
             <button onclick="window.closeListViewModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <div>
                 <h3 id="viewListTitle" class="text-xl font-extrabold text-gray-900">Название списка</h3>
                 <p id="viewListDescription" class="text-sm text-gray-500"></p>
             </div>
-
-            <!-- Строки (элементы) -->
             <div id="viewItemsContainer" class="space-y-3">
                 <div class="text-gray-400 text-sm py-4 text-center">Нет элементов. Добавьте первый!</div>
             </div>
-
-            <!-- Форма добавления элемента -->
             <div class="border-t border-gray-200 pt-4 space-y-3">
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="window.addItem('text')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl font-bold text-sm transition border border-gray-300">📝 Текст</button>
-                    <button onclick="window.addItem('checkbox')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl font-bold text-sm transition border border-gray-300">☑️ Чекбокс</button>
+                    <button onclick="window.addItem('text')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl font-bold text-sm transition border border-gray-300 hover-lift">📝 Текст</button>
+                    <button onclick="window.addItem('checkbox')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl font-bold text-sm transition border border-gray-300 hover-lift">☑️ Чекбокс</button>
                 </div>
-                <button onclick="window.addItem('vehicle')" class="w-full bg-cyan-50 hover:bg-cyan-100 text-cyan-700 py-2 rounded-xl font-bold text-sm transition border border-cyan-300">🚜 Выбрать технику</button>
+                <button onclick="window.addItem('vehicle')" class="w-full bg-cyan-50 hover:bg-cyan-100 text-cyan-700 py-2 rounded-xl font-bold text-sm transition border border-cyan-300 hover-lift">🚜 Выбрать технику</button>
             </div>
         </div>
     </div>
 
-    <!-- Модалка редактирования элемента -->
     <div id="itemFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative modal-enter">
             <button onclick="window.closeItemModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 id="itemModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Редактирование</h3>
             <form id="itemForm" class="space-y-4 text-sm">
@@ -92,10 +84,10 @@ export const template = `
                     </label>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="window.closeItemModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
-                    <button type="submit" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
+                    <button type="button" onclick="window.closeItemModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Отмена</button>
+                    <button type="submit" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Сохранить</button>
                 </div>
-                <button type="button" id="itemDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить элемент</button>
+                <button type="button" id="itemDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden hover-lift">Удалить элемент</button>
             </form>
         </div>
     </div>

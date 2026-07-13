@@ -1,7 +1,7 @@
 // js/repair_requests.js
 
 export const template = `
-<div class="space-y-6">
+<div class="space-y-6 animate-fade-in-down">
     <!-- Верхняя панель -->
     <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -10,27 +10,27 @@ export const template = `
             </h2>
             <p class="text-sm text-gray-500 font-medium">Учёт заявок на ремонт и обслуживание техники</p>
         </div>
-        <button onclick="window.openRequestModal()" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2">
+        <button onclick="window.openRequestModal()" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2 hover-lift">
             ➕ Новая заявка
         </button>
     </div>
 
     <!-- Фильтры -->
-    <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-3">
+    <div class="animate-fade-in-up delay-50 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-3">
         <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-1">Фильтр по статусу:</span>
         <button onclick="window.filterRequests('all')" id="statusFilter_all" class="px-3 py-1 text-xs font-bold rounded-xl border-2 border-orange-600 bg-orange-600 text-white">Все</button>
         <div id="statusFilterContainer" class="flex flex-wrap gap-2"></div>
-        <button onclick="window.openStatusManager()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-xl border border-gray-300 transition">+ Управлять</button>
+        <button onclick="window.openStatusManager()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-xl border border-gray-300 transition hover-lift">+ Управлять</button>
     </div>
 
     <!-- Список заявок -->
-    <div id="requestsGrid" class="space-y-3">
+    <div id="requestsGrid" class="space-y-3 card-stagger">
         <div class="text-center text-gray-400 py-12 text-sm font-medium bg-white rounded-2xl border border-gray-200">Загрузка заявок...</div>
     </div>
 
     <!-- Модалка создания/редактирования заявки -->
     <div id="requestFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative modal-enter">
             <button onclick="window.closeRequestModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 id="requestModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Новая заявка</h3>
             <form id="requestForm" class="space-y-4 text-sm">
@@ -59,7 +59,7 @@ export const template = `
                                 <option value="high">Высокий</option>
                                 <option value="critical">Критический</option>
                             </select>
-                            <button type="button" onclick="window.addPriorityOption()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 rounded-xl border border-gray-300 transition" title="Добавить новый приоритет">+</button>
+                            <button type="button" onclick="window.addPriorityOption()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 rounded-xl border border-gray-300 transition hover-lift" title="Добавить новый приоритет">+</button>
                         </div>
                     </div>
                     <div>
@@ -71,7 +71,7 @@ export const template = `
                                 <option value="completed">Выполнена</option>
                                 <option value="cancelled">Отменена</option>
                             </select>
-                            <button type="button" onclick="window.addStatusOption()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 rounded-xl border border-gray-300 transition" title="Добавить новый статус">+</button>
+                            <button type="button" onclick="window.addStatusOption()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 rounded-xl border border-gray-300 transition hover-lift" title="Добавить новый статус">+</button>
                         </div>
                     </div>
                 </div>
@@ -90,17 +90,16 @@ export const template = `
                     </div>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="window.closeRequestModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
-                    <button type="submit" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
+                    <button type="button" onclick="window.closeRequestModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Отмена</button>
+                    <button type="submit" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Сохранить</button>
                 </div>
-                <button type="button" id="requestDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить заявку</button>
+                <button type="button" id="requestDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden hover-lift">Удалить заявку</button>
             </form>
         </div>
     </div>
 
-    <!-- Модалка управления приоритетами/статусами -->
     <div id="statusManagerModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative modal-enter">
             <button onclick="window.closeStatusManager()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Управление статусами и приоритетами</h3>
             <div>
@@ -108,7 +107,7 @@ export const template = `
                 <div id="statusList" class="space-y-1 max-h-32 overflow-y-auto"></div>
                 <div class="flex gap-2 mt-2">
                     <input type="text" id="newStatusInput" placeholder="Новый статус..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent">
-                    <button onclick="window.addStatusItem()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold transition">Добавить</button>
+                    <button onclick="window.addStatusItem()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold transition hover-lift">Добавить</button>
                 </div>
             </div>
             <div class="border-t border-gray-200 pt-3">
@@ -116,10 +115,10 @@ export const template = `
                 <div id="priorityList" class="space-y-1 max-h-32 overflow-y-auto"></div>
                 <div class="flex gap-2 mt-2">
                     <input type="text" id="newPriorityInput" placeholder="Новый приоритет..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent">
-                    <button onclick="window.addPriorityItem()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold transition">Добавить</button>
+                    <button onclick="window.addPriorityItem()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold transition hover-lift">Добавить</button>
                 </div>
             </div>
-            <button onclick="window.closeStatusManager()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="window.closeStatusManager()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Закрыть</button>
         </div>
     </div>
 </div>

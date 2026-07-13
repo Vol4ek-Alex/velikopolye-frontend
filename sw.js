@@ -1,7 +1,7 @@
 // sw.js
-const CACHE_NAME = 'arm-v1.0.4';
-const STATIC_CACHE = 'arm-static-v1.0.4';
-const API_CACHE = 'arm-api-v1.0.4';
+const CACHE_NAME = 'arm-v1.0.5';
+const STATIC_CACHE = 'arm-static-v1.0.5';
+const API_CACHE = 'arm-api-v1.0.5';
 
 const STATIC_ASSETS = [
     '/',

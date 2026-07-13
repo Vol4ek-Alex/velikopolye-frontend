@@ -1,25 +1,24 @@
 // js/inspection.js
 
 export const template = `
-    <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+    <div class="animate-fade-in-down mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div>
             <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
                 <span class="bg-amber-100 p-1.5 rounded-lg">📋</span> Инспекционные листы
             </h2>
             <p class="text-sm text-gray-500 font-medium">Создавайте кастомные таблицы для обхода техники</p>
         </div>
-        <button onclick="window.openTemplateModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2">
+        <button onclick="window.openTemplateModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2 hover-lift">
             ➕ Новый шаблон
         </button>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="templatesGrid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger" id="templatesGrid">
         <div class="col-span-full text-center py-12 text-sm text-gray-400 font-medium bg-white rounded-2xl border border-gray-200">Загрузка шаблонов...</div>
     </div>
 
-    <!-- Модалка шаблона -->
     <div id="templateModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative modal-enter">
             <button onclick="window.closeTemplateModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 id="templateModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Новый шаблон</h3>
             <form id="templateForm" class="space-y-4 text-sm">
@@ -36,21 +35,20 @@ export const template = `
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Колонки</label>
                     <div class="space-y-2">
                         <div id="columnsContainer" class="space-y-2 max-h-48 overflow-y-auto"></div>
-                        <button type="button" onclick="window.addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">➕ Добавить колонку</button>
+                        <button type="button" onclick="window.addColumn()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition hover-lift">➕ Добавить колонку</button>
                     </div>
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="window.closeTemplateModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
-                    <button type="submit" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
+                    <button type="button" onclick="window.closeTemplateModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Отмена</button>
+                    <button type="submit" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Сохранить</button>
                 </div>
-                <button type="button" id="templateDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить шаблон</button>
+                <button type="button" id="templateDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden hover-lift">Удалить шаблон</button>
             </form>
         </div>
     </div>
 
-    <!-- Модалка данных -->
     <div id="dataModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-4xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative">
+        <div class="bg-white rounded-3xl w-full max-w-4xl p-6 border border-gray-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto relative modal-enter">
             <button onclick="window.closeDataModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <div>
                 <h3 id="dataModalTitle" class="text-xl font-extrabold text-gray-900">Название шаблона</h3>
@@ -63,13 +61,13 @@ export const template = `
                 </table>
             </div>
             <div class="flex gap-3">
-                <button onclick="window.addRow()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
+                <button onclick="window.addRow()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2 hover-lift">
                     ➕ Добавить строку
                 </button>
-                <button onclick="window.downloadExcel()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
+                <button onclick="window.downloadExcel()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2 hover-lift">
                     📥 Скачать Excel
                 </button>
-                <button onclick="window.reloadData()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold transition border border-gray-300 text-sm flex items-center justify-center gap-2">
+                <button onclick="window.reloadData()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold transition border border-gray-300 text-sm flex items-center justify-center gap-2 hover-lift">
                     🔄 Обновить
                 </button>
             </div>

@@ -1,33 +1,31 @@
-// js/links.js
-
 export const template = `
-    <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+    <div class="animate-fade-in-down mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div>
             <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
                 <span class="bg-purple-100 p-1.5 rounded-lg">🔗</span> Полезные ссылки
             </h2>
             <p class="text-sm text-gray-500 font-medium">Быстрый доступ к нужным ресурсам</p>
         </div>
-        <button onclick="window.openLinkModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2">
+        <button onclick="window.openLinkModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-md flex items-center gap-2 hover-lift">
             ➕ Добавить ссылку
         </button>
     </div>
 
-    <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm mb-6">
+    <div class="animate-fade-in-up delay-50 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm mb-6">
         <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-2">Категории:</span>
             <button onclick="window.filterLinks('all')" id="linkCat_all" class="px-3 py-1.5 text-xs font-bold rounded-xl transition border-2 border-purple-600 bg-purple-600 text-white">Все</button>
             <div id="linkCategoriesContainer" class="flex flex-wrap gap-2"></div>
-            <button onclick="window.openCategoryModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition">+ Управлять</button>
+            <button onclick="window.openCategoryModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl border border-gray-300 transition hover-lift">+ Управлять</button>
         </div>
     </div>
 
-    <div id="linksGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div id="linksGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 card-stagger">
         <div class="col-span-full text-center py-12 text-sm text-gray-400 font-medium bg-white rounded-2xl border border-gray-200">Загрузка ссылок...</div>
     </div>
 
     <div id="linkFormModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 border border-gray-200 shadow-2xl space-y-5 relative modal-enter">
             <button onclick="window.closeLinkModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 id="linkModalTitle" class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Добавление ссылки</h3>
             <form id="linkForm" class="space-y-4 text-sm">
@@ -51,24 +49,24 @@ export const template = `
                     <input type="text" id="linkIcon" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent" placeholder="https://... или 🚜">
                 </div>
                 <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="window.closeLinkModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Отмена</button>
-                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold transition shadow-md">Сохранить</button>
+                    <button type="button" onclick="window.closeLinkModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Отмена</button>
+                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Сохранить</button>
                 </div>
-                <button type="button" id="linkDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden">Удалить ссылку</button>
+                <button type="button" id="linkDeleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl font-bold transition border border-red-300 hidden hover-lift">Удалить ссылку</button>
             </form>
         </div>
     </div>
 
     <div id="categoryModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative modal-enter">
             <button onclick="window.closeCategoryModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
             <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Управление категориями</h3>
             <div id="categoryList" class="space-y-2 max-h-48 overflow-y-auto"></div>
             <div class="pt-3 border-t border-gray-100 flex gap-2">
                 <input type="text" id="newCategoryInput" placeholder="Новая категория..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-purple-400 focus:border-transparent">
-                <button onclick="window.addCategory()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition shadow-sm">Добавить</button>
+                <button onclick="window.addCategory()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition shadow-sm hover-lift">Добавить</button>
             </div>
-            <button onclick="window.closeCategoryModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300">Закрыть</button>
+            <button onclick="window.closeCategoryModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold transition border border-gray-300 hover-lift">Закрыть</button>
         </div>
     </div>
 `;

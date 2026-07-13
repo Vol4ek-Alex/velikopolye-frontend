@@ -28,7 +28,7 @@ export const template = `
 }
 </style>
 
-<div class="space-y-6 no-print-section">
+<div class="space-y-6 no-print-section animate-fade-in-down">
     <!-- Верхняя панель -->
     <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -37,7 +37,7 @@ export const template = `
             </h2>
             <p class="text-sm text-gray-500 font-medium">Управление внутренней документацией и общий архив документов</p>
         </div>
-        <button id="docBackToMenuBtn" onclick="window.switchDocSubModule('menu')" class="hidden bg-gray-100 hover:bg-gray-200 border border-gray-300 font-bold text-xs text-gray-700 px-4 py-2 rounded-xl transition shadow-sm">
+        <button id="docBackToMenuBtn" onclick="window.switchDocSubModule('menu')" class="hidden bg-gray-100 hover:bg-gray-200 border border-gray-300 font-bold text-xs text-gray-700 px-4 py-2 rounded-xl transition shadow-sm hover-lift">
             ⬅ Назад в каталог
         </button>
     </div>
@@ -46,14 +46,14 @@ export const template = `
     <div id="docHubMainContainer" class="space-y-6">
         <!-- Вкладки категорий -->
         <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
-            <button onclick="window.filterDocByCategory('all')" id="catTab_all" class="px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition">Все документы</button>
-            <button onclick="window.filterDocByCategory('personal')" id="catTab_personal" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 transition">🧑‍💻 Служебные записки</button>
-            <button onclick="window.filterDocByCategory('acts')" id="catTab_acts" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 transition">📝 Акты</button>
-            <button onclick="window.filterDocByCategory('sklad')" id="catTab_sklad" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 transition">📊 Склад</button>
+            <button onclick="window.filterDocByCategory('all')" id="catTab_all" class="px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition hover-lift">Все документы</button>
+            <button onclick="window.filterDocByCategory('personal')" id="catTab_personal" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 transition hover-lift">🧑‍💻 Служебные записки</button>
+            <button onclick="window.filterDocByCategory('acts')" id="catTab_acts" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 transition hover-lift">📝 Акты</button>
+            <button onclick="window.filterDocByCategory('sklad')" id="catTab_sklad" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 transition hover-lift">📊 Склад</button>
         </div>
 
         <!-- Поиск -->
-        <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex gap-3 items-center">
+        <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex gap-3 items-center animate-fade-in-up delay-50">
             <div class="relative flex-1">
                 <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">🔍</span>
                 <input type="text" id="docCardsSearchInput" oninput="window.filterDocCards()" class="w-full bg-gray-50 border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-400 focus:border-transparent focus:bg-white transition" placeholder="Поиск среди документов...">
@@ -61,20 +61,20 @@ export const template = `
         </div>
 
         <!-- Сетка карточек документов -->
-        <div id="docHubMainMenu" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 fade-in-sub"></div>
+        <div id="docHubMainMenu" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 fade-in-sub card-stagger"></div>
 
         <!-- Архив документов (карточки) -->
-        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm fade-in-sub">
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm fade-in-sub animate-fade-in-up delay-100">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <h3 class="text-sm font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-2">
                     <span>🗄️</span> Архив сгенерированных документов
                 </h3>
                 <div class="flex gap-2">
                     <input type="text" id="archiveSearchInput" placeholder="Фильтр по имени..." oninput="window.filterArchive()" class="text-sm bg-gray-50 border border-gray-300 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
-                    <button onclick="window.loadTripStorageHistory()" class="text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-3 py-1.5 rounded-xl transition">🔄 Обновить</button>
+                    <button onclick="window.loadTripStorageHistory()" class="text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-3 py-1.5 rounded-xl transition hover-lift">🔄 Обновить</button>
                 </div>
             </div>
-            <div id="archiveGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-1">
+            <div id="archiveGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-1 card-stagger">
                 <!-- Карточки будут вставлены динамически -->
             </div>
         </div>

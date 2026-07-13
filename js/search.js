@@ -1,7 +1,7 @@
 // js/search.js
 
 export const template = `
-    <div class="max-w-5xl mx-auto p-4 md:p-6">
+    <div class="max-w-5xl mx-auto p-4 md:p-6 animate-fade-in-down">
         <!-- Шапка -->
         <div class="mb-8">
             <h2 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
@@ -12,7 +12,7 @@ export const template = `
         </div>
 
         <!-- Поисковая строка -->
-        <div class="relative">
+        <div class="relative animate-fade-in-up delay-50">
             <div class="absolute left-5 top-1/2 -translate-y-1/2 text-xl text-gray-400">🔎</div>
             <input type="text" id="searchInput" 
                    placeholder="Поиск: техника, заявки, списки, инспекции, ссылки..." 
@@ -21,17 +21,17 @@ export const template = `
         </div>
 
         <!-- Быстрые фильтры -->
-        <div class="flex flex-wrap gap-2 mt-4">
-            <button onclick="window.searchFilter('all')" id="filter_all" class="px-4 py-1.5 text-xs font-bold rounded-full bg-indigo-600 text-white border border-indigo-600 transition">Все</button>
-            <button onclick="window.searchFilter('vehicles')" id="filter_vehicles" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition">🚜 Техника</button>
-            <button onclick="window.searchFilter('repairs')" id="filter_repairs" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition">🔧 Заявки</button>
-            <button onclick="window.searchFilter('lists')" id="filter_lists" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition">📋 Списки</button>
-            <button onclick="window.searchFilter('inspections')" id="filter_inspections" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition">📄 Инспекции</button>
-            <button onclick="window.searchFilter('links')" id="filter_links" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition">🔗 Ссылки</button>
+        <div class="flex flex-wrap gap-2 mt-4 animate-fade-in-up delay-100">
+            <button onclick="window.searchFilter('all')" id="filter_all" class="px-4 py-1.5 text-xs font-bold rounded-full bg-indigo-600 text-white border border-indigo-600 transition hover-lift">Все</button>
+            <button onclick="window.searchFilter('vehicles')" id="filter_vehicles" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition hover-lift">🚜 Техника</button>
+            <button onclick="window.searchFilter('repairs')" id="filter_repairs" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition hover-lift">🔧 Заявки</button>
+            <button onclick="window.searchFilter('lists')" id="filter_lists" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition hover-lift">📋 Списки</button>
+            <button onclick="window.searchFilter('inspections')" id="filter_inspections" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition hover-lift">📄 Инспекции</button>
+            <button onclick="window.searchFilter('links')" id="filter_links" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition hover-lift">🔗 Ссылки</button>
         </div>
 
         <!-- Результаты -->
-        <div id="searchResults" class="mt-6 space-y-6">
+        <div id="searchResults" class="mt-6 space-y-6 card-stagger">
             <div class="text-center py-16 text-gray-400">
                 <span class="text-6xl block mb-4">🔎</span>
                 <p class="text-lg font-medium">Начните вводить текст для поиска</p>
