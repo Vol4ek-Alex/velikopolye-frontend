@@ -83,7 +83,8 @@ let currentTemplateId = null;
 let currentColumns = [];
 let currentRows = [];
 let allVehicles = [];
-let editingRowId = null;
+let currentPage = 1;
+const PAGE_SIZE = 20;
 
 // ===== Инициализация =====
 export async function init() {
@@ -162,16 +163,6 @@ function renderTemplates() {
             </div>
         `;
     }).join('');
-}
-
-let currentPage = 1;
-const PAGE_SIZE = 20;
-
-function renderTable() {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-    const pageRows = currentRows.slice(start, end);
-    // ... рендеринг только pageRows
 }
 
 // ===== Модалка шаблона =====
@@ -323,6 +314,7 @@ function closeDataModal() {
     document.getElementById('dataModal').classList.add('hidden');
     currentTemplateId = null;
     currentRows = [];
+    currentPage = 1;
 }
 
 window.closeDataModal = closeDataModal;
@@ -338,16 +330,21 @@ async function loadRows(templateId) {
             .order('created_at', { ascending: true });
         if (error) throw error;
         currentRows = data || [];
+        currentPage = 1;
     } catch (err) {
         console.error('Ошибка загрузки строк:', err);
     }
 }
 
-// ===== Рендеринг таблицы =====
+// ===== Рендеринг таблицы с пагинацией =====
 function renderTable() {
     const thead = document.getElementById('dataTableHead');
     const tbody = document.getElementById('dataTableBody');
     if (!thead || !tbody) return;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = Math.min(start + PAGE_SIZE, currentRows.length);
+    const pageRows = currentRows.slice(start, end);
 
     thead.innerHTML = `
         <th class="px-3 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b whitespace-nowrap">#</th>
@@ -360,15 +357,16 @@ function renderTable() {
         return;
     }
 
-    tbody.innerHTML = currentRows.map((row, index) => {
+    let html = '';
+    pageRows.forEach((row, index) => {
+        const globalIndex = start + index + 1;
         const rowData = row.row_data || {};
-        return `
+        html += `
             <tr class="border-b border-gray-100 hover:bg-gray-50 transition" data-row-id="${row.id}">
-                <td class="px-3 py-2 text-sm font-medium text-gray-500 whitespace-nowrap">${index + 1}</td>
+                <td class="px-3 py-2 text-sm font-medium text-gray-500 whitespace-nowrap">${globalIndex}</td>
                 ${currentColumns.map(col => {
                     const value = rowData[col.name];
                     let cellContent = '';
-
                     if (col.type === 'checkbox') {
                         const checked = value ? 'checked' : '';
                         cellContent = `<input type="checkbox" ${checked} onchange="window.updateCell('${row.id}', '${col.name}', this.checked)" class="w-5 h-5 rounded text-amber-600 border-gray-300 focus:ring-amber-500">`;
@@ -385,7 +383,6 @@ function renderTable() {
                             <input type="text" value="${value || ''}" onchange="window.updateCell('${row.id}', '${col.name}', this.value)" class="w-full bg-transparent border-0 focus:ring-2 focus:ring-amber-400 rounded-lg p-1 text-sm" placeholder="—">
                         `;
                     }
-
                     return `<td class="px-3 py-2 text-sm text-gray-800">${cellContent}</td>`;
                 }).join('')}
                 <td class="px-3 py-2 text-center whitespace-nowrap">
@@ -393,10 +390,41 @@ function renderTable() {
                 </td>
             </tr>
         `;
-    }).join('');
+    });
+
+    // Добавляем пагинацию, если строк больше PAGE_SIZE
+    if (currentRows.length > PAGE_SIZE) {
+        const totalPages = Math.ceil(currentRows.length / PAGE_SIZE);
+        html += `
+            <tr>
+                <td colspan="${currentColumns.length + 2}" class="px-3 py-3 text-center border-t">
+                    <div class="flex items-center justify-center gap-2">
+                        <button onclick="window.changePage('prev')" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg ${currentPage <= 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage <= 1 ? 'disabled' : ''}>◀</button>
+                        <span class="text-sm font-medium text-gray-700">Стр. ${currentPage} из ${totalPages}</span>
+                        <button onclick="window.changePage('next')" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg ${currentPage >= totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage >= totalPages ? 'disabled' : ''}>▶</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    tbody.innerHTML = html;
 }
 
-// ===== Обновление ячейки (с таймаутом для мобильных) =====
+// ===== Пагинация =====
+window.changePage = (direction) => {
+    const totalPages = Math.ceil(currentRows.length / PAGE_SIZE);
+    if (direction === 'prev' && currentPage > 1) {
+        currentPage--;
+    } else if (direction === 'next' && currentPage < totalPages) {
+        currentPage++;
+    } else {
+        return;
+    }
+    renderTable();
+};
+
+// ===== Обновление ячейки =====
 window.updateCell = async (rowId, colName, value) => {
     const row = currentRows.find(r => r.id === rowId);
     if (!row) return;
@@ -422,10 +450,8 @@ window.updateCell = async (rowId, colName, value) => {
             .update({ row_data: rowData })
             .eq('id', rowId);
         if (error) throw error;
-        // Принудительная перерисовка с таймаутом для мобильных
-        setTimeout(() => {
-            renderTable();
-        }, 50);
+        // Перерисовываем только текущую страницу
+        renderTable();
     } catch (err) {
         alert('Ошибка сохранения: ' + err.message);
     }
