@@ -388,6 +388,67 @@
         .theme-toggle .icon {
             font-size: 18px;
         }
+                /* ===== ПЕРЕОПРЕДЕЛЕНИЕ TAILWIND ДЛЯ ТЁМНОЙ ТЕМЫ ===== */
+        .bg-white {
+            background-color: var(--bg-card) !important;
+        }
+        .bg-gray-50 {
+            background-color: var(--bg-gray-50) !important;
+        }
+        .bg-gray-100 {
+            background-color: var(--bg-gray-100) !important;
+        }
+        .bg-gray-200 {
+            background-color: var(--bg-gray-200) !important;
+        }
+        .border-gray-200 {
+            border-color: var(--border-gray-200) !important;
+        }
+        .border-gray-300 {
+            border-color: var(--border-gray-300) !important;
+        }
+        .text-gray-900 {
+            color: var(--text-primary) !important;
+        }
+        .text-gray-800 {
+            color: var(--text-primary) !important;
+        }
+        .text-gray-700 {
+            color: var(--text-secondary) !important;
+        }
+        .text-gray-600 {
+            color: var(--text-muted) !important;
+        }
+        .text-gray-500 {
+            color: var(--text-muted) !important;
+        }
+        .text-gray-400 {
+            color: var(--text-light) !important;
+        }
+        .border-gray-100 {
+            border-color: var(--border-gray-100) !important;
+        }
+        .shadow-sm {
+            box-shadow: var(--shadow-sm) !important;
+        }
+        .shadow-md {
+            box-shadow: var(--shadow-md) !important;
+        }
+        .shadow-lg {
+            box-shadow: var(--shadow-lg) !important;
+        }
+        .shadow-xl {
+            box-shadow: var(--shadow-xl) !important;
+        }
+        .hover\:bg-gray-50:hover {
+            background-color: var(--bg-card-hover) !important;
+        }
+        .hover\:bg-gray-100:hover {
+            background-color: var(--bg-gray-100) !important;
+        }
+        .hover\:border-gray-300:hover {
+            border-color: var(--border-gray-300) !important;
+        }
     </style>
 </head>
 <body>
@@ -738,7 +799,7 @@
     };
 
     // ===== УПРАВЛЕНИЕ ВЕРСИЕЙ =====
-    const APP_VERSION = '1.0.3';
+    const APP_VERSION = '1.0.4';
     const storedVersion = localStorage.getItem('app_version');
     if (storedVersion !== APP_VERSION) {
         localStorage.clear();
