@@ -1,10 +1,6 @@
-// ============================================================
-// dashboard.js – Панель управления (главная страница)
-// ============================================================
-
 export const template = `
     <!-- Шапка -->
-    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="animate-fade-in-down mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
                 <span class="bg-gradient-to-br from-emerald-400 to-emerald-600 text-white p-2 rounded-xl shadow-md">📊</span>
@@ -21,10 +17,9 @@ export const template = `
         </div>
     </div>
 
-    <!-- Статистика -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <!-- Общий автопарк -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-between">
+    <!-- Статистика (4 карточки с задержкой) -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 card-stagger">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-between hover-lift">
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Автопарк</p>
                 <h3 id="dashTotal" class="text-4xl font-black text-gray-900 mt-1">0</h3>
@@ -33,8 +28,7 @@ export const template = `
             <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-2xl text-indigo-600">🚜</div>
         </div>
 
-        <!-- Готово -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-between">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-between hover-lift delay-50">
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span> Готово
@@ -44,8 +38,7 @@ export const template = `
             <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-2xl text-emerald-600">✅</div>
         </div>
 
-        <!-- Хранение -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-between">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-between hover-lift delay-100">
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Хранение
@@ -55,8 +48,7 @@ export const template = `
             <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-2xl text-blue-600">🏠</div>
         </div>
 
-        <!-- Ремонт -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-between">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-between hover-lift delay-150">
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <span class="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse"></span> Ремонт
@@ -69,9 +61,8 @@ export const template = `
 
     <!-- Три колонки -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        
         <!-- Задачи -->
-        <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up delay-100">
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <div class="flex items-center gap-2">
                     <span class="text-lg">📋</span>
@@ -94,7 +85,7 @@ export const template = `
         </div>
 
         <!-- Гарантийный контроль -->
-        <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden relative">
+        <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden relative animate-fade-in-up delay-200">
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <div class="flex items-center gap-2">
                     <span class="text-lg">🛠️</span>
@@ -119,7 +110,7 @@ export const template = `
         </div>
 
         <!-- Документы -->
-        <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up delay-300">
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <div class="flex items-center gap-2">
                     <span class="text-lg">📄</span>
@@ -134,7 +125,7 @@ export const template = `
 
     <!-- Модалка редактирования -->
     <div id="dashEditModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[150] flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-5 relative border border-gray-200">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-5 relative border border-gray-200 modal-enter">
             <button onclick="window.dashCloseModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl">✕</button>
             <div>
                 <h4 id="modalVehicleTitle" class="text-lg font-black text-gray-900 leading-tight">Модель техники</h4>
@@ -173,7 +164,7 @@ export const template = `
     </div>
 
     <!-- Нижняя панель -->
-    <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in-up delay-350">
         <div class="flex items-center gap-3">
             <span class="text-2xl">📌</span>
             <div>

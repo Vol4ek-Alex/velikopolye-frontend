@@ -1,0 +1,187 @@
+/* css/animations.css */
+
+/* ===== БАЗОВЫЕ АНИМАЦИИ ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes bounceIn {
+    0% { opacity: 0; transform: scale(0.8); }
+    60% { opacity: 1; transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* ===== КЛАССЫ АНИМАЦИЙ ===== */
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.animate-fade-in-down {
+    animation: fadeInDown 0.4s ease-out forwards;
+}
+
+.animate-fade-in-scale {
+    animation: fadeInScale 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.4s ease-out forwards;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out forwards;
+}
+
+.animate-pulse-once {
+    animation: pulse 0.6s ease-in-out;
+}
+
+.animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.animate-shimmer {
+    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* ===== ЗАДЕРЖКИ (STAGGER) ===== */
+.delay-50 { animation-delay: 0.05s; }
+.delay-100 { animation-delay: 0.1s; }
+.delay-150 { animation-delay: 0.15s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-250 { animation-delay: 0.25s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-350 { animation-delay: 0.35s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-450 { animation-delay: 0.45s; }
+.delay-500 { animation-delay: 0.5s; }
+
+/* ===== ПЕРЕХОДЫ ДЛЯ ИНТЕРАКТИВОВ ===== */
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.hover-glow {
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+.hover-glow:hover {
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.15);
+    transform: scale(1.01);
+}
+
+.hover-scale {
+    transition: transform 0.2s ease;
+}
+.hover-scale:hover {
+    transform: scale(1.02);
+}
+
+.hover-rotate {
+    transition: transform 0.3s ease;
+}
+.hover-rotate:hover {
+    transform: rotate(-5deg) scale(1.05);
+}
+
+/* ===== МОДАЛЬНЫЕ ОКНА ===== */
+.modal-enter {
+    animation: modalIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ===== КАРТОЧКИ С ПОСЛЕДОВАТЕЛЬНЫМ ПОЯВЛЕНИЕМ ===== */
+.card-stagger > * {
+    opacity: 0;
+    animation: fadeInUp 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+.card-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.card-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.card-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.card-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.card-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.card-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.card-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.card-stagger > *:nth-child(8) { animation-delay: 0.4s; }
+.card-stagger > *:nth-child(9) { animation-delay: 0.45s; }
+.card-stagger > *:nth-child(10) { animation-delay: 0.5s; }
+
+/* ===== ЛОДЕР ===== */
+.loader-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+}
+.loader-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: loaderBounce 1.4s infinite ease-in-out both;
+}
+.loader-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loader-dots span:nth-child(2) { animation-delay: -0.16s; }
+.loader-dots span:nth-child(3) { animation-delay: 0s; }
+@keyframes loaderBounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
