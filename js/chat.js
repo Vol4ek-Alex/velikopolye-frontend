@@ -1,64 +1,82 @@
-// js/chat.js
+// js/chat.js – Полноценный чат с анимациями, онлайн-статусами, личными сообщениями
 
-// ===== Глобальные переменные =====
-let currentRoom = 'general';
-let currentReceiver = null; // для личных сообщений
-let messages = [];
-let chatUsers = [];
-let chatSubscription = null;
-let isChatOpen = false;
-let isMenuOpen = false;
+// ===== СОСТОЯНИЕ =====
+let state = {
+    currentRoom: 'general',
+    messages: [],
+    users: [],
+    subscription: null,
+    isOpen: false,
+    isMinimized: false,
+    currentUser: null,
+    unreadCount: 0,
+    selectedUser: null // для личных сообщений
+};
 
-// ===== Инициализация =====
+// ===== ИНИЦИАЛИЗАЦИЯ =====
 export async function init() {
-    console.log('💬 Глобальный чат инициализирован');
+    console.log('💬 Запуск чата...');
 
-    if (!document.getElementById('chatGlobalContainer')) {
+    // Загружаем данные пользователя
+    state.currentUser = {
+        name: localStorage.getItem('user_name') || 'Сотрудник',
+        role: localStorage.getItem('user_role') || 'Сотрудник'
+    };
+
+    // Создаём HTML, если его нет
+    if (!document.getElementById('chatApp')) {
         document.body.insertAdjacentHTML('beforeend', getChatHTML());
     }
 
-    // Привязка событий
-    document.getElementById('chatFab').addEventListener('click', toggleChat);
-    document.getElementById('chatCloseBtn').addEventListener('click', toggleChat);
-    document.getElementById('chatMinimizeBtn').addEventListener('click', minimizeChat);
-    document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
-    document.getElementById('chatInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') sendChatMessage();
-    });
-    document.getElementById('chatMenuBtn').addEventListener('click', toggleMenu);
-    document.getElementById('chatMenuOverlay').addEventListener('click', closeMenu);
+    // Подключаем обработчики
+    bindEvents();
 
-    // Загружаем пользователей и сообщения
-    await loadChatUsers();
+    // Загружаем пользователей
+    await loadUsers();
+
+    // Загружаем сообщения
     await loadMessages('general');
+
+    // Рендерим
     renderMessages();
+    renderUserList();
+
+    // Подписываемся на Realtime
     subscribeToRoom('general');
 
-    // Периодическая проверка онлайн-статусов
-    setInterval(updateOnlineStatus, 30000);
-    // Проверка новых сообщений для бейджа
+    // Обновляем статус онлайн
+    await updateOnlineStatus(true);
+
+    // Закрываем/открываем
+    window.toggleChat = toggleChat;
+    window.openChat = openChat;
+    window.closeChat = closeChat;
+    window.sendMessage = sendMessage;
+
+    // Периодическая проверка новых сообщений (для уведомлений)
     setInterval(checkNewMessages, 10000);
+    setInterval(updateOnlineStatus, 30000); // обновляем статус каждые 30 сек
 }
 
-// ===== HTML-шаблон =====
+// ===== HTML-ШАБЛОН =====
 function getChatHTML() {
     return `
-        <div id="chatGlobalContainer" class="fixed inset-0 pointer-events-none z-[999]">
+        <div id="chatApp" class="fixed inset-0 z-[999] pointer-events-none">
             <!-- Плавающая кнопка -->
-            <button id="chatFab" class="fixed bottom-6 right-6 pointer-events-auto bg-cyan-600/80 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center w-14 h-14 backdrop-blur-sm animate-fade-in-up">
+            <button id="chatFab" class="fixed bottom-6 right-6 pointer-events-auto bg-cyan-600/80 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center w-14 h-14 backdrop-blur-sm hover:scale-105 active:scale-95">
                 <span class="text-2xl">💬</span>
-                <span id="chatBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center hidden animate-pulse">0</span>
+                <span id="chatBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
             </button>
 
             <!-- Окно чата -->
-            <div id="chatWindow" class="fixed inset-0 md:inset-auto md:bottom-24 md:right-6 md:w-[450px] md:h-[600px] bg-white shadow-2xl border border-gray-200 pointer-events-auto flex flex-col hidden max-h-screen max-w-screen overflow-hidden rounded-none md:rounded-3xl animate-fade-in-up">
-                <!-- Шапка с меню -->
-                <div class="bg-gradient-to-r from-cyan-600 to-cyan-500 text-white p-4 flex justify-between items-center flex-shrink-0 rounded-t-none md:rounded-t-3xl">
+            <div id="chatWindow" class="fixed inset-0 md:inset-auto md:bottom-24 md:right-6 md:w-[480px] md:h-[680px] bg-white shadow-2xl border border-gray-200 pointer-events-auto flex flex-col hidden transition-all duration-300 transform scale-95 opacity-0 md:rounded-3xl overflow-hidden max-w-full max-h-full">
+                <!-- Шапка -->
+                <div class="bg-gradient-to-r from-cyan-600 to-cyan-700 text-white p-4 flex justify-between items-center flex-shrink-0">
                     <div class="flex items-center gap-3">
-                        <button id="chatMenuBtn" class="text-white hover:text-gray-200 text-2xl leading-none transition-transform hover:scale-110">☰</button>
+                        <button id="chatMenuBtn" class="text-white hover:text-gray-200 text-2xl leading-none md:hidden">☰</button>
+                        <span class="text-2xl">💬</span>
                         <span class="font-bold text-lg">Чат</span>
-                        <span id="chatRoomName" class="text-sm font-medium bg-cyan-700/50 px-3 py-0.5 rounded-full">Общий</span>
-                        <span id="chatOnlineCount" class="text-xs bg-green-400/30 px-2 py-0.5 rounded-full">🟢 0</span>
+                        <span id="chatRoomName" class="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full">Общий</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <button id="chatMinimizeBtn" class="text-white hover:text-gray-200 text-xl leading-none">−</button>
@@ -66,49 +84,121 @@ function getChatHTML() {
                     </div>
                 </div>
 
-                <!-- Меню (выезжающее слева) -->
-                <div id="chatMenuOverlay" class="absolute inset-0 bg-black/30 hidden z-10" style="pointer-events: auto;"></div>
-                <div id="chatMenu" class="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-xl z-20 transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto rounded-none md:rounded-l-3xl">
-                    <div class="p-4 border-b border-gray-200 bg-gray-50">
-                        <h3 class="font-bold text-gray-800">💬 Каналы</h3>
+                <!-- Основная панель (меню + сообщения) -->
+                <div class="flex flex-1 overflow-hidden">
+                    <!-- Боковое меню (пользователи/комнаты) -->
+                    <div id="chatSidebar" class="w-64 bg-gray-50 border-r border-gray-200 flex-shrink-0 overflow-y-auto transition-transform duration-300 -translate-x-full md:translate-x-0 md:block absolute md:relative z-10 h-full md:h-auto">
+                        <div class="p-3 border-b border-gray-200 bg-white">
+                            <div class="flex items-center gap-2 text-sm font-bold text-gray-700">
+                                <span>👥</span> Комнаты
+                            </div>
+                        </div>
+                        <div class="p-2 space-y-1">
+                            <button onclick="window.switchRoom('general')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-200 transition flex items-center gap-2 text-sm font-medium" id="room-general">
+                                <span>💬</span> Общий чат
+                            </button>
+                            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 py-2">Личные сообщения</div>
+                            <div id="chatUserList" class="space-y-1"></div>
+                        </div>
                     </div>
-                    <div class="p-2 space-y-1">
-                        <button onclick="window.switchChatRoom('general')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-cyan-50 transition text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <span class="text-lg">📢</span> Общий чат
-                        </button>
-                        <button onclick="window.switchChatRoom('repair')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-cyan-50 transition text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <span class="text-lg">🔧</span> Ремонтная бригада
-                        </button>
-                        <button onclick="window.switchChatRoom('dispatch')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-cyan-50 transition text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <span class="text-lg">📋</span> Диспетчерская
-                        </button>
-                    </div>
-                    <div class="p-4 border-t border-gray-200 bg-gray-50">
-                        <h3 class="font-bold text-gray-800">👤 Личные сообщения</h3>
-                    </div>
-                    <div id="chatUserList" class="p-2 space-y-1 max-h-[300px] overflow-y-auto"></div>
-                    <div class="p-3 text-xs text-gray-400 border-t border-gray-200 text-center">
-                        Онлайн: <span id="chatOnlineCountMenu">0</span>
-                    </div>
-                </div>
 
-                <!-- Сообщения -->
-                <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50">
-                    <div class="text-center text-gray-400 py-8 text-sm">Загрузка сообщений...</div>
-                </div>
+                    <!-- Сообщения -->
+                    <div class="flex-1 flex flex-col bg-gray-50 relative">
+                        <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3">
+                            <div class="text-center text-gray-400 py-8 text-sm">Загрузка...</div>
+                        </div>
 
-                <!-- Поле ввода -->
-                <div class="border-t border-gray-200 p-3 flex gap-2 items-center bg-white flex-shrink-0">
-                    <input type="text" id="chatInput" placeholder="Введите сообщение..." class="flex-1 bg-gray-100 border-0 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-400 outline-none transition-shadow">
-                    <button id="chatSendBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition shadow-sm hover:shadow-md active:scale-95">➤</button>
+                        <!-- Поле ввода -->
+                        <div class="border-t border-gray-200 p-3 flex gap-2 items-center bg-white">
+                            <input type="text" id="chatInput" placeholder="Введите сообщение..." class="flex-1 bg-gray-100 border-0 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-400 outline-none">
+                            <button id="chatSendBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition shadow-sm hover:scale-105 active:scale-95">➤</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Оверлей для мобильного меню -->
+        <div id="chatMenuOverlay" class="fixed inset-0 bg-black/40 z-[998] hidden pointer-events-auto" onclick="closeChatMenu()"></div>
     `;
 }
 
-// ===== Загрузка пользователей чата =====
-async function loadChatUsers() {
+// ===== ОБРАБОТЧИКИ =====
+function bindEvents() {
+    document.getElementById('chatFab').addEventListener('click', toggleChat);
+    document.getElementById('chatCloseBtn').addEventListener('click', closeChat);
+    document.getElementById('chatMinimizeBtn').addEventListener('click', minimizeChat);
+    document.getElementById('chatSendBtn').addEventListener('click', sendMessage);
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+    document.getElementById('chatMenuBtn').addEventListener('click', openChatMenu);
+    document.getElementById('chatMenuOverlay').addEventListener('click', closeChatMenu);
+}
+
+// ===== УПРАВЛЕНИЕ ОКНОМ =====
+function toggleChat() {
+    const win = document.getElementById('chatWindow');
+    const fab = document.getElementById('chatFab');
+    if (win.classList.contains('hidden')) {
+        openChat();
+    } else {
+        closeChat();
+    }
+}
+
+function openChat() {
+    const win = document.getElementById('chatWindow');
+    const fab = document.getElementById('chatFab');
+    win.classList.remove('hidden', 'scale-95', 'opacity-0');
+    win.classList.add('scale-100', 'opacity-100');
+    fab.classList.add('hidden');
+    state.isOpen = true;
+    clearBadge();
+    // Обновляем сообщения при открытии
+    loadMessages(state.currentRoom);
+    renderMessages();
+    // Обновляем статус
+    updateOnlineStatus(true);
+}
+
+function closeChat() {
+    const win = document.getElementById('chatWindow');
+    const fab = document.getElementById('chatFab');
+    win.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        win.classList.add('hidden');
+        win.classList.remove('scale-100', 'opacity-100');
+        fab.classList.remove('hidden');
+        state.isOpen = false;
+    }, 300);
+}
+
+function minimizeChat() {
+    const win = document.getElementById('chatWindow');
+    const fab = document.getElementById('chatFab');
+    win.classList.add('hidden');
+    fab.classList.remove('hidden');
+    state.isOpen = false;
+}
+
+// ===== УПРАВЛЕНИЕ МЕНЮ =====
+function openChatMenu() {
+    const sidebar = document.getElementById('chatSidebar');
+    const overlay = document.getElementById('chatMenuOverlay');
+    sidebar.classList.remove('-translate-x-full');
+    overlay.classList.remove('hidden');
+}
+
+function closeChatMenu() {
+    const sidebar = document.getElementById('chatSidebar');
+    const overlay = document.getElementById('chatMenuOverlay');
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
+}
+
+// ===== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ =====
+async function loadUsers() {
     if (!window._supabase) return;
     try {
         const { data, error } = await window._supabase
@@ -116,147 +206,102 @@ async function loadChatUsers() {
             .select('*')
             .order('name');
         if (error) throw error;
-        chatUsers = data || [];
-        // Если нет пользователей, загружаем из localStorage
-        if (chatUsers.length === 0) {
-            const role = localStorage.getItem('user_role') || 'Сотрудник';
-            const name = localStorage.getItem('user_name') || 'Неизвестный';
-            // Добавляем базовых пользователей
-            const defaultUsers = [
-                { name: 'Рунцевич Д.С.', role: 'Директор' },
-                { name: 'Волчек А.А.', role: 'Инженер по ЭМТП' },
-                { name: 'Ладутько И.И.', role: 'Техник' },
-                { name: 'Новик А.А.', role: 'Заместитель директора' }
-            ];
-            // Добавляем текущего пользователя
-            if (!defaultUsers.find(u => u.name === name)) {
-                defaultUsers.push({ name, role });
-            }
-            // Сохраняем в Supabase
-            for (const u of defaultUsers) {
-                await window._supabase.from('chat_users').upsert({
-                    name: u.name,
-                    role: u.role,
-                    online: false,
-                    last_seen: new Date().toISOString()
-                }, { onConflict: 'name' });
-            }
-            // Перезагружаем
-            const { data: newData } = await window._supabase
-                .from('chat_users')
-                .select('*')
-                .order('name');
-            chatUsers = newData || [];
-        }
+        state.users = data || [];
         renderUserList();
-        updateOnlineStatus();
     } catch (err) {
         console.error('Ошибка загрузки пользователей:', err);
     }
 }
 
-// ===== Рендеринг списка пользователей =====
 function renderUserList() {
     const container = document.getElementById('chatUserList');
     if (!container) return;
-    const currentUser = localStorage.getItem('user_name') || 'Неизвестный';
-    container.innerHTML = chatUsers
-        .filter(u => u.name !== currentUser) // не показываем себя
-        .map(u => `
-            <button onclick="window.startPrivateChat('${u.name}')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-cyan-50 transition text-sm font-medium text-gray-700 flex items-center gap-2">
-                <span class="flex-shrink-0 w-2 h-2 rounded-full ${u.online ? 'bg-green-500' : 'bg-gray-300'}"></span>
-                <span>${u.name}</span>
-                <span class="text-xs text-gray-400 ml-auto">${u.role}</span>
+    const currentName = state.currentUser.name;
+    const filtered = state.users.filter(u => u.name !== currentName);
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="text-xs text-gray-400 px-3 py-1">Нет пользователей</div>';
+        return;
+    }
+    container.innerHTML = filtered.map(u => {
+        const online = u.online ? '🟢' : '⚪';
+        const isActive = state.selectedUser === u.name;
+        return `
+            <button onclick="window.startPrivateChat('${u.name}')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-200 transition flex items-center gap-2 text-sm ${isActive ? 'bg-cyan-100' : ''}">
+                <span>${online}</span>
+                <span class="flex-1 truncate">${u.name}</span>
+                <span class="text-[10px] text-gray-400">${u.role}</span>
             </button>
-        `).join('');
-    // Обновляем счетчик онлайн
-    const onlineCount = chatUsers.filter(u => u.online).length;
-    document.getElementById('chatOnlineCount').textContent = `🟢 ${onlineCount}`;
-    document.getElementById('chatOnlineCountMenu').textContent = onlineCount;
+        `;
+    }).join('');
 }
 
-// ===== Обновление онлайн-статуса =====
-async function updateOnlineStatus() {
-    if (!window._supabase) return;
-    const currentUser = localStorage.getItem('user_name') || 'Неизвестный';
-    // Обновляем статус текущего пользователя
-    await window._supabase
-        .from('chat_users')
-        .update({ online: true, last_seen: new Date().toISOString() })
-        .eq('name', currentUser);
-    // Получаем всех пользователей
-    const { data } = await window._supabase
-        .from('chat_users')
-        .select('*')
-        .order('name');
-    if (data) {
-        chatUsers = data;
-        renderUserList();
-    }
-}
-
-// ===== Переключение комнаты =====
-window.switchChatRoom = function(room) {
-    if (room === currentRoom && !currentReceiver) return;
-    currentRoom = room;
-    currentReceiver = null;
+// ===== ПЕРЕКЛЮЧЕНИЕ КОМНАТ =====
+window.switchRoom = function(room) {
+    state.currentRoom = room;
+    state.selectedUser = null;
     document.getElementById('chatRoomName').textContent = room === 'general' ? 'Общий' : room;
-    if (chatSubscription) {
-        chatSubscription.unsubscribe();
-        chatSubscription = null;
+    // Закрываем меню на мобильных
+    closeChatMenu();
+    // Отписываемся от старой подписки
+    if (state.subscription) {
+        state.subscription.unsubscribe();
+        state.subscription = null;
     }
     loadMessages(room);
     renderMessages();
     subscribeToRoom(room);
-    closeMenu();
+    // Обновляем активный пункт в меню
+    document.querySelectorAll('#room-general, #chatUserList button').forEach(el => el.classList.remove('bg-cyan-100'));
+    if (room === 'general') {
+        document.getElementById('room-general').classList.add('bg-cyan-100');
+    }
 };
 
-// ===== Личный чат =====
-window.startPrivateChat = function(receiverName) {
-    const room = `private_${receiverName}`;
-    currentRoom = room;
-    currentReceiver = receiverName;
-    document.getElementById('chatRoomName').textContent = `💬 ${receiverName}`;
-    if (chatSubscription) {
-        chatSubscription.unsubscribe();
-        chatSubscription = null;
+window.startPrivateChat = function(userName) {
+    const room = `private_${userName}`;
+    state.currentRoom = room;
+    state.selectedUser = userName;
+    document.getElementById('chatRoomName').textContent = `Личное: ${userName}`;
+    closeChatMenu();
+    if (state.subscription) {
+        state.subscription.unsubscribe();
+        state.subscription = null;
     }
     loadMessages(room);
     renderMessages();
     subscribeToRoom(room);
-    closeMenu();
+    // Обновляем активный пункт
+    document.querySelectorAll('#room-general, #chatUserList button').forEach(el => el.classList.remove('bg-cyan-100'));
+    document.querySelectorAll('#chatUserList button').forEach(el => {
+        if (el.textContent.includes(userName)) {
+            el.classList.add('bg-cyan-100');
+        }
+    });
 };
 
-// ===== Загрузка сообщений =====
+// ===== ЗАГРУЗКА СООБЩЕНИЙ =====
 async function loadMessages(room) {
     if (!window._supabase) return;
     try {
-        let query = window._supabase
+        const { data, error } = await window._supabase
             .from('chat_messages')
             .select('*')
+            .eq('room', room)
             .order('created_at', { ascending: true })
             .limit(100);
-        if (room.startsWith('private_')) {
-            const receiver = room.replace('private_', '');
-            const currentUser = localStorage.getItem('user_name') || 'Неизвестный';
-            query = query.or(`room.eq.${room},and(sender_name.eq.${currentUser},receiver_name.eq.${receiver}),and(sender_name.eq.${receiver},receiver_name.eq.${currentUser})`);
-        } else {
-            query = query.eq('room', room);
-        }
-        const { data, error } = await query;
         if (error) throw error;
-        messages = data || [];
+        state.messages = data || [];
     } catch (err) {
         console.error('Ошибка загрузки сообщений:', err);
     }
 }
 
-// ===== Рендеринг сообщений =====
+// ===== РЕНДЕРИНГ СООБЩЕНИЙ =====
 function renderMessages() {
     const container = document.getElementById('chatMessages');
     if (!container) return;
-    if (messages.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-400 py-8 text-sm animate-fade-in">Нет сообщений. Напишите первое!</div>';
+    if (state.messages.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-400 py-8 text-sm">Нет сообщений. Напишите первое!</div>';
         return;
     }
     const roleColors = {
@@ -265,25 +310,24 @@ function renderMessages() {
         'Техник': 'bg-green-100 text-green-800',
         'Заместитель директора': 'bg-purple-100 text-purple-800'
     };
-    const currentUser = localStorage.getItem('user_name') || 'Неизвестный';
-    container.innerHTML = messages.map(msg => {
-        const isOwn = msg.sender_name === currentUser;
-        const colorClass = roleColors[msg.sender_role] || 'bg-gray-100 text-gray-800';
+    const currentName = state.currentUser.name;
+    container.innerHTML = state.messages.map(msg => {
+        const isMe = msg.user_name === currentName;
+        const colorClass = roleColors[msg.user_role] || 'bg-gray-100 text-gray-800';
         const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const date = new Date(msg.created_at).toLocaleDateString('ru-RU');
         return `
-            <div class="flex items-start gap-3 animate-fade-in-up" style="animation-delay: 0.05s;">
+            <div class="flex items-start gap-3 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in-up">
                 <div class="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700 font-bold text-sm">
-                    ${msg.sender_name.charAt(0)}
+                    ${msg.user_name ? msg.user_name.charAt(0) : '?'}
                 </div>
-                <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-gray-800 text-sm">${msg.sender_name}</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full ${colorClass}">${msg.sender_role || 'Сотрудник'}</span>
+                <div class="flex-1 ${isMe ? 'items-end' : ''}">
+                    <div class="flex items-center gap-2 ${isMe ? 'justify-end' : ''}">
+                        <span class="font-bold text-gray-800 text-sm">${msg.user_name || 'Неизвестный'}</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full ${colorClass}">${msg.user_role || 'Сотрудник'}</span>
                         <span class="text-xs text-gray-400">${date} ${time}</span>
-                        ${isOwn ? '<span class="text-xs text-gray-400">✓</span>' : ''}
                     </div>
-                    <div class="text-sm text-gray-700 mt-0.5 break-words">${msg.message}</div>
+                    <div class="text-sm text-gray-700 mt-0.5 break-words ${isMe ? 'text-right' : ''}">${msg.message}</div>
                 </div>
             </div>
         `;
@@ -291,133 +335,92 @@ function renderMessages() {
     container.scrollTop = container.scrollHeight;
 }
 
-// ===== Подписка на Realtime =====
+// ===== REALTIME ПОДПИСКА =====
 function subscribeToRoom(room) {
     if (!window._supabase) return;
-    if (chatSubscription) {
-        chatSubscription.unsubscribe();
-        chatSubscription = null;
+    if (state.subscription) {
+        state.subscription.unsubscribe();
+        state.subscription = null;
     }
-    let filter = `room=eq.${room}`;
-    if (room.startsWith('private_')) {
-        const currentUser = localStorage.getItem('user_name') || 'Неизвестный';
-        const receiver = room.replace('private_', '');
-        filter = `or(room.eq.${room},and(sender_name.eq.${currentUser},receiver_name.eq.${receiver}),and(sender_name.eq.${receiver},receiver_name.eq.${currentUser}))`;
-    }
-    chatSubscription = window._supabase
-        .channel('chat_messages')
+    state.subscription = window._supabase
+        .channel(`chat_${room}`)
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
             table: 'chat_messages',
-            filter: filter
+            filter: `room=eq.${room}`
         }, (payload) => {
-            messages.push(payload.new);
+            state.messages.push(payload.new);
             renderMessages();
-            if (!isChatOpen) {
-                showBadge(1);
+            if (!state.isOpen) {
+                showBadge(state.unreadCount + 1);
             }
         })
         .subscribe();
 }
 
-// ===== Отправка сообщения =====
-window.sendChatMessage = async function() {
+// ===== ОТПРАВКА СООБЩЕНИЯ =====
+window.sendMessage = async function() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
     if (!text) return;
-
-    const sender_name = localStorage.getItem('user_name') || 'Сотрудник';
-    const sender_role = localStorage.getItem('user_role') || 'Сотрудник';
-    let room = currentRoom;
-    let receiver_name = null;
-
-    if (currentRoom.startsWith('private_')) {
-        receiver_name = currentRoom.replace('private_', '');
-        // Для личных сообщений сохраняем room как private_ + имя получателя, но для выборки используем комнату
-        room = `private_${receiver_name}`;
-    }
-
+    const user_name = state.currentUser.name;
+    const user_role = state.currentUser.role;
     const payload = {
-        room: room,
-        sender_name: sender_name,
-        sender_role: sender_role,
-        receiver_name: receiver_name,
+        room: state.currentRoom,
+        user_name: user_name,
+        user_role: user_role,
         message: text,
         created_at: new Date().toISOString()
     };
-
     if (!window._supabase) {
         alert('Ошибка: Supabase не инициализирован');
         return;
     }
-
     try {
         const { error } = await window._supabase
             .from('chat_messages')
             .insert([payload]);
         if (error) throw error;
         input.value = '';
-        // Realtime добавит сообщение автоматически
+        // Realtime сам добавит сообщение
     } catch (err) {
         console.error('Ошибка отправки:', err);
         alert('Ошибка отправки: ' + err.message);
     }
 };
 
-// ===== Управление меню =====
-function toggleMenu() {
-    const menu = document.getElementById('chatMenu');
-    const overlay = document.getElementById('chatMenuOverlay');
-    isMenuOpen = !isMenuOpen;
-    menu.style.transform = isMenuOpen ? 'translateX(0)' : 'translateX(-100%)';
-    overlay.style.display = isMenuOpen ? 'block' : 'none';
-}
-
-function closeMenu() {
-    const menu = document.getElementById('chatMenu');
-    const overlay = document.getElementById('chatMenuOverlay');
-    isMenuOpen = false;
-    menu.style.transform = 'translateX(-100%)';
-    overlay.style.display = 'none';
-}
-
-// ===== Управление окном чата =====
-function toggleChat() {
-    const window = document.getElementById('chatWindow');
-    const fab = document.getElementById('chatFab');
-    if (window.classList.contains('hidden')) {
-        window.classList.remove('hidden');
-        fab.classList.add('hidden');
-        isChatOpen = true;
-        clearBadge();
-        // Загружаем свежие сообщения
-        loadMessages(currentRoom);
-        renderMessages();
-        // Обновляем онлайн-статус
-        updateOnlineStatus();
-    } else {
-        window.classList.add('hidden');
-        fab.classList.remove('hidden');
-        isChatOpen = false;
+// ===== ОНЛАЙН-СТАТУС =====
+async function updateOnlineStatus(force = false) {
+    if (!window._supabase) return;
+    const name = state.currentUser.name;
+    try {
+        const { error } = await window._supabase
+            .from('chat_users')
+            .update({ last_seen: new Date().toISOString(), online: true })
+            .eq('name', name);
+        if (error) throw error;
+        // Если пользователя нет в таблице – добавляем
+    } catch (err) {
+        // Если пользователь не найден – добавляем
+        try {
+            await window._supabase
+                .from('chat_users')
+                .insert([{ name: name, role: state.currentUser.role, online: true }]);
+        } catch(e) {}
     }
+    // Обновляем список пользователей через 1 секунду
+    setTimeout(loadUsers, 1000);
 }
 
-function minimizeChat() {
-    const window = document.getElementById('chatWindow');
-    const fab = document.getElementById('chatFab');
-    window.classList.add('hidden');
-    fab.classList.remove('hidden');
-    isChatOpen = false;
-}
-
-// ===== Бейдж уведомлений =====
+// ===== УВЕДОМЛЕНИЯ =====
 function showBadge(count) {
     const badge = document.getElementById('chatBadge');
     if (badge) {
         badge.textContent = count;
         badge.classList.remove('hidden');
     }
+    state.unreadCount = count;
 }
 
 function clearBadge() {
@@ -426,12 +429,12 @@ function clearBadge() {
         badge.classList.add('hidden');
         badge.textContent = '0';
     }
+    state.unreadCount = 0;
 }
 
-// ===== Проверка новых сообщений для бейджа =====
 async function checkNewMessages() {
     if (!window._supabase) return;
-    if (isChatOpen) {
+    if (state.isOpen) {
         clearBadge();
         return;
     }
@@ -439,7 +442,7 @@ async function checkNewMessages() {
         const { count, error } = await window._supabase
             .from('chat_messages')
             .select('*', { count: 'exact', head: true })
-            .eq('room', currentRoom)
+            .eq('room', state.currentRoom)
             .gt('created_at', new Date(Date.now() - 60000).toISOString());
         if (error) throw error;
         if (count > 0) {
@@ -450,40 +453,13 @@ async function checkNewMessages() {
     }
 }
 
-// ===== Глобальные функции =====
+// ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ =====
 window.toggleChat = toggleChat;
+window.openChat = openChat;
+window.closeChat = closeChat;
 window.minimizeChat = minimizeChat;
-window.sendChatMessage = sendChatMessage;
-window.switchChatRoom = window.switchChatRoom;
-window.startPrivateChat = window.startPrivateChat;
-window.toggleMenu = toggleMenu;
-window.closeMenu = closeMenu;
-
-// ===== Анимации: добавляем CSS-классы при загрузке =====
-document.addEventListener('DOMContentLoaded', () => {
-    const style = document.createElement('style');
-    style.textContent = `
-        .animate-fade-in-up {
-            animation: fadeInUp 0.3s ease-out forwards;
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .animate-pulse {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-    `;
-    document.head.appendChild(style);
-});
+window.sendMessage = sendMessage;
+window.switchRoom = switchRoom;
+window.startPrivateChat = startPrivateChat;
+window.closeChatMenu = closeChatMenu;
+window.openChatMenu = openChatMenu;
