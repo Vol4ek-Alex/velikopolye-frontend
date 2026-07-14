@@ -1,271 +1,187 @@
 // js/chat.js
 
 export const template = `
-<div class="space-y-6 h-full flex flex-col">
-    <!-- Верхняя панель -->
-    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
-        <div>
-            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-                <span class="bg-cyan-100 p-1.5 rounded-lg">💬</span> Чат
-            </h2>
-            <p class="text-sm text-gray-500 font-medium">Общение и обмен файлами</p>
-        </div>
-        <div class="flex gap-2">
-            <select id="chatRoomSelect" class="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-cyan-400 focus:border-transparent">
-                <option value="general">Общий</option>
-                <option value="repair">Ремонтная бригада</option>
-                <option value="dispatch">Диспетчерская</option>
-                <option value="management">Руководство</option>
-                <option value="direct">💬 Личные</option>
-            </select>
-            <button onclick="window.switchChatRoom()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm hover-lift">Перейти</button>
-            <button onclick="window.openNewDirectChat()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm hover-lift">➕ Личный чат</button>
-        </div>
-    </div>
-
-    <!-- Список личных чатов (боковая панель) -->
-    <div id="directChatsPanel" class="hidden bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex-shrink-0">
-        <h3 class="text-sm font-bold text-gray-700 mb-2">Личные чаты</h3>
-        <div id="directChatsList" class="space-y-1 max-h-40 overflow-y-auto">
-            <div class="text-gray-400 text-sm py-2 text-center">Нет личных чатов</div>
-        </div>
-    </div>
+    <!-- Плавающая кнопка -->
+    <button id="chatFab" onclick="window.toggleChat()" class="fixed bottom-6 right-6 z-50 bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center w-14 h-14">
+        <span id="chatFabIcon" class="text-2xl">💬</span>
+        <span id="chatBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+    </button>
 
     <!-- Окно чата -->
-    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-[400px]">
-        <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3">
+    <div id="chatWindow" class="fixed inset-0 md:inset-auto md:bottom-24 md:right-6 md:w-[450px] md:h-[600px] bg-white rounded-3xl shadow-2xl border border-gray-200 z-50 flex flex-col hidden transition-all duration-300">
+        <!-- Шапка -->
+        <div class="bg-cyan-600 text-white p-4 rounded-t-3xl flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">💬</span>
+                <span class="font-bold">Чат</span>
+                <span id="chatRoomName" class="text-sm font-medium bg-cyan-500 px-2 py-0.5 rounded-full">Общий</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="window.minimizeChat()" class="text-white hover:text-gray-200 text-xl leading-none">−</button>
+                <button onclick="window.toggleChat()" class="text-white hover:text-gray-200 text-xl leading-none">✕</button>
+            </div>
+        </div>
+
+        <!-- Список комнат / пользователей -->
+        <div id="chatSidebar" class="flex border-b border-gray-200 bg-gray-50 p-2 gap-1 overflow-x-auto">
+            <button onclick="window.switchChatRoom('general')" data-room="general" class="px-3 py-1 text-xs font-bold rounded-full bg-cyan-600 text-white whitespace-nowrap">Общий</button>
+            <div id="chatUserList" class="flex gap-1 overflow-x-auto"></div>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50">
             <div class="text-center text-gray-400 py-8 text-sm">Загрузка сообщений...</div>
         </div>
-        <!-- Панель ввода -->
-        <div class="border-t border-gray-200 p-3 flex flex-col gap-2">
-            <div id="filePreviewContainer" class="hidden flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-200">
-                <span id="filePreviewName" class="text-sm font-medium text-gray-700 truncate"></span>
-                <button onclick="window.clearFileAttachment()" class="text-red-500 hover:text-red-700 text-sm">✕</button>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="document.getElementById('fileInput').click()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2.5 rounded-xl text-sm font-bold transition shadow-sm flex-shrink-0">📎</button>
-                <input type="file" id="fileInput" class="hidden" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,.xls,.xlsx">
-                <input type="text" id="chatInput" placeholder="Введите сообщение..." class="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-cyan-400 focus:border-transparent">
-                <button onclick="window.sendChatMessage()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-sm hover-lift flex-shrink-0">Отправить</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- Модалка для выбора пользователя для личного чата -->
-    <div id="directChatModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 border border-gray-200 shadow-2xl space-y-4 relative modal-enter">
-            <button onclick="window.closeDirectChatModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 font-bold text-xl transition">✕</button>
-            <h3 class="text-xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">Новый личный чат</h3>
-            <div>
-                <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Выберите пользователя</label>
-                <select id="directChatUserSelect" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-cyan-400 focus:border-transparent">
-                    <option value="">-- Загрузка --</option>
-                </select>
-            </div>
-            <button onclick="window.startDirectChat()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 rounded-xl font-bold transition shadow-md hover-lift">Начать чат</button>
+        <!-- Поле ввода + кнопки -->
+        <div class="border-t border-gray-200 p-3 flex gap-2 items-center bg-white rounded-b-3xl">
+            <button onclick="window.chatAttachFile()" class="text-gray-500 hover:text-cyan-600 transition text-xl">📎</button>
+            <input type="text" id="chatInput" placeholder="Введите сообщение..." class="flex-1 bg-gray-100 border-0 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-400 outline-none">
+            <button onclick="window.sendChatMessage()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition shadow-sm">➤</button>
         </div>
     </div>
-</div>
 `;
 
 // ===== Глобальные переменные =====
 let currentRoom = 'general';
-let currentRoomType = 'group'; // 'group' или 'direct'
 let chatSubscription = null;
 let messages = [];
-let directChats = [];
-let selectedFiles = [];
-let userList = [];
-let currentUser = { name: '', role: '' };
+let chatUsers = [];
+let unreadCount = 0;
+let isChatOpen = false;
+let fileInput = null;
 
 // ===== Инициализация =====
 export async function init() {
     console.log('💬 Модуль чата инициализирован');
 
-    // Получаем текущего пользователя
-    const user_name = localStorage.getItem('user_name') || 'Сотрудник';
-    const user_role = localStorage.getItem('user_role') || 'Сотрудник';
-    currentUser = { name: user_name, role: user_role };
-
+    window.toggleChat = toggleChat;
+    window.minimizeChat = minimizeChat;
     window.sendChatMessage = sendChatMessage;
     window.switchChatRoom = switchChatRoom;
-    window.openNewDirectChat = openNewDirectChat;
-    window.closeDirectChatModal = closeDirectChatModal;
-    window.startDirectChat = startDirectChat;
-    window.clearFileAttachment = clearFileAttachment;
+    window.chatAttachFile = chatAttachFile;
+
+    // Создаём скрытый input для файлов
+    fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.style.display = 'none';
+    fileInput.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
+    fileInput.addEventListener('change', handleFileUpload);
+    document.body.appendChild(fileInput);
+
+    // Загружаем пользователей чата
+    await loadChatUsers();
 
     // Загружаем сохранённую комнату
     const savedRoom = localStorage.getItem('chat_room') || 'general';
-    const savedType = localStorage.getItem('chat_room_type') || 'group';
-    document.getElementById('chatRoomSelect').value = savedRoom;
     currentRoom = savedRoom;
-    currentRoomType = savedType;
-
-    // Загружаем список пользователей (для личных чатов)
-    await loadUsers();
+    document.getElementById('chatRoomName').textContent = savedRoom === 'general' ? 'Общий' : 'Личные';
 
     // Загружаем сообщения
-    await loadMessages(currentRoom, currentRoomType);
+    await loadMessages(currentRoom);
     renderMessages();
 
     // Подписываемся на Realtime
-    subscribeToRoom(currentRoom, currentRoomType);
+    subscribeToRoom(currentRoom);
 
     // Отправка по Enter
     document.getElementById('chatInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') sendChatMessage();
     });
 
-    // Обработчик выбора файлов
-    document.getElementById('fileInput').addEventListener('change', (e) => {
-        selectedFiles = Array.from(e.target.files);
-        if (selectedFiles.length > 0) {
-            const preview = document.getElementById('filePreviewContainer');
-            const nameEl = document.getElementById('filePreviewName');
-            preview.classList.remove('hidden');
-            nameEl.textContent = selectedFiles.map(f => f.name).join(', ');
-        }
-    });
-
-    // Загружаем личные чаты
-    await loadDirectChats();
-    renderDirectChats();
+    // Периодическое обновление непрочитанных
+    setInterval(updateUnreadBadge, 5000);
 }
 
-// ===== Загрузка списка пользователей =====
-async function loadUsers() {
-    // Здесь можно загружать из таблицы users, но у нас пока нет таблицы.
-    // Используем статический список или данные из автопарка (водители, механики).
-    // В реальном проекте – запрос к таблице users.
-    // Пока сделаем статику + текущего пользователя.
-    const allUsers = [
-        { name: 'Волчек А.А.', role: 'Инженер по ЭМТП' },
-        { name: 'Рунцевич Д.С.', role: 'Директор' },
-        { name: 'Ладутько И.И.', role: 'Техник' },
-        { name: 'Макович М.П.', role: 'Заместитель директора' }
-    ];
-    // Добавляем всех, кроме текущего
-    userList = allUsers.filter(u => u.name !== currentUser.name);
-    // Заполняем select
-    const select = document.getElementById('directChatUserSelect');
-    if (select) {
-        select.innerHTML = userList.map(u => `<option value="${u.name}">${u.name} (${u.role})</option>`).join('');
-    }
-}
-
-// ===== Загрузка личных чатов =====
-async function loadDirectChats() {
+// ===== Загрузка пользователей чата =====
+async function loadChatUsers() {
     if (!window._supabase) return;
     try {
-        // Ищем все личные чаты текущего пользователя
         const { data, error } = await window._supabase
-            .from('chat_messages')
-            .select('room_id')
-            .eq('room_type', 'direct')
-            .or(`sender_name.eq.${currentUser.name}`)
-            .order('created_at', { ascending: false });
+            .from('chat_users')
+            .select('*')
+            .order('name');
         if (error) throw error;
-        // Уникальные room_id
-        const roomIds = [...new Set(data.map(item => item.room_id))];
-        directChats = roomIds.map(id => {
-            const users = id.split('_');
-            const other = users.find(u => u !== currentUser.name);
-            return { roomId: id, otherName: other };
-        });
+        chatUsers = data || [];
+        console.log(`✅ Загружено ${chatUsers.length} пользователей чата`);
+        renderUserList();
     } catch (err) {
-        console.error('Ошибка загрузки личных чатов:', err);
+        console.error('Ошибка загрузки пользователей:', err);
     }
 }
 
-function renderDirectChats() {
-    const container = document.getElementById('directChatsList');
+// ===== Рендеринг списка пользователей =====
+function renderUserList() {
+    const container = document.getElementById('chatUserList');
     if (!container) return;
-    if (directChats.length === 0) {
-        container.innerHTML = '<div class="text-gray-400 text-sm py-2 text-center">Нет личных чатов</div>';
-        return;
-    }
-    container.innerHTML = directChats.map(chat => `
-        <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition" onclick="window.switchToDirectChat('${chat.roomId}')">
-            <span class="text-sm font-medium text-gray-700">💬 ${chat.otherName}</span>
-            <span class="text-xs text-cyan-600">→</span>
-        </div>
-    `).join('');
+    const currentUser = localStorage.getItem('user_name') || 'Сотрудник';
+    container.innerHTML = chatUsers
+        .filter(u => u.name !== currentUser)
+        .map(u => `
+            <button onclick="window.switchChatRoom('private_${u.id}')" class="px-3 py-1 text-xs font-bold rounded-full bg-gray-200 text-gray-700 hover:bg-cyan-100 whitespace-nowrap transition">
+                ${u.avatar || '👤'} ${u.name}
+                ${u.online ? '<span class="w-2 h-2 inline-block rounded-full bg-green-500 ml-1"></span>' : ''}
+            </button>
+        `).join('');
 }
-
-window.switchToDirectChat = (roomId) => {
-    currentRoom = roomId;
-    currentRoomType = 'direct';
-    localStorage.setItem('chat_room', roomId);
-    localStorage.setItem('chat_room_type', 'direct');
-    document.getElementById('chatRoomSelect').value = 'direct';
-    // Перезагружаем сообщения
-    loadMessages(roomId, 'direct');
-    renderMessages();
-    subscribeToRoom(roomId, 'direct');
-};
 
 // ===== Переключение комнаты =====
-function switchChatRoom() {
-    const select = document.getElementById('chatRoomSelect');
-    const room = select.value;
-    if (room === 'direct') {
-        // Показываем панель личных чатов
-        document.getElementById('directChatsPanel').classList.remove('hidden');
-        // Если есть первый диалог, загружаем его, иначе ничего
-        if (directChats.length > 0) {
-            const first = directChats[0];
-            currentRoom = first.roomId;
-            currentRoomType = 'direct';
-            localStorage.setItem('chat_room', first.roomId);
-            localStorage.setItem('chat_room_type', 'direct');
-            loadMessages(first.roomId, 'direct');
-            renderMessages();
-            subscribeToRoom(first.roomId, 'direct');
-        } else {
-            // Пустое состояние
-            document.getElementById('chatMessages').innerHTML = '<div class="text-center text-gray-400 py-8 text-sm">Выберите личный чат или создайте новый</div>';
-        }
-        return;
-    } else {
-        document.getElementById('directChatsPanel').classList.add('hidden');
-    }
-
-    if (room === currentRoom && currentRoomType === 'group') return;
+function switchChatRoom(room) {
+    if (room === currentRoom) return;
     currentRoom = room;
-    currentRoomType = 'group';
     localStorage.setItem('chat_room', room);
-    localStorage.setItem('chat_room_type', 'group');
+    document.getElementById('chatRoomName').textContent = room === 'general' ? 'Общий' : 'Личные';
 
-    // Отписываемся от старой подписки
+    // Отписываемся от старой комнаты
     if (chatSubscription) {
         chatSubscription.unsubscribe();
         chatSubscription = null;
     }
 
-    loadMessages(room, 'group');
+    // Загружаем сообщения новой комнаты
+    loadMessages(room);
     renderMessages();
-    subscribeToRoom(room, 'group');
+    subscribeToRoom(room);
 }
 
 window.switchChatRoom = switchChatRoom;
 
 // ===== Загрузка сообщений =====
-async function loadMessages(room, type) {
+async function loadMessages(room) {
     if (!window._supabase) return;
     try {
-        const query = window._supabase
+        let query = window._supabase
             .from('chat_messages')
             .select('*')
-            .eq('room_type', type)
-            .eq('room_id', room)
+            .eq('room', room)
             .order('created_at', { ascending: true })
-            .limit(100);
+            .limit(200);
         const { data, error } = await query;
         if (error) throw error;
         messages = data || [];
-        console.log(`✅ Загружено ${messages.length} сообщений для ${type}/${room}`);
+        // Сбрасываем счётчик непрочитанных для этой комнаты
+        if (room === currentRoom) {
+            await markMessagesAsRead(room);
+        }
+        console.log(`✅ Загружено ${messages.length} сообщений для комнаты ${room}`);
     } catch (err) {
         console.error('Ошибка загрузки сообщений:', err);
+    }
+}
+
+// ===== Отметить сообщения как прочитанные =====
+async function markMessagesAsRead(room) {
+    if (!window._supabase) return;
+    try {
+        const { error } = await window._supabase
+            .from('chat_messages')
+            .update({ is_read: true })
+            .eq('room', room)
+            .eq('is_read', false);
+        if (error) throw error;
+    } catch (err) {
+        console.error('Ошибка отметки прочитанных:', err);
     }
 }
 
@@ -279,49 +195,39 @@ function renderMessages() {
         return;
     }
 
-    const roleColors = {
-        'Директор': 'bg-red-100 text-red-800',
-        'Инженер по ЭМТП': 'bg-blue-100 text-blue-800',
-        'Техник': 'bg-green-100 text-green-800',
-        'Заместитель директора': 'bg-purple-100 text-purple-800'
-    };
+    const currentUser = localStorage.getItem('user_name') || 'Сотрудник';
 
     container.innerHTML = messages.map(msg => {
-        const isOwn = msg.sender_name === currentUser.name;
-        const colorClass = roleColors[msg.sender_role] || 'bg-gray-100 text-gray-800';
+        const isMine = msg.sender_name === currentUser;
         const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const date = new Date(msg.created_at).toLocaleDateString('ru-RU');
-        const alignClass = isOwn ? 'flex-row-reverse' : '';
-        const bgClass = isOwn ? 'bg-cyan-50 border-cyan-200' : 'bg-gray-50 border-gray-200';
 
-        let contentHtml = '';
+        let content = '';
         if (msg.message) {
-            contentHtml += `<div class="text-sm text-gray-700 break-words">${msg.message}</div>`;
+            content = `<div class="text-sm break-words">${msg.message}</div>`;
         }
         if (msg.file_url) {
             const isImage = msg.file_type && msg.file_type.startsWith('image/');
             if (isImage) {
-                contentHtml += `<a href="${msg.file_url}" target="_blank"><img src="${msg.file_url}" class="max-w-[200px] max-h-[200px] rounded-lg border border-gray-200 mt-1"></a>`;
+                content += `<div class="mt-1"><a href="${msg.file_url}" target="_blank"><img src="${msg.file_url}" class="max-w-full max-h-48 rounded-lg border border-gray-200"></a></div>`;
             } else {
-                contentHtml += `<a href="${msg.file_url}" target="_blank" class="text-cyan-600 underline text-sm flex items-center gap-1 mt-1">📎 ${msg.file_name || 'Файл'}</a>`;
+                content += `<div class="mt-1"><a href="${msg.file_url}" target="_blank" class="text-cyan-600 hover:underline">📎 ${msg.file_name || 'Файл'}</a></div>`;
             }
         }
 
+        const bubbleClass = isMine
+            ? 'bg-cyan-600 text-white rounded-br-none'
+            : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none';
+
         return `
-            <div class="flex items-start gap-3 ${alignClass}">
-                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700 font-bold text-sm">
-                    ${msg.sender_name.charAt(0)}
-                </div>
-                <div class="flex-1 max-w-[75%]">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="font-bold text-gray-800 text-sm">${msg.sender_name}</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full ${colorClass}">${msg.sender_role}</span>
-                        <span class="text-xs text-gray-400">${date} ${time}</span>
-                        ${isOwn ? `<button onclick="window.deleteMessage('${msg.id}')" class="text-red-400 hover:text-red-600 text-xs">🗑️</button>` : ''}
-                        ${msg.is_edited ? `<span class="text-xs text-gray-400">(ред.)</span>` : ''}
+            <div class="flex ${isMine ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-[80%]">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span class="text-xs font-bold text-gray-600">${isMine ? 'Вы' : msg.sender_name}</span>
+                        <span class="text-[10px] text-gray-400">${date} ${time}</span>
                     </div>
-                    <div class="p-2 rounded-xl border ${bgClass} mt-0.5">
-                        ${contentHtml}
+                    <div class="p-3 rounded-2xl shadow-sm ${bubbleClass}">
+                        ${content}
                     </div>
                 </div>
             </div>
@@ -332,7 +238,7 @@ function renderMessages() {
 }
 
 // ===== Подписка на Realtime =====
-function subscribeToRoom(room, type) {
+function subscribeToRoom(room) {
     if (!window._supabase) return;
     if (chatSubscription) {
         chatSubscription.unsubscribe();
@@ -345,20 +251,35 @@ function subscribeToRoom(room, type) {
             event: 'INSERT',
             schema: 'public',
             table: 'chat_messages',
-            filter: `room_id=eq.${room} AND room_type=eq.${type}`
+            filter: `room=eq.${room}`
         }, (payload) => {
-            messages.push(payload.new);
-            renderMessages();
+            const msg = payload.new;
+            // Если сообщение от другого пользователя и комната текущая – добавляем
+            if (msg.sender_name !== localStorage.getItem('user_name')) {
+                messages.push(msg);
+                renderMessages();
+                // Увеличиваем счётчик непрочитанных, если чат закрыт
+                if (!isChatOpen) {
+                    unreadCount++;
+                    updateUnreadBadge();
+                }
+                // Отмечаем как прочитанное, если чат открыт
+                if (isChatOpen) {
+                    markMessagesAsRead(room);
+                }
+            }
         })
+        .subscribe();
+
+    // Подписка на изменения пользователей (онлайн-статус)
+    window._supabase
+        .channel('chat_users')
         .on('postgres_changes', {
-            event: 'DELETE',
+            event: 'UPDATE',
             schema: 'public',
-            table: 'chat_messages',
-            filter: `room_id=eq.${room} AND room_type=eq.${type}`
-        }, (payload) => {
-            const deletedId = payload.old.id;
-            messages = messages.filter(m => m.id !== deletedId);
-            renderMessages();
+            table: 'chat_users'
+        }, () => {
+            loadChatUsers();
         })
         .subscribe();
 }
@@ -367,58 +288,37 @@ function subscribeToRoom(room, type) {
 async function sendChatMessage() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
-    if (!text && selectedFiles.length === 0) return;
+    if (!text) return;
 
-    if (!window._supabase) {
-        alert('Ошибка: Supabase не инициализирован');
-        return;
+    const userName = localStorage.getItem('user_name') || 'Сотрудник';
+    const userRole = localStorage.getItem('user_role') || 'Сотрудник';
+
+    // Определяем получателя для личных сообщений
+    let receiverId = null;
+    if (currentRoom.startsWith('private_')) {
+        const targetId = currentRoom.replace('private_', '');
+        receiverId = targetId;
     }
 
-    const user_name = currentUser.name;
-    const user_role = currentUser.role;
+    const payload = {
+        room: currentRoom,
+        sender_id: null, // можно добавить ID пользователя
+        sender_name: userName,
+        sender_role: userRole,
+        receiver_id: receiverId,
+        message: text,
+        is_read: false
+    };
 
-    // Загружаем файлы в Storage
-    let fileUrls = [];
-    for (const file of selectedFiles) {
-        try {
-            const filePath = `chat/${Date.now()}_${file.name}`;
-            const { data, error } = await window._supabase.storage
-                .from('chat-files')
-                .upload(filePath, file);
-            if (error) throw error;
-            const { data: urlData } = window._supabase.storage
-                .from('chat-files')
-                .getPublicUrl(filePath);
-            fileUrls.push({ url: urlData.publicUrl, name: file.name, type: file.type });
-        } catch (err) {
-            console.error('Ошибка загрузки файла:', err);
-            alert('Ошибка загрузки файла: ' + err.message);
-            return;
-        }
-    }
-
-    // Сохраняем сообщение
     try {
-        const payload = {
-            room_type: currentRoomType,
-            room_id: currentRoom,
-            sender_name: user_name,
-            sender_role: user_role,
-            message: text || null,
-            file_url: fileUrls.length > 0 ? fileUrls[0].url : null,
-            file_name: fileUrls.length > 0 ? fileUrls[0].name : null,
-            file_type: fileUrls.length > 0 ? fileUrls[0].type : null,
-            created_at: new Date().toISOString()
-        };
         const { error } = await window._supabase
             .from('chat_messages')
             .insert([payload]);
         if (error) throw error;
-
         input.value = '';
-        selectedFiles = [];
-        document.getElementById('filePreviewContainer').classList.add('hidden');
-        document.getElementById('fileInput').value = '';
+        // Добавляем сообщение локально
+        messages.push({ ...payload, created_at: new Date().toISOString() });
+        renderMessages();
     } catch (err) {
         alert('Ошибка отправки: ' + err.message);
     }
@@ -426,68 +326,118 @@ async function sendChatMessage() {
 
 window.sendChatMessage = sendChatMessage;
 
-// ===== Очистка выбранных файлов =====
-function clearFileAttachment() {
-    selectedFiles = [];
-    document.getElementById('filePreviewContainer').classList.add('hidden');
-    document.getElementById('fileInput').value = '';
-}
-
-window.clearFileAttachment = clearFileAttachment;
-
-// ===== Личные чаты =====
-function openNewDirectChat() {
-    document.getElementById('directChatModal').classList.remove('hidden');
-}
-
-function closeDirectChatModal() {
-    document.getElementById('directChatModal').classList.add('hidden');
-}
-
-window.openNewDirectChat = openNewDirectChat;
-window.closeDirectChatModal = closeDirectChatModal;
-
-function startDirectChat() {
-    const select = document.getElementById('directChatUserSelect');
-    const otherName = select.value;
-    if (!otherName) {
-        alert('Выберите пользователя');
-        return;
+// ===== Вложение файлов =====
+function chatAttachFile() {
+    if (fileInput) {
+        fileInput.click();
     }
-    // Создаем room_id: сортируем имена по алфавиту
-    const names = [currentUser.name, otherName].sort();
-    const roomId = names.join('_');
-    // Закрываем модалку, переключаемся в личный чат
-    closeDirectChatModal();
-    // Добавляем в список личных чатов, если нет
-    if (!directChats.find(d => d.roomId === roomId)) {
-        directChats.push({ roomId, otherName });
-        renderDirectChats();
-    }
-    // Переключаемся
-    currentRoom = roomId;
-    currentRoomType = 'direct';
-    localStorage.setItem('chat_room', roomId);
-    localStorage.setItem('chat_room_type', 'direct');
-    document.getElementById('chatRoomSelect').value = 'direct';
-    document.getElementById('directChatsPanel').classList.remove('hidden');
-    loadMessages(roomId, 'direct');
-    renderMessages();
-    subscribeToRoom(roomId, 'direct');
 }
 
-window.startDirectChat = startDirectChat;
+async function handleFileUpload(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-// ===== Удаление сообщения =====
-window.deleteMessage = async (messageId) => {
-    if (!confirm('Удалить сообщение?')) return;
-    try {
-        const { error } = await window._supabase
-            .from('chat_messages')
-            .delete()
-            .eq('id', messageId);
-        if (error) throw error;
-    } catch (err) {
-        alert('Ошибка удаления: ' + err.message);
+    const userName = localStorage.getItem('user_name') || 'Сотрудник';
+    const userRole = localStorage.getItem('user_role') || 'Сотрудник';
+
+    for (const file of files) {
+        try {
+            // Загружаем файл в Storage
+            const filePath = `chat/${Date.now()}_${file.name}`;
+            const { data, error } = await window._supabase.storage
+                .from('chat-files')
+                .upload(filePath, file);
+
+            if (error) throw error;
+
+            // Получаем публичную ссылку
+            const { data: urlData } = window._supabase.storage
+                .from('chat-files')
+                .getPublicUrl(filePath);
+
+            const fileUrl = urlData.publicUrl;
+
+            let receiverId = null;
+            if (currentRoom.startsWith('private_')) {
+                const targetId = currentRoom.replace('private_', '');
+                receiverId = targetId;
+            }
+
+            const payload = {
+                room: currentRoom,
+                sender_id: null,
+                sender_name: userName,
+                sender_role: userRole,
+                receiver_id: receiverId,
+                message: null,
+                file_url: fileUrl,
+                file_name: file.name,
+                file_type: file.type,
+                is_read: false
+            };
+
+            const { error: msgError } = await window._supabase
+                .from('chat_messages')
+                .insert([payload]);
+            if (msgError) throw msgError;
+
+            messages.push({ ...payload, created_at: new Date().toISOString() });
+            renderMessages();
+
+        } catch (err) {
+            alert('Ошибка загрузки файла: ' + err.message);
+        }
     }
-};
+
+    fileInput.value = '';
+}
+
+window.chatAttachFile = chatAttachFile;
+
+// ===== Управление окном чата =====
+function toggleChat() {
+    const windowEl = document.getElementById('chatWindow');
+    const fabIcon = document.getElementById('chatFabIcon');
+    isChatOpen = !isChatOpen;
+    if (isChatOpen) {
+        windowEl.classList.remove('hidden');
+        fabIcon.textContent = '✕';
+        // Отмечаем сообщения как прочитанные
+        markMessagesAsRead(currentRoom);
+        unreadCount = 0;
+        updateUnreadBadge();
+        // Подгружаем пользователей
+        loadChatUsers();
+    } else {
+        windowEl.classList.add('hidden');
+        fabIcon.textContent = '💬';
+    }
+}
+
+function minimizeChat() {
+    document.getElementById('chatWindow').classList.add('hidden');
+    document.getElementById('chatFabIcon').textContent = '💬';
+    isChatOpen = false;
+}
+
+window.toggleChat = toggleChat;
+window.minimizeChat = minimizeChat;
+
+// ===== Обновление бейджа непрочитанных =====
+function updateUnreadBadge() {
+    const badge = document.getElementById('chatBadge');
+    if (unreadCount > 0) {
+        badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+// ===== Инициализация при загрузке модуля =====
+setTimeout(() => {
+    if (window._supabase) {
+        // Проверяем, есть ли пользователи в chat_users, если нет – добавляем из localStorage
+        loadChatUsers();
+    }
+}, 100);
