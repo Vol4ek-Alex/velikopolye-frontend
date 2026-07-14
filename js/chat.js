@@ -1,34 +1,33 @@
-// js/chat.js – Полноценный чат с анимациями, онлайн-статусами, личными сообщениями
+// js/chat.js – Идеальный чат для АРМ
 
 // ===== СОСТОЯНИЕ =====
-let state = {
+const state = {
     currentRoom: 'general',
     messages: [],
     users: [],
     subscription: null,
     isOpen: false,
-    isMinimized: false,
-    currentUser: null,
     unreadCount: 0,
-    selectedUser: null // для личных сообщений
+    selectedUser: null,
+    currentUser: null
 };
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 export async function init() {
     console.log('💬 Запуск чата...');
 
-    // Загружаем данные пользователя
+    // Текущий пользователь
     state.currentUser = {
         name: localStorage.getItem('user_name') || 'Сотрудник',
         role: localStorage.getItem('user_role') || 'Сотрудник'
     };
 
-    // Создаём HTML, если его нет
-    if (!document.getElementById('chatApp')) {
+    // Вставляем HTML, если его нет
+    if (!document.getElementById('chatRoot')) {
         document.body.insertAdjacentHTML('beforeend', getChatHTML());
     }
 
-    // Подключаем обработчики
+    // Обработчики
     bindEvents();
 
     // Загружаем пользователей
@@ -41,85 +40,89 @@ export async function init() {
     renderMessages();
     renderUserList();
 
-    // Подписываемся на Realtime
+    // Подписываемся на общий чат
     subscribeToRoom('general');
 
-    // Обновляем статус онлайн
+    // Обновляем онлайн-статус
     await updateOnlineStatus(true);
 
-    // Закрываем/открываем
+    // Периодические задачи
+    setInterval(checkNewMessages, 10000);
+    setInterval(updateOnlineStatus, 30000);
+
+    // Глобальные функции
     window.toggleChat = toggleChat;
-    window.openChat = openChat;
     window.closeChat = closeChat;
     window.sendMessage = sendMessage;
-
-    // Периодическая проверка новых сообщений (для уведомлений)
-    setInterval(checkNewMessages, 10000);
-    setInterval(updateOnlineStatus, 30000); // обновляем статус каждые 30 сек
+    window.switchRoom = switchRoom;
+    window.startPrivateChat = startPrivateChat;
+    window.openChatMenu = openChatMenu;
+    window.closeChatMenu = closeChatMenu;
+    window.minimizeChat = minimizeChat;
 }
 
 // ===== HTML-ШАБЛОН =====
 function getChatHTML() {
     return `
-        <div id="chatApp" class="fixed inset-0 z-[999] pointer-events-none">
+        <div id="chatRoot" class="fixed inset-0 z-[999] pointer-events-none">
             <!-- Плавающая кнопка -->
-            <button id="chatFab" class="fixed bottom-6 right-6 pointer-events-auto bg-cyan-600/80 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center w-14 h-14 backdrop-blur-sm hover:scale-105 active:scale-95">
+            <button id="chatFab" class="fixed bottom-6 right-6 pointer-events-auto bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white p-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center w-16 h-16 backdrop-blur-sm hover:scale-105 active:scale-95">
                 <span class="text-2xl">💬</span>
-                <span id="chatBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                <span id="chatBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center hidden shadow-lg">0</span>
             </button>
 
             <!-- Окно чата -->
-            <div id="chatWindow" class="fixed inset-0 md:inset-auto md:bottom-24 md:right-6 md:w-[480px] md:h-[680px] bg-white shadow-2xl border border-gray-200 pointer-events-auto flex flex-col hidden transition-all duration-300 transform scale-95 opacity-0 md:rounded-3xl overflow-hidden max-w-full max-h-full">
+            <div id="chatWindow" class="fixed inset-0 md:inset-auto md:bottom-24 md:right-6 md:w-[500px] md:h-[700px] bg-white shadow-2xl border border-gray-200/80 pointer-events-auto flex flex-col hidden transition-all duration-300 transform scale-95 opacity-0 md:rounded-3xl overflow-hidden">
                 <!-- Шапка -->
-                <div class="bg-gradient-to-r from-cyan-600 to-cyan-700 text-white p-4 flex justify-between items-center flex-shrink-0">
+                <div class="bg-gradient-to-r from-cyan-600 to-cyan-700 text-white p-5 flex justify-between items-center flex-shrink-0">
                     <div class="flex items-center gap-3">
                         <button id="chatMenuBtn" class="text-white hover:text-gray-200 text-2xl leading-none md:hidden">☰</button>
                         <span class="text-2xl">💬</span>
                         <span class="font-bold text-lg">Чат</span>
-                        <span id="chatRoomName" class="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full">Общий</span>
+                        <span id="chatRoomName" class="text-xs font-medium bg-white/20 px-3 py-1 rounded-full">Общий</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button id="chatMinimizeBtn" class="text-white hover:text-gray-200 text-xl leading-none">−</button>
-                        <button id="chatCloseBtn" class="text-white hover:text-gray-200 text-xl leading-none">✕</button>
+                        <button id="chatMinimizeBtn" class="text-white hover:text-gray-200 text-xl leading-none transition">−</button>
+                        <button id="chatCloseBtn" class="text-white hover:text-gray-200 text-xl leading-none transition">✕</button>
                     </div>
                 </div>
 
-                <!-- Основная панель (меню + сообщения) -->
-                <div class="flex flex-1 overflow-hidden">
-                    <!-- Боковое меню (пользователи/комнаты) -->
-                    <div id="chatSidebar" class="w-64 bg-gray-50 border-r border-gray-200 flex-shrink-0 overflow-y-auto transition-transform duration-300 -translate-x-full md:translate-x-0 md:block absolute md:relative z-10 h-full md:h-auto">
-                        <div class="p-3 border-b border-gray-200 bg-white">
+                <!-- Основная панель -->
+                <div class="flex flex-1 overflow-hidden relative">
+                    <!-- Боковое меню (выезжает) -->
+                    <div id="chatSidebar" class="absolute md:relative z-20 w-72 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 flex-shrink-0 overflow-y-auto transition-transform duration-300 -translate-x-full md:translate-x-0 md:block">
+                        <div class="p-4 border-b border-gray-200 bg-white/80">
                             <div class="flex items-center gap-2 text-sm font-bold text-gray-700">
                                 <span>👥</span> Комнаты
                             </div>
                         </div>
-                        <div class="p-2 space-y-1">
-                            <button onclick="window.switchRoom('general')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-200 transition flex items-center gap-2 text-sm font-medium" id="room-general">
-                                <span>💬</span> Общий чат
+                        <div class="p-3 space-y-2">
+                            <button onclick="window.switchRoom('general')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-cyan-100/50 transition flex items-center gap-3 text-sm font-medium" id="room-general">
+                                <span class="text-lg">💬</span> Общий чат
                             </button>
-                            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 py-2">Личные сообщения</div>
+                            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 pt-2 pb-1">Личные сообщения</div>
                             <div id="chatUserList" class="space-y-1"></div>
                         </div>
                     </div>
 
-                    <!-- Сообщения -->
-                    <div class="flex-1 flex flex-col bg-gray-50 relative">
+                    <!-- Оверлей для мобильного меню -->
+                    <div id="chatMenuOverlay" class="fixed inset-0 bg-black/30 z-10 hidden pointer-events-auto" onclick="closeChatMenu()"></div>
+
+                    <!-- Область сообщений -->
+                    <div class="flex-1 flex flex-col bg-gray-50/80">
                         <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3">
-                            <div class="text-center text-gray-400 py-8 text-sm">Загрузка...</div>
+                            <div class="text-center text-gray-400 py-10 text-sm">Загрузка...</div>
                         </div>
 
                         <!-- Поле ввода -->
-                        <div class="border-t border-gray-200 p-3 flex gap-2 items-center bg-white">
-                            <input type="text" id="chatInput" placeholder="Введите сообщение..." class="flex-1 bg-gray-100 border-0 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-400 outline-none">
-                            <button id="chatSendBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition shadow-sm hover:scale-105 active:scale-95">➤</button>
+                        <div class="border-t border-gray-200 p-4 flex gap-3 items-center bg-white">
+                            <input type="text" id="chatInput" placeholder="Введите сообщение..." class="flex-1 bg-gray-100 border-0 rounded-2xl px-5 py-3 text-base focus:ring-2 focus:ring-cyan-400 outline-none transition">
+                            <button id="chatSendBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-3 rounded-2xl text-sm font-bold transition shadow-md hover:shadow-lg active:scale-95">➤</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Оверлей для мобильного меню -->
-        <div id="chatMenuOverlay" class="fixed inset-0 bg-black/40 z-[998] hidden pointer-events-auto" onclick="closeChatMenu()"></div>
     `;
 }
 
@@ -155,10 +158,9 @@ function openChat() {
     fab.classList.add('hidden');
     state.isOpen = true;
     clearBadge();
-    // Обновляем сообщения при открытии
+    // Загружаем свежие сообщения
     loadMessages(state.currentRoom);
     renderMessages();
-    // Обновляем статус
     updateOnlineStatus(true);
 }
 
@@ -182,7 +184,7 @@ function minimizeChat() {
     state.isOpen = false;
 }
 
-// ===== УПРАВЛЕНИЕ МЕНЮ =====
+// ===== МЕНЮ (мобильное) =====
 function openChatMenu() {
     const sidebar = document.getElementById('chatSidebar');
     const overlay = document.getElementById('chatMenuOverlay');
@@ -197,7 +199,7 @@ function closeChatMenu() {
     overlay.classList.add('hidden');
 }
 
-// ===== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ =====
+// ===== ПОЛЬЗОВАТЕЛИ =====
 async function loadUsers() {
     if (!window._supabase) return;
     try {
@@ -219,17 +221,17 @@ function renderUserList() {
     const currentName = state.currentUser.name;
     const filtered = state.users.filter(u => u.name !== currentName);
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="text-xs text-gray-400 px-3 py-1">Нет пользователей</div>';
+        container.innerHTML = '<div class="text-xs text-gray-400 px-3 py-2">Нет пользователей</div>';
         return;
     }
     container.innerHTML = filtered.map(u => {
         const online = u.online ? '🟢' : '⚪';
         const isActive = state.selectedUser === u.name;
         return `
-            <button onclick="window.startPrivateChat('${u.name}')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-200 transition flex items-center gap-2 text-sm ${isActive ? 'bg-cyan-100' : ''}">
-                <span>${online}</span>
-                <span class="flex-1 truncate">${u.name}</span>
-                <span class="text-[10px] text-gray-400">${u.role}</span>
+            <button onclick="window.startPrivateChat('${u.name}')" class="w-full text-left px-4 py-2.5 rounded-xl hover:bg-cyan-100/50 transition flex items-center gap-3 text-sm ${isActive ? 'bg-cyan-100' : ''}">
+                <span class="text-lg">${online}</span>
+                <span class="flex-1 truncate font-medium">${u.name}</span>
+                <span class="text-[10px] text-gray-400 bg-gray-200/70 px-2 py-0.5 rounded-full">${u.role}</span>
             </button>
         `;
     }).join('');
@@ -240,9 +242,7 @@ window.switchRoom = function(room) {
     state.currentRoom = room;
     state.selectedUser = null;
     document.getElementById('chatRoomName').textContent = room === 'general' ? 'Общий' : room;
-    // Закрываем меню на мобильных
     closeChatMenu();
-    // Отписываемся от старой подписки
     if (state.subscription) {
         state.subscription.unsubscribe();
         state.subscription = null;
@@ -250,7 +250,7 @@ window.switchRoom = function(room) {
     loadMessages(room);
     renderMessages();
     subscribeToRoom(room);
-    // Обновляем активный пункт в меню
+    // Активный пункт
     document.querySelectorAll('#room-general, #chatUserList button').forEach(el => el.classList.remove('bg-cyan-100'));
     if (room === 'general') {
         document.getElementById('room-general').classList.add('bg-cyan-100');
@@ -270,7 +270,6 @@ window.startPrivateChat = function(userName) {
     loadMessages(room);
     renderMessages();
     subscribeToRoom(room);
-    // Обновляем активный пункт
     document.querySelectorAll('#room-general, #chatUserList button').forEach(el => el.classList.remove('bg-cyan-100'));
     document.querySelectorAll('#chatUserList button').forEach(el => {
         if (el.textContent.includes(userName)) {
@@ -279,7 +278,7 @@ window.startPrivateChat = function(userName) {
     });
 };
 
-// ===== ЗАГРУЗКА СООБЩЕНИЙ =====
+// ===== СООБЩЕНИЯ =====
 async function loadMessages(room) {
     if (!window._supabase) return;
     try {
@@ -296,12 +295,11 @@ async function loadMessages(room) {
     }
 }
 
-// ===== РЕНДЕРИНГ СООБЩЕНИЙ =====
 function renderMessages() {
     const container = document.getElementById('chatMessages');
     if (!container) return;
     if (state.messages.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-400 py-8 text-sm">Нет сообщений. Напишите первое!</div>';
+        container.innerHTML = '<div class="text-center text-gray-400 py-12 text-base">Нет сообщений. Напишите первое!</div>';
         return;
     }
     const roleColors = {
@@ -318,16 +316,18 @@ function renderMessages() {
         const date = new Date(msg.created_at).toLocaleDateString('ru-RU');
         return `
             <div class="flex items-start gap-3 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in-up">
-                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700 font-bold text-sm">
+                <div class="flex-shrink-0 w-9 h-9 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700 font-bold text-sm shadow-sm">
                     ${msg.user_name ? msg.user_name.charAt(0) : '?'}
                 </div>
                 <div class="flex-1 ${isMe ? 'items-end' : ''}">
-                    <div class="flex items-center gap-2 ${isMe ? 'justify-end' : ''}">
+                    <div class="flex items-center gap-2 ${isMe ? 'justify-end' : ''} flex-wrap">
                         <span class="font-bold text-gray-800 text-sm">${msg.user_name || 'Неизвестный'}</span>
                         <span class="text-xs font-bold px-2 py-0.5 rounded-full ${colorClass}">${msg.user_role || 'Сотрудник'}</span>
                         <span class="text-xs text-gray-400">${date} ${time}</span>
                     </div>
-                    <div class="text-sm text-gray-700 mt-0.5 break-words ${isMe ? 'text-right' : ''}">${msg.message}</div>
+                    <div class="text-sm text-gray-700 mt-1 break-words bg-white p-3 rounded-2xl shadow-sm max-w-[85%] ${isMe ? 'ml-auto bg-cyan-50' : ''}">
+                        ${msg.message}
+                    </div>
                 </div>
             </div>
         `;
@@ -335,7 +335,7 @@ function renderMessages() {
     container.scrollTop = container.scrollHeight;
 }
 
-// ===== REALTIME ПОДПИСКА =====
+// ===== REALTIME =====
 function subscribeToRoom(room) {
     if (!window._supabase) return;
     if (state.subscription) {
@@ -359,7 +359,7 @@ function subscribeToRoom(room) {
         .subscribe();
 }
 
-// ===== ОТПРАВКА СООБЩЕНИЯ =====
+// ===== ОТПРАВКА =====
 window.sendMessage = async function() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
@@ -383,14 +383,13 @@ window.sendMessage = async function() {
             .insert([payload]);
         if (error) throw error;
         input.value = '';
-        // Realtime сам добавит сообщение
     } catch (err) {
         console.error('Ошибка отправки:', err);
         alert('Ошибка отправки: ' + err.message);
     }
 };
 
-// ===== ОНЛАЙН-СТАТУС =====
+// ===== ОНЛАЙН =====
 async function updateOnlineStatus(force = false) {
     if (!window._supabase) return;
     const name = state.currentUser.name;
@@ -399,17 +398,13 @@ async function updateOnlineStatus(force = false) {
             .from('chat_users')
             .update({ last_seen: new Date().toISOString(), online: true })
             .eq('name', name);
-        if (error) throw error;
-        // Если пользователя нет в таблице – добавляем
-    } catch (err) {
-        // Если пользователь не найден – добавляем
-        try {
+        if (error) {
+            // Если нет – создаём
             await window._supabase
                 .from('chat_users')
                 .insert([{ name: name, role: state.currentUser.role, online: true }]);
-        } catch(e) {}
-    }
-    // Обновляем список пользователей через 1 секунду
+        }
+    } catch (e) {}
     setTimeout(loadUsers, 1000);
 }
 
@@ -448,18 +443,5 @@ async function checkNewMessages() {
         if (count > 0) {
             showBadge(count);
         }
-    } catch (err) {
-        // игнорируем
-    }
+    } catch (err) {}
 }
-
-// ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ =====
-window.toggleChat = toggleChat;
-window.openChat = openChat;
-window.closeChat = closeChat;
-window.minimizeChat = minimizeChat;
-window.sendMessage = sendMessage;
-window.switchRoom = switchRoom;
-window.startPrivateChat = startPrivateChat;
-window.closeChatMenu = closeChatMenu;
-window.openChatMenu = openChatMenu;
